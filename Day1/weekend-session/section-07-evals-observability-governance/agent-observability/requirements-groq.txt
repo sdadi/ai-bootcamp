@@ -1,0 +1,8 @@
+# Agent observability notebooks (Groq instead of Amazon Bedrock)
+strands-agents[otel,openai]>=1.60.0,<2.0.0
+strands-agents-tools>=0.8.9,<0.9.0
+langfuse>=3.0.0
+python-dotenv>=1.0.0
+# Notebook 5 only: ADOT sends traces to CloudWatch (needs AWS credentials, not Bedrock)
+aws-opentelemetry-distro>=0.12.0
+boto3>=1.40.0

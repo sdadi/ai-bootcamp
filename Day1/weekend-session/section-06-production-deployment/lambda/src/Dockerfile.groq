@@ -1,0 +1,9 @@
+# Groq edition of Dockerfile: Groq requirements and app_groq.py
+FROM public.ecr.aws/lambda/python:3.13
+
+COPY requirements-groq.txt ${LAMBDA_TASK_ROOT}
+RUN pip install -r requirements-groq.txt
+
+COPY app_groq.py ${LAMBDA_TASK_ROOT}
+
+CMD ["app_groq.lambda_handler"]

@@ -1,0 +1,32 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Weather Forecast API",
+    "version": "1.0.0",
+    "description": "Subset of the free Open-Meteo forecast API (https://open-meteo.com). No API key required."
+  },
+  "servers": [{ "url": "https://api.open-meteo.com" }],
+  "paths": {
+    "/v1/forecast": {
+      "get": {
+        "operationId": "getForecast",
+        "summary": "Get current weather and a daily forecast for a latitude/longitude",
+        "description": "Returns current temperature and wind, plus daily max/min temperature and precipitation for the next few days.",
+        "parameters": [
+          { "name": "latitude", "in": "query", "required": true, "description": "Latitude in decimal degrees, e.g. 12.97 for Bangalore", "schema": { "type": "number" } },
+          { "name": "longitude", "in": "query", "required": true, "description": "Longitude in decimal degrees, e.g. 77.59 for Bangalore", "schema": { "type": "number" } },
+          { "name": "current", "in": "query", "required": false, "description": "Comma-separated current variables", "schema": { "type": "string", "default": "temperature_2m,wind_speed_10m" } },
+          { "name": "daily", "in": "query", "required": false, "description": "Comma-separated daily variables", "schema": { "type": "string", "default": "temperature_2m_max,temperature_2m_min,precipitation_sum" } },
+          { "name": "timezone", "in": "query", "required": false, "description": "IANA timezone or 'auto'", "schema": { "type": "string", "default": "auto" } },
+          { "name": "forecast_days", "in": "query", "required": false, "description": "Number of forecast days (1-16)", "schema": { "type": "integer", "default": 3 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forecast data",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    }
+  }
+}

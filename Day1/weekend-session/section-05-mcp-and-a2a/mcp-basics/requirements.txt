@@ -1,0 +1,4 @@
+# MCP basics — pure protocol, no LLM needed
+# mcp 2.x renamed FastMCP and changed client APIs; this code targets the 1.x line.
+mcp[cli]>=1.23.0,<2.0.0
+httpx>=0.28.0

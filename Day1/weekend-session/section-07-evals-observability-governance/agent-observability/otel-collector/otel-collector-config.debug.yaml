@@ -1,0 +1,26 @@
+# otel-collector-config.debug.yaml
+#
+# Same receivers, but the only exporter prints spans to the collector's own
+# console. Use this to try the collector without any third-party accounts.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

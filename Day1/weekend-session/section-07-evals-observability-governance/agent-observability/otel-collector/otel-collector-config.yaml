@@ -1,0 +1,39 @@
+# otel-collector-config.yaml
+#
+# One OpenTelemetry Collector receives traces from your agents on the
+# standard OTLP ports and fans them out to two backends at the same time:
+#   - Datadog              (alerting / APM)
+#   - Langfuse (cloud or self-hosted)  (deep LLM trace analysis)
+#
+# Required environment variables (see run_collector.sh):
+#   DD_API_KEY, DD_SITE              e.g. DD_SITE=datadoghq.com
+#   LANGFUSE_OTEL_ENDPOINT           e.g. https://cloud.langfuse.com/api/public/otel
+#   LANGFUSE_AUTH                    base64("pk-lf-...:sk-lf-...")
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  datadog:
+    api:
+      key: ${env:DD_API_KEY}
+      site: ${env:DD_SITE}
+  otlphttp/langfuse:
+    endpoint: ${env:LANGFUSE_OTEL_ENDPOINT}
+    headers:
+      Authorization: "Basic ${env:LANGFUSE_AUTH}"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [datadog, otlphttp/langfuse]

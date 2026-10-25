@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.env
+.env.*
+!.env.example
+.bedrock_agentcore/
+.bedrock_agentcore.yaml
+.aws-sam/
+.mem0_course/
+eval_output/
+weather_summary.txt
+inventory_demo.db
+.DS_Store
+build_groq/

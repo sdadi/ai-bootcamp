@@ -1,0 +1,8 @@
+# Section 3 — Notebook 2 (LangGraph + AgentCore Memory checkpointer)
+boto3>=1.40.0
+langchain>=1.4.0,<2.0.0
+langchain-aws>=1.8.0,<2.0.0
+langchain-core>=1.6.0,<2.0.0
+langgraph>=1.2.0,<2.0.0
+langgraph-checkpoint-aws>=1.2.0,<2.0.0
+bedrock-agentcore>=1.24.0,<2.0.0

@@ -1,0 +1,10 @@
+# Section 3 — Notebook 2 (LangGraph + AgentCore Memory checkpointer), Groq instead of Amazon Bedrock
+# AgentCore Memory still needs AWS credentials, but no Bedrock model access.
+boto3>=1.40.0
+langchain>=1.4.0,<2.0.0
+langchain-core>=1.6.0,<2.0.0
+langchain-groq>=1.1.0,<2.0.0
+langgraph>=1.2.0,<2.0.0
+langgraph-checkpoint-aws>=1.2.0,<2.0.0
+bedrock-agentcore>=1.24.0,<2.0.0
+python-dotenv>=1.0.0

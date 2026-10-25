@@ -1,0 +1,4 @@
+# Packages installed INSIDE the deployed AgentCore container (Groq edition)
+bedrock-agentcore>=1.24.0,<2.0.0
+strands-agents[openai]>=1.60.0,<2.0.0
+python-dotenv>=1.0.0

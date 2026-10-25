@@ -1,0 +1,1 @@
+strands-agents[openai]>=1.60.0,<2.0.0

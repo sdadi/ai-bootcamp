@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Strands document analysis agent on AWS Lambda behind API Gateway (Groq edition)
+
+Globals:
+  Function:
+    Timeout: 900
+    MemorySize: 1024
+
+Parameters:
+  Architecture:
+    Type: String
+    Default: arm64
+    AllowedValues:
+      - arm64
+      - x86_64
+    Description: "Lambda architecture. Use arm64 for Apple Silicon / Graviton, x86_64 for Intel."
+  ModelId:
+    Type: String
+    Default: openai/gpt-oss-120b
+    Description: "Groq model ID used by the agent."
+  GroqSecretName:
+    Type: String
+    Default: document-analysis-agent-groq/groq-api-key
+    Description: "Secrets Manager secret that holds the Groq API key (deploy-groq.sh creates it)."
+
+Resources:
+  DocumentAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+        - !Ref Architecture
+      Environment:
+        Variables:
+          MODEL_ID: !Ref ModelId
+          # Resolved from Secrets Manager at deploy time: the key is never in this
+          # template, the stack parameters or the deploy command line.
+          GROQ_API_KEY: !Sub "{{resolve:secretsmanager:${GroqSecretName}}}"
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref DocumentBucket
+      Events:
+        AnalyzeContract:
+          Type: Api
+          Properties:
+            Path: /analyze
+            Method: post
+    Metadata:
+      DockerTag: v1
+      DockerContext: ./src
+      Dockerfile: Dockerfile.groq
+
+  DocumentBucket:
+    Type: AWS::S3::Bucket
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/analyze/"
