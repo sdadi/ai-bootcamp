@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NPS Analyst in a Box — Project Brief</title>
+<meta name="description" content="Future with Shivank — AI Agents in Finance, Project: a five-agent NPS analyst for Future with Shivank Bank. Promoters, passives and detractors, revenue at risk, what to fix first. The project brief for learners.">
+<script>
+  try { var t = localStorage.getItem('fws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f7f3; --surface:#ffffff; --surface-2:#f1f0ea; --ink:#1c232b; --muted:#5a6573; --line:#e1ddd2;
+  --accent:#0d6e5b; --accent-ink:#ffffff; --accent-soft:#e1f1eb;
+  --gold:#835c00; --gold-soft:#fff4d4;
+  --warn:#ad4519; --warn-soft:#fdede3;
+  --blue:#1d5ca6; --blue-soft:#e5eef9;
+  --skip:#5f6874; --skip-soft:#eceef1;
+  --good:#17803a; --good-soft:#e3f4e8; --bad:#be3326; --bad-soft:#fbe8e5;
+  --code-bg:#151a21; --code-ink:#e7e9ec; --code-line:#262d37;
+  --radius:14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1317; --surface:#161b21; --surface-2:#1c232a; --ink:#e6eaee; --muted:#9aa5b1; --line:#29313b;
+    --accent:#4cc3a5; --accent-ink:#04231c; --accent-soft:#12302a;
+    --gold:#efc85a; --gold-soft:#2c250f;
+    --warn:#f29a69; --warn-soft:#35200f;
+    --blue:#82b3ee; --blue-soft:#14253a;
+    --skip:#a7b0bb; --skip-soft:#1f262e;
+    --good:#5fd07e; --good-soft:#12301c; --bad:#ff7d70; --bad-soft:#3a1714;
+    --code-bg:#0b0f13; --code-ink:#e7e9ec; --code-line:#1d242d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1317; --surface:#161b21; --surface-2:#1c232a; --ink:#e6eaee; --muted:#9aa5b1; --line:#29313b;
+  --accent:#4cc3a5; --accent-ink:#04231c; --accent-soft:#12302a;
+  --gold:#efc85a; --gold-soft:#2c250f;
+  --warn:#f29a69; --warn-soft:#35200f;
+  --blue:#82b3ee; --blue-soft:#14253a;
+  --skip:#a7b0bb; --skip-soft:#1f262e;
+  --good:#5fd07e; --good-soft:#12301c; --bad:#ff7d70; --bad-soft:#3a1714;
+  --code-bg:#0b0f13; --code-ink:#e7e9ec; --code-line:#1d242d;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:72px}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+#progress{position:fixed; top:0; left:0; height:3px; width:0; background:var(--accent); z-index:60}
+
+/* top bar */
+.topbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; padding:10px 20px; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.brand{font-weight:800; letter-spacing:-.01em; font-size:15px}
+.brand span{color:var(--accent)}
+.brand em{font-style:normal}
+.iconbtn{white-space:nowrap; display:inline-flex; align-items:center; gap:6px}
+.iconbtn svg{width:15px; height:15px}
+input[type=range]{accent-color:var(--accent)}
+.svgwrap svg{display:block; width:100%; height:auto; color:var(--ink)}
+.trail{display:flex; flex-wrap:wrap; align-items:center; gap:4px 4px; margin:6px 0 2px; font:11.5px/1.3 "JetBrains Mono",ui-monospace,monospace}
+.trail span.c{padding:3px 7px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--muted)}
+.trail span.c.done{background:var(--accent-soft); color:var(--accent); border-color:transparent}
+.trail span.c.now{background:var(--gold-soft); color:var(--gold); border-color:var(--gold); font-weight:700}
+.trail i{font-style:normal; color:var(--muted)}
+.trail b.day{font:700 10.5px Inter,system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); padding:0 4px}
+.topbar .sp{flex:1}
+.iconbtn{font:inherit; font-size:14px; font-weight:600; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 14px; cursor:pointer}
+.iconbtn:hover{border-color:var(--accent)}
+#tocBtn{display:none}
+
+/* layout */
+.layout{display:grid; grid-template-columns:260px minmax(0,1fr); gap:40px; max-width:1240px; margin:0 auto; padding:0 24px}
+.toc{position:sticky; top:64px; align-self:start; max-height:calc(100vh - 80px); overflow:auto; padding:24px 0 40px; font-size:14px; line-height:1.45}
+.toc h4{margin:0 0 8px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.toc a{display:block; padding:5px 10px; border-radius:8px; color:var(--muted); text-decoration:none; border-left:2px solid transparent}
+.toc a.lvl2{padding-left:22px; font-size:13.5px}
+.toc a:hover{color:var(--ink); background:var(--surface-2)}
+.toc a.active{color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft); font-weight:600}
+.toc .grp{margin-top:16px}
+main{min-width:0; max-width:880px; padding:28px 0 80px}
+
+@media (max-width:1100px){
+  .layout{grid-template-columns:minmax(0,1fr); padding:0 16px}
+  #tocBtn{display:inline-block}
+  .toc{position:fixed; top:56px; left:0; right:0; max-height:70vh; background:var(--surface); border-bottom:1px solid var(--line); padding:16px 20px; display:none; z-index:45; box-shadow:0 12px 30px rgba(0,0,0,.15)}
+  .toc.open{display:block}
+  main{padding-top:16px}
+}
+
+/* type */
+h1,h2,h3,h4{line-height:1.25; letter-spacing:-.015em}
+h1{font-size:clamp(32px,5vw,46px); margin:.2em 0 .3em; font-weight:800}
+h1 .small{display:block; font-size:.48em; color:var(--muted); font-weight:600; letter-spacing:0; margin-top:6px}
+h2{font-size:clamp(26px,3.6vw,34px); margin:0 0 .4em; font-weight:800}
+h3{font-size:23px; margin:2.2em 0 .5em; font-weight:700; display:flex; gap:10px; align-items:baseline}
+h3 .num{flex:none; font-size:13px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:8px; padding:2px 8px; transform:translateY(-3px)}
+h4{font-size:18px; margin:1.6em 0 .4em}
+p{margin:.6em 0 1em}
+.muted{color:var(--muted)}
+strong{font-weight:650}
+code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.86em; background:var(--surface-2); border:1px solid var(--line); padding:1px 6px; border-radius:6px; overflow-wrap:anywhere}
+.kicker{font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin:0}
+hr.sec{border:0; border-top:1px solid var(--line); margin:64px 0 48px}
+
+/* hero */
+.hero{padding:24px 0 8px}
+.lede{font-size:19px; color:var(--ink); max-width:760px}
+.story{margin:20px 0; padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
+.build-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin:18px 0}
+.build-grid .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; font-size:15px; line-height:1.5}
+.build-grid .card b{display:block; font-size:15.5px; margin-bottom:2px}
+.build-grid .card .lab{font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.06em; text-transform:uppercase}
+.legend{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 4px}
+.legend span{font-size:13.5px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface)}
+
+/* callouts */
+.box{margin:20px 0; padding:14px 18px 14px 18px; border-radius:12px; border:1px solid var(--line); border-left-width:5px; background:var(--surface); font-size:16px; line-height:1.65}
+.box > .tag{display:block; font-size:12.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px}
+.box p:first-of-type{margin-top:0} .box p:last-child{margin-bottom:0}
+.box ul{margin:.3em 0 .2em; padding-left:1.2em}
+.analogy{border-left-color:var(--gold); background:var(--gold-soft)} .analogy > .tag{color:var(--gold)}
+.fin{border-left-color:var(--accent); background:var(--accent-soft)} .fin > .tag{color:var(--accent)}
+.warn{border-left-color:var(--warn); background:var(--warn-soft)} .warn > .tag{color:var(--warn)}
+.skip{border-left-color:var(--skip); background:var(--skip-soft)} .skip > .tag{color:var(--skip)}
+.tip{border-left-color:var(--blue); background:var(--blue-soft)} .tip > .tag{color:var(--blue)}
+
+/* code */
+.code{margin:16px 0 18px; border-radius:12px; overflow:hidden; background:var(--code-bg); border:1px solid var(--code-line)}
+.code .head{display:flex; align-items:center; gap:10px; padding:8px 12px 8px 16px; background:var(--code-line); color:#aeb7c2; font:600 12.5px/1.4 Inter,system-ui,sans-serif}
+.code .head .sp{flex:1}
+.code .copy{font:600 12px Inter,system-ui,sans-serif; color:#d6dbe1; background:transparent; border:1px solid #3a4350; border-radius:6px; padding:3px 10px; cursor:pointer}
+.code .copy:hover{border-color:#6c7a8a}
+.code pre{margin:0; padding:14px 16px 16px; overflow-x:auto; font:13.5px/1.62 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--code-ink); tab-size:4}
+.code pre code{background:none; border:0; padding:0; font-size:inherit; color:inherit; overflow-wrap:normal}
+.token.comment{color:#8d99a6; font-style:italic}
+.token.keyword{color:#ff8b7f}
+.token.string,.token.triple-quoted-string{color:#a8d8ff}
+.token.function{color:#d7b0ff}
+.token.number,.token.boolean{color:#7cc4ff}
+.token.builtin,.token.decorator,.token.annotation{color:#ffb070}
+.token.operator,.token.punctuation{color:#c9d1d9}
+.token.interpolation{color:#e7e9ec}
+.token.property{color:#a8d8ff}
+
+.prompt{margin:14px 0; padding:14px 16px; border-radius:12px; background:var(--surface); border:1px dashed var(--line); font:14px/1.6 "JetBrains Mono",ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere}
+.prompt .hl{background:var(--gold-soft); color:var(--gold); border-radius:4px; padding:0 3px; font-weight:600}
+
+/* walkthrough lists */
+ol.walk{list-style:none; counter-reset:w; padding:0; margin:12px 0 20px}
+ol.walk > li{counter-increment:w; position:relative; padding:10px 14px 10px 50px; margin:8px 0; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:16px; line-height:1.6}
+ol.walk > li::before{content:counter(w); position:absolute; left:14px; top:10px; width:24px; height:24px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:13px; display:grid; place-items:center}
+
+/* tables */
+.tw{overflow-x:auto; margin:16px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+table.tbl{width:100%; border-collapse:collapse; font-size:15px; line-height:1.5}
+.tbl th,.tbl td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+.tbl th{font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--surface-2)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td code{white-space:nowrap}
+.tbl .num{text-align:right; font-variant-numeric:tabular-nums}
+
+/* figures */
+figure{margin:22px 0; padding:16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
+figure svg{display:block; width:100%; height:auto; color:var(--ink)}
+figcaption{font-size:14px; color:var(--muted); margin-top:10px; line-height:1.55}
+svg text{font-family:Inter,system-ui,sans-serif; fill:currentColor}
+svg .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+svg .t13{font-size:13px} svg .t12{font-size:12px} svg .t11{font-size:11.5px} svg .t15{font-size:15px}
+svg .b{font-weight:700}
+svg .sub{opacity:.68}
+svg .nd rect, svg .nd path.shape{fill:var(--surface); stroke:currentColor; stroke-opacity:.38; stroke-width:1.3; transition:fill .25s, stroke .25s}
+svg .nd.soft rect{fill:var(--surface-2)}
+svg .nd.acc rect, svg .nd.acc path.shape{fill:var(--accent-soft); stroke:var(--accent); stroke-opacity:1}
+svg .nd.hl rect, svg .nd.hl path.shape{fill:var(--gold-soft); stroke:var(--gold); stroke-opacity:1; stroke-width:2.4}
+svg .ar{stroke:currentColor; stroke-opacity:.55; stroke-width:1.5; fill:none; transition:stroke .25s}
+svg .ar.hl{stroke:var(--gold); stroke-opacity:1; stroke-width:2.6}
+svg .alab{font-size:11.5px; opacity:.85}
+svg .zone{fill:var(--surface-2); stroke:none}
+svg .dash{stroke:currentColor; stroke-opacity:.35; stroke-dasharray:5 5}
+
+/* sims */
+.sim{margin:22px 0; padding:16px 18px 18px; border:1.5px dashed var(--accent); border-radius:var(--radius); background:var(--surface)}
+.sim > .tag{display:inline-block; font-size:12.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:4px}
+.sim h4{margin:.1em 0 .4em}
+.btn{font:inherit; font-size:14.5px; font-weight:650; border:0; border-radius:999px; padding:8px 16px; background:var(--accent); color:var(--accent-ink); cursor:pointer}
+.btn:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.4; cursor:default}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+.btn.ghost.on{border-color:var(--accent); color:var(--accent); background:var(--accent-soft)}
+.row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0}
+.row .sp{flex:1}
+.stepper .row .dots{margin-left:auto}
+.state{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin:8px 0}
+.state div{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px}
+.state div b{display:block; font:600 15px/1.4 "JetBrains Mono",ui-monospace,monospace; color:var(--ink)}
+.state div.chg{border-color:var(--gold); background:var(--gold-soft)}
+.rbrow{display:grid; grid-template-columns:110px 1fr 56px; gap:10px; align-items:center; font-size:14.5px; margin:5px 0}
+.rbtrack{position:relative; height:16px; border-radius:8px; background:var(--surface)}
+.rbtrack i{position:absolute; left:0; top:0; bottom:0; border-radius:8px; background:var(--accent); transition:width .3s}
+.rbtrack i.over{background:var(--bad)}
+.rbtrack i.def{background:var(--blue)}
+.rbtrack s{position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--bad); opacity:.8}
+.rbrow .v{text-align:right; font-variant-numeric:tabular-nums; font-weight:700}
+.inp{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:10px 0}
+.inp label{display:block; font-size:13.5px; color:var(--muted); font-weight:600}
+.inp input{width:100%; font:inherit; font-size:15px; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+.out{margin-top:10px; padding:12px 14px; border-radius:10px; background:var(--surface-2); font-size:15.5px; line-height:1.65}
+.out .ok{color:var(--good); font-weight:700} .out .no{color:var(--bad); font-weight:700}
+.pill{display:inline-block; font-size:12.5px; font-weight:700; padding:2px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line)}
+.pill.ok{background:var(--good-soft); color:var(--good); border-color:transparent}
+.pill.no{background:var(--bad-soft); color:var(--bad); border-color:transparent}
+.stepper .counter{font-size:13px; font-weight:700; color:var(--muted)}
+.stepper .panel{margin-top:10px; padding:14px 16px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line)}
+.stepper .panel h5{margin:0 0 6px; font-size:16.5px}
+.stepper .panel .lbl{font-size:12px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:10px 0 4px}
+.stepper .panel pre{margin:0; padding:10px 12px; border-radius:8px; background:var(--code-bg); color:var(--code-ink); font:13px/1.55 "JetBrains Mono",ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere}
+.stepper .panel pre.val{background:var(--surface); color:var(--ink); border:1px solid var(--line)}
+.dots{display:flex; gap:5px; flex-wrap:wrap}
+.dots i{width:22px; height:6px; border-radius:3px; background:var(--line)}
+.dots i.on{background:var(--accent)}
+
+/* glossary cards */
+.gloss{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:16px 0}
+.gloss div{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:15px; line-height:1.55}
+.gloss b{display:block; color:var(--accent); font-size:15.5px}
+
+/* ratio cards */
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin:14px 0}
+.rcard{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14.5px; line-height:1.5}
+.rcard .nm{font-size:13px; font-weight:700; color:var(--muted)}
+.rcard .v{font-size:24px; font-weight:800; letter-spacing:-.02em; margin:2px 0 4px; font-variant-numeric:tabular-nums}
+.rcard.flag{border-color:var(--warn); box-shadow:0 0 0 1px var(--warn) inset}
+.rcard.flag .v{color:var(--warn)}
+.famhead{display:flex; align-items:baseline; gap:10px; margin:18px 0 0}
+.famhead b{font-size:16px}
+.famhead span{font-size:14px; color:var(--muted)}
+
+/* df demo */
+.df{width:100%; border-collapse:collapse; font:13.5px/1.45 "JetBrains Mono",ui-monospace,monospace}
+.df th,.df td{padding:6px 10px; border-bottom:1px solid var(--line); text-align:left}
+.df th{position:sticky; top:0; z-index:1; background:var(--surface-2); font-family:Inter,system-ui,sans-serif; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+.df td.idx{font-weight:600}
+.df tr.pick td{background:var(--gold-soft)}
+.df tr.pick td.idx{color:var(--gold)}
+.df td.cellhl{background:var(--gold-soft); color:var(--gold); font-weight:700; outline:2px solid var(--gold); outline-offset:-2px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0}
+.chip{font:12.5px/1.4 "JetBrains Mono",ui-monospace,monospace; padding:3px 8px; border-radius:6px; background:var(--surface-2); border:1px solid var(--line)}
+.chip.ok{background:var(--good-soft); color:var(--good); border-color:transparent}
+.chip.no{background:var(--bad-soft); color:var(--bad); border-color:transparent; text-decoration:line-through}
+
+/* chat bubbles */
+.chat{display:flex; flex-direction:column; gap:8px; margin-top:8px}
+.bub{max-width:90%; padding:9px 13px; border-radius:12px; font-size:14.5px; line-height:1.5; border:1px solid var(--line)}
+.bub.u{align-self:flex-end; background:var(--blue-soft)}
+.bub.a{align-self:flex-start; background:var(--surface)}
+.bub .who{display:block; font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.bub.ghosted{opacity:.35; text-decoration:line-through}
+
+/* shape visual */
+.shape{font:13.5px/1.6 "JetBrains Mono",ui-monospace,monospace; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto; white-space:pre}
+.shape .k{color:var(--accent); font-weight:600}
+.shape .s{color:var(--blue)}
+.shape .m{color:var(--muted)}
+.shape .g{background:var(--gold-soft); color:var(--gold); border-radius:3px; font-weight:700}
+
+/* grid demo */
+.qgrid{display:grid; grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:6px; margin:10px 0; font-size:13.5px}
+.qgrid .h{font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; align-self:end}
+.qgrid button{font:12.5px/1.4 "JetBrains Mono",ui-monospace,monospace; text-align:left; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer; min-width:0; overflow:hidden; text-overflow:ellipsis}
+.qgrid button.on{background:var(--gold-soft); border-color:var(--gold); color:var(--gold); font-weight:700}
+.qgrid .qlab{font-size:13px; font-weight:600; align-self:center; padding-right:6px}
+
+/* pipeline */
+.pipe{display:grid; grid-template-columns:1fr 64px 1fr 64px 1fr; align-items:stretch; margin:12px 0}
+.pipe button{font:inherit; text-align:left; background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; color:var(--ink); line-height:1.4}
+.pipe button b{display:block; font-size:15px}
+.pipe button span{font-size:13px; color:var(--muted)}
+.pipe button.on{border-color:var(--accent); background:var(--accent-soft)}
+.pipe .arr{display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10.5px; color:var(--muted); text-align:center; line-height:1.25}
+.pipe .arr::before{content:"→"; font-size:24px; color:var(--accent); line-height:1}
+@media (max-width:700px){
+  .pipe{grid-template-columns:1fr}
+  .pipe .arr{padding:4px 0}
+  .pipe .arr::before{content:"↓"}
+}
+
+/* votes */
+.paths{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:10px 0}
+.paths button{font:inherit; font-size:13.5px; text-align:left; padding:10px 12px; border-radius:10px; cursor:pointer; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); line-height:1.45}
+.paths button .c{display:block; font-weight:800; margin-top:4px}
+.paths button.pos{border-color:var(--good)} .paths button.pos .c{color:var(--good)}
+.paths button.neu{border-color:var(--gold)} .paths button.neu .c{color:var(--gold)}
+.bars{display:grid; grid-template-columns:150px 1fr 30px; gap:6px 10px; align-items:center; font-size:14px}
+.bar{height:14px; border-radius:7px; background:var(--surface-2); overflow:hidden}
+.bar i{display:block; height:100%; background:var(--accent); transition:width .3s}
+
+/* quiz */
+.q{margin:14px 0; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+.q p{margin:0 0 8px; font-weight:650}
+.q button{display:block; width:100%; text-align:left; font:inherit; font-size:15px; margin:6px 0; padding:9px 12px; border-radius:9px; border:1px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer}
+.q button.right{background:var(--good-soft); border-color:var(--good)}
+.q button.wrong{background:var(--bad-soft); border-color:var(--bad)}
+.q .why{font-size:14.5px; color:var(--muted); margin-top:6px; display:none}
+.q.done .why{display:block}
+
+footer{border-top:1px solid var(--line); padding:28px 24px 48px; text-align:center; color:var(--muted); font-size:14px}
+@media (max-width:600px){
+  .brand em{display:none}
+  .iconbtn .lbl{display:none}
+  .topbar{padding:10px 16px}
+  figure{overflow-x:auto; padding:12px}
+  figure svg{min-width:620px}
+  .svgwrap{overflow-x:auto}
+  .svgwrap svg{min-width:560px}
+  body{font-size:16px}
+  .box, ol.walk > li{font-size:15px}
+  .code pre{font-size:12.5px}
+  h3{font-size:20px}
+}
+
+/* ---- page 2 additions ---- */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:16px 0}
+.stats div{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.45; color:var(--muted)}
+.stats b{display:block; font-size:24px; letter-spacing:-.02em; color:var(--ink); font-weight:800; margin-bottom:2px}
+.fwfilter{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px}
+.fwfilter button{font:inherit; font-size:13.5px; font-weight:600; padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.fwfilter button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.fwgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin:12px 0}
+.fw{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; font-size:14.5px; line-height:1.55; transition:opacity .25s, border-color .25s, box-shadow .25s}
+.fw.dim{opacity:.28}
+.fw.lit{border-color:var(--accent); box-shadow:0 0 0 1.5px var(--accent) inset}
+.fw h5{margin:0; font-size:17px; letter-spacing:-.01em}
+.fw .pw{display:inline-block; margin:4px 0 8px; font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:6px}
+.fw p{margin:0 0 6px}
+.fw .k{font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:block; margin-top:6px}
+.fw .mem{background:var(--gold-soft); border-radius:8px; padding:6px 9px; margin:6px 0; font-size:14px}
+.oneword{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:6px; margin:12px 0}
+.oneword div{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:14px}
+.oneword b{display:block; font-size:13px; color:var(--muted); font-weight:700}
+.oneword span{font-weight:800; color:var(--accent); font-size:15.5px}
+.tabs{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0}
+.tabs button{font:inherit; font-size:14px; font-weight:650; padding:7px 14px; border-radius:10px 10px 0 0; border:1px solid var(--line); border-bottom:0; background:var(--surface-2); color:var(--muted); cursor:pointer}
+.tabs button.on{background:var(--code-line); color:#e7e9ec; border-color:var(--code-line)}
+.tabpanel .code{margin-top:0; border-top-left-radius:0}
+.opt{margin:18px 0; border:1px dashed var(--skip); border-radius:12px; background:var(--skip-soft)}
+.opt > summary{cursor:pointer; padding:12px 16px; font-weight:700; list-style:none}
+.opt > summary::-webkit-details-marker{display:none}
+.opt > summary::before{content:"▸ "; color:var(--skip)}
+.opt[open] > summary::before{content:"▾ "}
+.opt > summary .optb{display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--skip); border:1px solid var(--skip); border-radius:6px; padding:1px 7px; margin-left:8px; vertical-align:2px}
+.opt .inner{padding:0 16px 14px}
+.ratingtbl{border-collapse:separate; border-spacing:4px; width:100%; font-size:13.5px}
+.ratingtbl th{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; padding:4px; text-align:center}
+.ratingtbl th.rowh{text-align:right; padding-right:8px; white-space:nowrap}
+.ratingtbl td button{width:100%; font:700 13px Inter,system-ui,sans-serif; padding:10px 4px; border-radius:8px; border:1.5px solid transparent; cursor:pointer; color:var(--ink)}
+.ratingtbl td button.on{border-color:var(--ink); box-shadow:0 0 0 2px var(--gold)}
+.r-sb{background:#1a7f3a33} .r-b{background:#1a7f3a1f} .r-h{background:var(--surface-2)} .r-s{background:#be332622} .r-ss{background:#be332640}
+.trace{font:13px/1.65 "JetBrains Mono",ui-monospace,monospace; background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:10px 14px; min-height:60px; white-space:pre-wrap}
+.trace .c{color:#ffb070} .trace .o{color:#7fd6a8} .trace .m{color:#8d99a6}
+.twocol{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0}
+@media (max-width:700px){ .twocol{grid-template-columns:1fr} }
+.slider{display:grid; grid-template-columns:200px 1fr 64px; gap:10px; align-items:center; margin:6px 0; font-size:14.5px}
+.slider b{text-align:right; font-variant-numeric:tabular-nums}
+@media (max-width:600px){ .slider{grid-template-columns:1fr 64px} .slider input{grid-column:1 / -1; grid-row:2} }
+.verdict{display:inline-block; font-weight:800; font-size:13px; letter-spacing:.04em; padding:3px 10px; border-radius:999px}
+.v-su{background:var(--good-soft); color:var(--good)} .v-u{background:var(--good-soft); color:var(--good)} .v-f{background:var(--surface-2); color:var(--ink)} .v-o{background:var(--bad-soft); color:var(--bad)} .v-so{background:var(--bad-soft); color:var(--bad)}
+.brief{font:13px/1.6 "JetBrains Mono",ui-monospace,monospace; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; white-space:pre-wrap; overflow-x:auto}
+.brief .hl{background:var(--gold-soft); color:var(--gold); font-weight:700; border-radius:3px}
+.lesson{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin:12px 0}
+.lesson div{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:12px 14px; font-size:14.5px; line-height:1.55}
+.lesson div b{display:block; font-size:15px; margin-bottom:4px}
+.lesson div .fix{display:block; margin-top:6px; color:var(--accent); font-weight:650}
+.basket{display:flex; flex-direction:column; gap:6px; margin:8px 0}
+.basket label{display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; font-size:14px; padding:7px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface)}
+.basket .sc{font:600 12.5px "JetBrains Mono",monospace}
+.hlword{border-radius:3px; padding:0 2px; font-weight:700}
+.hlword.b{background:var(--good-soft); color:var(--good)} .hlword.r{background:var(--bad-soft); color:var(--bad)}
+.flag{display:inline-block; font-size:11px; font-weight:800; color:var(--bad); border:1px solid var(--bad); border-radius:5px; padding:0 5px; margin-left:6px}
+.selrow{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0}
+.selrow select{font:inherit; font-size:14.5px; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+.game .opts{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin:10px 0}
+.game .opts button{font:inherit; font-size:14.5px; font-weight:600; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; text-align:left}
+.game .opts button.right{border-color:var(--good); background:var(--good-soft)}
+.game .opts button.wrong{border-color:var(--bad); background:var(--bad-soft)}
+.game .scen{font-size:17px; font-weight:650; margin:6px 0}
+.ratingtbl .short{display:none}
+@media (max-width:600px){ .ratingtbl .full{display:none} .ratingtbl .short{display:inline} .ratingtbl td button{font-size:11.5px; padding:9px 2px} }
+
+/* ---- NPS project additions ---- */
+.scale{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px;margin:12px 0 6px}
+.scale div{text-align:center;border-radius:8px;padding:8px 0 6px;font:700 15px/1.2 "JetBrains Mono",ui-monospace,monospace}
+.scale div small{display:block;font:600 9.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase;margin-top:3px;opacity:.85;overflow:hidden;text-overflow:ellipsis}
+.s-det{background:var(--bad-soft);color:var(--bad)} .s-pas{background:var(--gold-soft);color:var(--gold)} .s-pro{background:var(--good-soft);color:var(--good)}
+.npbar{display:flex;height:26px;border-radius:8px;overflow:hidden;margin:12px 0 4px;border:1px solid var(--line);background:var(--surface-2)}
+.npbar i{display:flex;align-items:center;justify-content:center;font:700 12px/1 Inter,system-ui,sans-serif;font-style:normal;color:var(--bg);transition:width .25s;white-space:nowrap;overflow:hidden}
+.npbar .pro{background:var(--good)} .npbar .pas{background:var(--gold)} .npbar .det{background:var(--bad)}
+.a-g{background:#17803a2e} .a-a{background:#c991003d} .a-r{background:#be332645}
+table.wf{width:100%;border-collapse:collapse;font-size:14.5px}
+table.wf th,table.wf td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.wf th{font-size:12.5px;color:var(--muted);font-weight:700}
+table.wf td.best{font-weight:800;color:var(--accent);background:var(--accent-soft)}
+#tg-ex .btn{font-size:13px;text-align:left;white-space:normal}
+.trace{overflow-x:auto}
+.gp{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.inp input[type=text]{width:100%}
+@media (max-width:560px){ .scale div small{font-size:8px} .scale div{font-size:13px} }
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<header class="topbar">
+  <div class="brand">Future with <span>Shivank</span><em> · AI Agents in Finance · Project: NPS analyst</em></div>
+  <div class="sp"></div>
+  <button class="iconbtn" id="tocBtn" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="iconbtn" id="themeBtn" aria-label="Switch light or dark theme"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><span class="lbl">Theme</span></button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Contents">
+  <h4>On this page</h4>
+  <a href="#start">Start here</a>
+  <a href="#p-problem">The problem, in 10 customers</a>
+  <div class="grp"><h4>Understand it</h4></div>
+  <a class="lvl2" href="#p-ask">P1 The ask</a>
+  <a class="lvl2" href="#p-nps">P2 Just-enough NPS</a>
+  <a class="lvl2" href="#p-money">P3 NPS is a money number</a>
+  <a class="lvl2" href="#p-arch">P4 The architecture</a>
+  <div class="grp"><h4>Build it</h4></div>
+  <a class="lvl2" href="#p-setup">P5 Setup, folders &amp; data</a>
+  <div class="grp"><h4>Own it</h4></div>
+  <a class="lvl2" href="#p-project">P6 Milestones &amp; rubric</a>
+  <div class="grp"></div>
+  <a href="#wrap">Wrap-up</a>
+</nav>
+<main id="main">
+<section class="hero" id="start">
+  <p class="kicker">Future with Shivank · Hands-on project · Learner brief</p>
+  <h1>NPS Analyst in a Box <span class="small">Promoters, passives, detractors — and a team of agents that turns 600 survey answers into a leadership brief</span></h1>
+  <p class="lede">You built an "analyst in a box" for stocks. Now point the same design at the bank's own customers. Five specialist agents and a director read a Net Promoter Score survey, find <strong>why</strong> the score moved, put a <strong>rupee value</strong> on unhappy customers, decide <strong>what to fix first</strong>, and say <strong>who to call back this week</strong>. Every number is computed by plain Python; the agents only read, decide and explain.</p>
+
+  <div class="story">🏦 <strong>Future with Shivank Bank, Monday morning.</strong> The Head of Customer Experience walks in: <em>"Our quarterly NPS dropped. The CEO asks on Thursday: how bad is it, why did it happen, how much money is at risk, and what are we doing about it? Last quarter two analysts spent three days reading comments in Excel. Can your agents do the first draft before lunch?"</em></div>
+
+  <div class="stats">
+    <div><b>600</b>survey answers, July–September 2026</div>
+    <div><b>5 + 1</b>specialist agents plus a director</div>
+    <div><b>3</b>hidden stories your agents must find</div>
+    <div><b>~$0.20</b>per full run on gpt-4o</div>
+  </div>
+
+  <p class="muted" style="margin-bottom:4px">How to read the coloured boxes:</p>
+  <div class="legend">
+    <span>🧠 Analogy</span><span>💰 Finance corner</span><span>⚠️ Watch out</span><span>⏭️ Already covered</span><span>💡 Tip</span><span>🧪 Simulation</span>
+  </div>
+  <div class="box skip"><span class="tag">⏭️ Same skeleton as Section 4</span>
+    <p>Tools return JSON and never crash · agents are <code>Agent(name, instructions, tools, model)</code> · the orchestrator calls specialists with <code>.as_tool()</code> · three phases (parallel → dependent → synthesis) · verdicts come from tables, not moods. If any of that feels new, re-read Section 4.2–4.6 first. This page spends its time on what is <strong>new</strong>: NPS, money at risk, text themes, what-if analysis and fact-checking the final brief.</p>
+  </div>
+</section>
+
+<hr class="sec">
+<section id="p-problem">
+  <p class="kicker">Start here · the problem statement</p>
+  <h2>The problem, explained with 10 customers</h2>
+
+  <h4>The situation</h4>
+  <p>Future with Shivank Bank asks every customer one question: <em>"On a scale of 0 to 10, how likely are you to recommend our bank to a friend?"</em> — and then <em>"Why did you give this score?"</em></p>
+  <ul>
+    <li><span class="gp s-pro">9–10 · Promoter</span> happy, will recommend the bank</li>
+    <li><span class="gp s-pas">7–8 · Passive (neutral)</span> okay, but would switch easily</li>
+    <li><span class="gp s-det">0–6 · Detractor</span> unhappy, likely to leave and complain</li>
+  </ul>
+<div class="shape">NPS = % promoters − % detractors        <span class="m"># passives count in the total, but add nothing</span></div>
+
+  <h4>A tiny example: 10 customers in September</h4>
+  <div class="tw"><table class="tbl" id="tc-table">
+    <tr><th>#</th><th class="num">Score</th><th>Group</th><th>Comment</th><th>Product</th><th class="num">Yearly revenue to bank</th></tr>
+    <tr><td>1</td><td class="num">10</td><td><span class="gp s-pro">Promoter</span></td><td>"UPI is super quick"</td><td>Savings</td><td class="num">₹5,000</td></tr>
+    <tr><td>2</td><td class="num">9</td><td><span class="gp s-pro">Promoter</span></td><td>"My RM is very helpful"</td><td>Wealth</td><td class="num">₹2,00,000</td></tr>
+    <tr><td>3</td><td class="num">9</td><td><span class="gp s-pro">Promoter</span></td><td>"App is easy"</td><td>Savings</td><td class="num">₹4,000</td></tr>
+    <tr><td>4</td><td class="num">8</td><td><span class="gp s-pas">Passive</span></td><td>"Fine, but call centre wait is long"</td><td>Card</td><td class="num">₹10,000</td></tr>
+    <tr><td>5</td><td class="num">7</td><td><span class="gp s-pas">Passive</span></td><td>"Okay"</td><td>Savings</td><td class="num">₹3,000</td></tr>
+    <tr><td>6</td><td class="num">4</td><td><span class="gp s-det">Detractor</span></td><td>"OTP not coming after the update"</td><td>Savings</td><td class="num">₹6,000</td></tr>
+    <tr><td>7</td><td class="num">3</td><td><span class="gp s-det">Detractor</span></td><td>"Can't login since the update"</td><td>Card</td><td class="num">₹12,000</td></tr>
+    <tr><td>8</td><td class="num">5</td><td><span class="gp s-det">Detractor</span></td><td>"OTP fails, moving my salary account"</td><td>Savings</td><td class="num">₹8,000</td></tr>
+    <tr><td>9</td><td class="num">2</td><td><span class="gp s-det">Detractor</span></td><td>"New advisory fee, nobody explained it"</td><td>Wealth</td><td class="num"><b>₹3,00,000</b></td></tr>
+    <tr id="tc-row10"><td>10</td><td class="num" id="tc-score10">0</td><td id="tc-grp10"><span class="gp s-det">Detractor</span></td><td>"Excellent service, love it!"</td><td>Savings</td><td class="num">₹7,000</td></tr>
+  </table></div>
+  <div class="sim" id="sim-tc"><span class="tag">🧪 Try it</span>
+    <div class="out" id="tc-out" aria-live="polite" style="margin-top:0"></div>
+    <div class="row"><button class="btn ghost" type="button" id="tc-btn">What if customer #10 meant 10, not 0?</button></div>
+  </div>
+  <p><strong>Getting that number takes one line of code.</strong> The hard part is the four questions the CEO will ask next:</p>
+  <ol class="walk">
+    <li><strong>How bad is it?</strong> NPS fell from +30 last month to −20 in one month.</li>
+    <li><strong>Why?</strong> Read the comments: three of the five detractors (#6, #7, #8) complain about OTP or login after the app update. That's the cause.</li>
+    <li><strong>How much money is at risk?</strong> The three OTP customers bring ₹26,000 a year in total. The one fee complaint (#9) brings ₹3,00,000. <em>The loudest problem (OTP) is not the most expensive one (fees).</em></li>
+    <li><strong>What do we do?</strong> Fix OTP first — it moves the score the most. Phone customer #9 today — that one account is worth more than the other nine put together.</li>
+  </ol>
+  <div class="box warn"><span class="tag">⚠️ The trap</span>
+    <p>Customer #10 gave a 0 but wrote "Excellent service". They probably thought 0 meant best. If they meant 10, the NPS is <strong>0, not −20</strong>. A good analyst flags this — and doesn't silently change the score.</p>
+  </div>
+  <p>With 10 customers, you can do all of this in your head.</p>
+
+  <h4>The real problem</h4>
+  <p>The bank actually has <strong>600 customers, 536 written comments and 3 months of data</strong>. Last quarter, two analysts spent three days in Excel reading every comment, colour-coding topics, slicing scores by month, product and channel, working out the money at risk, and writing one page for the CEO. That's the job we hand to agents — one question per agent:</p>
+  <div class="tw"><table class="tbl">
+    <tr><th>Question</th><th>Agent</th><th>What it does in the 10-customer example</th></tr>
+    <tr><td><b>How bad is it?</b></td><td>ScoreAnalystAgent</td><td>Calculates −20 and spots that September dropped</td></tr>
+    <tr><td><b>Why?</b></td><td>VoiceOfCustomerAgent</td><td>Reads comments, finds "OTP/login after update" in 3 of 5 detractors</td></tr>
+    <tr><td><b>How much money?</b></td><td>ChurnRiskAgent</td><td>Finds ₹3 lakh sits with one Wealth customer; flags #10 as a likely mistake</td></tr>
+    <tr><td><b>What do we do?</b></td><td>ActionPlannerAgent</td><td>Fix OTP first; call #9 today</td></tr>
+    <tr><td><b>One page for the CEO</b></td><td>ReportWriterAgent</td><td>Writes the brief with a RED / AMBER / GREEN alert</td></tr>
+  </table></div>
+  <p>Python does all the counting and maths, so the numbers are always exact. The agents do what Excel can't: read comments, decide where to look next, connect complaints to money, and write it up.</p>
+
+  <div class="story">📋 <strong>Problem statement for learners.</strong> Future with Shivank Bank's NPS fell from +32 in July to −6.5 in September. Given 600 survey answers (score, comment, product, channel, revenue), build a team of AI agents that tells leadership: <strong>how bad</strong> the drop is, <strong>why</strong> it happened in customers' own words, <strong>how much revenue</strong> is at risk, and <strong>what to fix first and who to call back</strong> this week — on one page, with every number checked by code. The data: <a href="https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/248/987/original/nps_survey.csv?1792931898">nps_survey.csv</a> (600 answers).</div>
+</section>
+
+<hr class="sec">
+<section id="p">
+  <p class="kicker">Understand it</p>
+  <h2>What we are building, and why a bank cares</h2>
+
+  <!-- P1 -->
+  <h3 id="p-ask"><span class="num">P1</span>The ask: four questions for Thursday</h3>
+  <div class="tw"><table class="tbl">
+    <tr><th>The CEO's question</th><th>Who answers it</th><th>What they hand back</th></tr>
+    <tr><td><b>How bad is it?</b></td><td>ScoreAnalystAgent</td><td>NPS with margin of error, monthly trend, best/worst segments, health verdict</td></tr>
+    <tr><td><b>Why did it happen?</b></td><td>VoiceOfCustomerAgent</td><td>Top themes in the comments, real quotes, root-cause hypotheses</td></tr>
+    <tr><td><b>How much money is at risk?</b></td><td>ChurnRiskAgent</td><td>Revenue at risk in ₹ lakh, risk verdict, data-quality warnings</td></tr>
+    <tr><td><b>What are we doing about it?</b></td><td>ActionPlannerAgent</td><td>Fix list ranked two ways (NPS points, rupees saved), who to call back this week</td></tr>
+    <tr><td><b>One page, please.</b></td><td>ReportWriterAgent</td><td>The NPS brief with a GREEN / AMBER / RED alert level</td></tr>
+  </table></div>
+  <div class="box tip"><span class="tag">💡 Why agents, and not just a pandas script?</span>
+    <p>If all you need is the number, pandas is enough — milestone M0 below is exactly that, about 20 lines. Agents earn their keep in the parts a script can't do alone: <strong>reading</strong> 500 comments, <strong>choosing</strong> where to drill down next ("September looks bad — which channel?"), <strong>connecting</strong> a complaint to a rupee figure, and <strong>writing</strong> it for a CEO. The design rule from Section 4 still holds: <em>code computes, agents reason.</em></p>
+  </div>
+
+  <!-- P2 -->
+  <h3 id="p-nps"><span class="num">P2</span>Just-enough NPS (three ideas, nothing more)</h3>
+  <p>Every NPS survey asks one question: <em>"How likely are you to recommend Future with Shivank Bank to a friend or colleague?"</em> on a 0–10 scale, usually followed by <em>"What is the main reason for your score?"</em></p>
+
+  <h4>Idea 1 · Three buckets</h4>
+  <div class="scale" aria-label="The 0 to 10 scale: 0 to 6 are detractors, 7 and 8 are passives, 9 and 10 are promoters">
+    <div class="s-det">0<small>det</small></div><div class="s-det">1<small>det</small></div><div class="s-det">2<small>det</small></div><div class="s-det">3<small>det</small></div><div class="s-det">4<small>det</small></div><div class="s-det">5<small>det</small></div><div class="s-det">6<small>det</small></div><div class="s-pas">7<small>passive</small></div><div class="s-pas">8<small>passive</small></div><div class="s-pro">9<small>promoter</small></div><div class="s-pro">10<small>promoter</small></div>
+  </div>
+  <div class="box analogy"><span class="tag">🧠 The new biryani place</span>
+    <p><strong>Promoters (9–10)</strong> post "must try!" in the family WhatsApp group. <strong>Passives (7–8)</strong> — also called <em>neutrals</em> — eat, pay and forget; they'd switch the moment a new place opens. <strong>Detractors (0–6)</strong> leave a one-star review and tell ten people. Notice how harsh the scale is: a 6 sounds fine, but a 6 is a detractor.</p>
+  </div>
+
+  <h4>Idea 2 · One subtraction</h4>
+<div class="shape">NPS = % promoters − % detractors
+
+our survey:  268 promoters, 175 passives, 157 detractors  (600 answers)
+             44.7%       −   26.2%                  = <span class="k">+18.5</span></div>
+  <p>NPS runs from <strong>−100</strong> (everyone is a detractor) to <strong>+100</strong> (everyone is a promoter). It is a <strong>score, not a percentage</strong> — write "+18.5", never "18.5%". Passives add nothing to the top line, but they <strong>are</strong> in the total you divide by. Play with that below.</p>
+
+  <div class="sim" id="sim-nps"><span class="tag">🧪 Simulation</span>
+    <h4>Build an NPS — start from our survey</h4>
+    <div class="slider"><b>Promoters (9–10)</b><input type="range" min="0" max="600" value="268" id="np-p" aria-label="promoters"><span id="np-pv">268</span></div>
+    <div class="slider"><b>Passives (7–8)</b><input type="range" min="0" max="600" value="175" id="np-a" aria-label="passives"><span id="np-av">175</span></div>
+    <div class="slider"><b>Detractors (0–6)</b><input type="range" min="0" max="600" value="157" id="np-d" aria-label="detractors"><span id="np-dv">157</span></div>
+    <div class="npbar" id="np-bar"></div>
+    <div class="row">
+      <button class="btn ghost" type="button" data-np="pas">+50 passives</button>
+      <button class="btn ghost" type="button" data-np="d2p">10 detractors → passives</button>
+      <button class="btn ghost" type="button" data-np="d2pro">10 detractors → promoters</button>
+      <button class="btn" type="button" data-np="reset">Reset to our survey</button>
+    </div>
+    <div class="out" id="np-out" aria-live="polite"></div>
+  </div>
+
+  <h4>Idea 3 · Small groups wobble</h4>
+  <p>The same NPS from 26 answers and from 600 answers are not equally trustworthy. Our tools attach a <strong>95% margin of error</strong> to every NPS: count each answer as +1, 0 or −1, and NPS is just their average × 100. With few answers that average wobbles. For example, a segment that scores +15 from only 26 answers has a margin of error of about <strong>±31</strong> points: its real score could be anything from −16 to +46.</p>
+  <div class="box analogy"><span class="tag">🧠 Two innings</span>
+    <p>Calling a 26-answer segment "our worst" is like dropping a batsman after two innings. The tools mark any segment with fewer than 30 answers <code>low_sample</code>, and the agents are told never to call it best or worst.</p>
+  </div>
+
+  <!-- P3 -->
+  <h3 id="p-money"><span class="num">P3</span>NPS is a money number</h3>
+  <p>The CX team is judged on NPS. The CFO is judged on revenue. Our project connects the two with one line of finance — <strong>expected loss</strong>, the same idea an insurance actuary uses:</p>
+<div class="shape">revenue at risk = Σ  (customer's yearly revenue × chance they leave this year)
+
+chance of leaving (an ASSUMPTION, set in config.py):
+    promoter 3%   ·   passive 10%   ·   detractor 25%</div>
+  <div class="box fin"><span class="tag">💰 The finance corner: loud ≠ expensive</span>
+    <p>The group with the <strong>most unhappy customers</strong> is not always the group with the <strong>most money at risk</strong>, because yearly revenue per customer differs a lot between products. A dashboard that only counts complaints can send the bank to fix the wrong thing first. That is why the brief must show two rankings: <em>most complaints</em> and <em>most money</em>.</p>
+    <p><strong>1 lakh = ₹1,00,000. 100 lakh = 1 crore.</strong> The tools report money in lakh so the LLM never has to count zeros.</p>
+  </div>
+  <div class="box warn"><span class="tag">⚠️ Assumptions, written down</span>
+    <p>The 3% / 10% / 25% churn rates are a house assumption, not a fact. Real teams estimate them from history ("of last year's detractors, how many closed their account?"). The project puts them in <code>config.py</code>, echoes them in every revenue tool result, and the brief must list them under DATA CAVEATS. An assumption you can see is an assumption someone can challenge.</p>
+  </div>
+
+  <!-- P4 -->
+  <h3 id="p-arch"><span class="num">P4</span>The architecture: a CX insights team in code</h3>
+  <div class="tw"><table class="tbl">
+    <tr><th>Agent</th><th>Human it replaces (the mechanical part only)</th><th>Its tools</th></tr>
+    <tr><td><b>ScoreAnalystAgent</b></td><td>Analyst building the monthly NPS pivot tables</td><td><code>get_nps_overview</code> <code>get_nps_by_segment</code>*</td></tr>
+    <tr><td><b>VoiceOfCustomerAgent</b></td><td>Analyst reading 500 comments and colour-coding cells</td><td><code>get_comment_themes</code></td></tr>
+    <tr><td><b>ChurnRiskAgent</b></td><td>Finance partner + data-quality reviewer — the sceptic</td><td><code>get_revenue_at_risk</code> <code>find_score_comment_mismatches</code> <code>get_nps_by_segment</code>*</td></tr>
+    <tr><td><b>ActionPlannerAgent</b></td><td>CX lead turning findings into a fix list</td><td><code>estimate_fix_impact</code> <code>get_callback_list</code></td></tr>
+    <tr><td><b>ReportWriterAgent</b></td><td>Head of CX writing to leadership</td><td>none — pure synthesis</td></tr>
+    <tr><td><b>OrchestratorAgent</b></td><td>Director of CX assigning the work</td><td>the five agents above, each wrapped with <code>.as_tool()</code></td></tr>
+  </table></div>
+  <figure>
+    <svg viewBox="0 0 820 500" role="img" aria-label="Architecture. The orchestrator calls three agents at once in phase 1: score analyst, voice of customer and churn risk. In phase 2 it passes an NPS context block to the action planner. In phase 3 the report writer turns all four reports into the NPS brief, which plain Python then fact-checks. All tools read one survey CSV through pandas, loaded once.">
+      <defs>
+        <marker id="np-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" fill-opacity=".6"/></marker>
+        <marker id="np-mh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--gold)"/></marker>
+      </defs>
+      <g class="nd acc" id="np-orch"><rect x="10" y="10" width="800" height="50" rx="10"/><text class="mono t13 b" x="28" y="32">OrchestratorAgent</text><text class="t11 sub" x="28" y="50">director of CX · calls every specialist as a tool · returns the final brief word for word</text></g>
+      <line class="ar" id="np-c1" x1="135" y1="60" x2="135" y2="104" marker-end="url(#np-m)"/>
+      <text class="alab b" x="145" y="88">① three calls at once</text>
+      <line class="ar" id="np-c2" x1="445" y1="60" x2="445" y2="104" marker-end="url(#np-m)"/>
+      <text class="alab b" x="455" y="88">② then</text>
+      <line class="ar" id="np-c3" x1="705" y1="60" x2="705" y2="232" marker-end="url(#np-m)"/>
+      <text class="alab b" x="715" y="88">③ finally</text>
+
+      <g class="nd" id="np-score"><rect x="10" y="106" width="250" height="100" rx="10"/><text class="mono t13 b" x="24" y="128">ScoreAnalystAgent</text><text class="t11 sub" x="24" y="145">how bad is it?</text><text class="mono t11" x="24" y="166">get_nps_overview</text><text class="mono t11" x="24" y="182">get_nps_by_segment *</text><text class="t11 sub" x="24" y="198">+ drill-down into the worst month</text></g>
+      <g class="nd" id="np-voc"><rect x="10" y="218" width="250" height="84" rx="10"/><text class="mono t13 b" x="24" y="240">VoiceOfCustomerAgent</text><text class="t11 sub" x="24" y="257">why did it happen?</text><text class="mono t11" x="24" y="278">get_comment_themes</text><text class="t11 sub" x="24" y="294">× detractor / passive / promoter</text></g>
+      <g class="nd" id="np-churn"><rect x="10" y="314" width="250" height="116" rx="10"/><text class="mono t13 b" x="24" y="336">ChurnRiskAgent</text><text class="t11 sub" x="24" y="353">how much money? can we trust it?</text><text class="mono t11" x="24" y="374">get_revenue_at_risk</text><text class="mono t11" x="24" y="390">find_score_comment_mismatches</text><text class="mono t11" x="24" y="406">get_nps_by_segment *</text></g>
+
+      <g class="nd" id="np-plan"><rect x="340" y="106" width="210" height="84" rx="10"/><text class="mono t13 b" x="354" y="128">ActionPlannerAgent</text><text class="t11 sub" x="354" y="145">what do we fix first?</text><text class="mono t11" x="354" y="166">estimate_fix_impact</text><text class="mono t11" x="354" y="182">get_callback_list</text></g>
+      <line class="ar" id="np-ctx" x1="260" y1="150" x2="338" y2="150" marker-end="url(#np-m)" style="stroke-dasharray:5 4"/>
+      <text class="t11" x="299" y="128" text-anchor="middle">NPS</text><text class="t11" x="299" y="141" text-anchor="middle">context</text>
+
+      <g class="nd" id="np-rw"><rect x="600" y="234" width="210" height="96" rx="10"/><text class="mono t13 b" x="614" y="256">ReportWriterAgent</text><text class="t11 sub" x="614" y="273">head of CX</text><text class="t11" x="614" y="294">no tools · synthesis only</text><text class="t11" x="614" y="310">alert table → brief</text></g>
+      <line class="ar" id="np-s2r" x1="260" y1="192" x2="598" y2="262" marker-end="url(#np-m)"/>
+      <line class="ar" id="np-p2r" x1="550" y1="170" x2="598" y2="244" marker-end="url(#np-m)"/>
+      <line class="ar" id="np-v2r" x1="260" y1="276" x2="598" y2="284" marker-end="url(#np-m)"/>
+      <line class="ar" id="np-r2r" x1="260" y1="380" x2="598" y2="312" marker-end="url(#np-m)"/>
+      <text class="t11 sub" x="430" y="376" text-anchor="middle">all four reports go in</text>
+
+      <line class="ar" id="np-wout" x1="705" y1="330" x2="705" y2="370" marker-end="url(#np-m)"/>
+      <g class="nd soft" id="np-brief"><rect x="610" y="372" width="200" height="56" rx="10"/><text class="t13 b" x="710" y="396" text-anchor="middle">NPS brief</text><text class="t11 sub" x="710" y="414" text-anchor="middle">GREEN · AMBER · RED</text></g>
+      <line class="ar" id="np-fc" x1="610" y1="400" x2="562" y2="400" marker-end="url(#np-m)"/>
+      <g class="nd" id="np-check"><rect x="340" y="372" width="220" height="56" rx="10"/><text class="mono t13 b" x="354" y="394">fact_check.py</text><text class="t11 sub" x="354" y="412">plain Python re-checks the numbers</text></g>
+
+      <g class="nd soft" id="np-data"><rect x="10" y="450" width="800" height="40" rx="10"/><text class="t12" x="28" y="475"><tspan class="b">data/nps_survey.csv</tspan> → pandas, loaded once (cached) · feeds every tool · <tspan class="mono">*</tspan> = shared by two agents</text></g>
+    </svg>
+    <figcaption>Three phases, same as Section 4. ① The three analysis agents don't need each other, so they run together. ② The planner needs the top themes, so it waits. ③ The writer needs everything. Then code — not an LLM — checks the brief.</figcaption>
+  </figure>
+
+
+  <div class="box analogy"><span class="tag">🧠 Hands, brains, manager — and an auditor</span>
+    <p><strong>Tools are the hands</strong> (pandas does the counting). <strong>Agents are the brains</strong> (they decide what to look at and explain it). <strong>The orchestrator is the manager</strong> (assigns, collects, never does the work itself). New in this project: <strong>an auditor at the door</strong>. Like the cashier who recounts the cash drawer at closing instead of trusting the sales log, <code>fact_check.py</code> re-computes the headline numbers and checks the brief quotes them correctly.</p>
+  </div>
+</section>
+
+<hr class="sec">
+<section id="b">
+  <p class="kicker">Build it</p>
+  <h2>Getting started</h2>
+  <p>You write the code yourself. Build it bottom-up, the same way as Section 4: <strong>data → tools → agents → orchestrator → main</strong>. The survey file is given to you.</p>
+
+  <!-- P5 -->
+  <h3 id="p-setup"><span class="num">P5</span>Setup, folders &amp; data</h3>
+  <div class="code"><div class="head">Bash · one-time setup (macOS / Linux; Windows notes in the comments)</div><pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate              # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env                   # Windows: copy .env.example .env  → then paste your OPENAI_API_KEY</code></pre></div>
+  <div class="code"><div class="head">Text · requirements.txt</div><pre><code class="language-none"># NPS analyst in a box — install with:  pip install -r requirements.txt   (Python 3.11–3.13)
+openai-agents&gt;=0.4        # the OpenAI Agents SDK (Agent, Runner, function_tool, .as_tool) — brings openai + pydantic
+pandas&gt;=2.2               # every number: NPS, segments, revenue at risk
+python-dotenv&gt;=1.0        # reads OPENAI_API_KEY from .env</code></pre></div>
+  <div class="code"><div class="head">Text · .env.example</div><pre><code class="language-none"># Copy this file to .env (same folder) and paste your key. Never commit .env.
+OPENAI_API_KEY=sk-...
+
+# Optional
+# NPS_MODEL=gpt-4o                        # any model your key can use, e.g. gpt-4.1 or gpt-5-mini
+# NPS_SURVEY_PATH=data/nps_survey.csv     # or point at your own survey CSV</code></pre></div>
+<div class="shape">nps-analyst-project/
+├── data/
+│   └── nps_survey.csv          <span class="m"># GIVEN: the 600 survey answers</span>
+├── nps_by_hand.py              <span class="m"># Step 0: NPS in plain pandas, no LLM</span>
+├── try_tools.py                <span class="m"># Step 1: every tool's numbers, no LLM</span>
+├── nps_insights_agent/
+│   ├── config.py               <span class="m"># NPS rules, house rules, assumptions, model name</span>
+│   ├── tools/                  <span class="m"># the HANDS — plain Python</span>
+│   │   ├── survey_tools.py     <span class="m"># overview, segments, revenue at risk, mismatches, callbacks</span>
+│   │   ├── theme_tools.py      <span class="m"># comments → themes (keyword rules)</span>
+│   │   └── whatif_tools.py     <span class="m"># "if we fix X": NPS points + rupees saved</span>
+│   ├── agents/                 <span class="m"># the BRAINS — 5 specialists + orchestrator</span>
+│   ├── fact_check.py           <span class="m"># the auditor</span>
+│   └── main.py                 <span class="m"># command line: --trace --verbose --stream --log-dir --survey</span>
+└── stretch/llm_theme_tagger.py <span class="m"># stretch goal: LLM tagging vs keyword rules</span></div>
+
+
+  <p>This is the suggested layout. Every file except <code>data/nps_survey.csv</code> is yours to write.</p>
+  <h4>The data: data/nps_survey.csv</h4>
+  <p>600 survey answers from July to September 2026 (200 a month); 536 of them have a written comment. One row is one customer's answer. The bank, the customers and their answers are fictional.</p>
+  <p><strong>Download it:</strong> <a href="https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/248/987/original/nps_survey.csv?1792931898">nps_survey.csv</a> (64 KB). If it opens as text in your browser, right-click the link, choose "Save link as…" and save it as <code>data/nps_survey.csv</code>. Or run this from your project folder:</p>
+  <div class="code"><div class="head">Bash · download the survey into data/</div><pre><code class="language-bash">mkdir -p data
+curl -L -o data/nps_survey.csv "https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/248/987/original/nps_survey.csv?1792931898"
+# Windows PowerShell: mkdir data; curl.exe -L -o data/nps_survey.csv "https://d2beiqkhq929f0.cloudfront.net/public_assets/assets/000/248/987/original/nps_survey.csv?1792931898"</code></pre></div>
+  <div class="tw"><table class="tbl">
+    <tr><th>Column</th><th>What it holds</th><th>Example</th></tr>
+    <tr><td><code>response_id</code></td><td>A unique id for the answer</td><td>R0001</td></tr>
+    <tr><td><code>date</code></td><td>The day the customer answered</td><td>2026-07-01</td></tr>
+    <tr><td><code>month</code></td><td>The month of that day</td><td>2026-07</td></tr>
+    <tr><td><code>product</code></td><td>Savings Account, Credit Card or Wealth</td><td>Savings Account</td></tr>
+    <tr><td><code>tenure</code></td><td>How long they have banked with us: &lt;1 yr, 1-3 yrs or 3+ yrs</td><td>3+ yrs</td></tr>
+    <tr><td><code>channel</code></td><td>How they mostly bank: Mobile App, Branch or Call Centre</td><td>Branch</td></tr>
+    <tr><td><code>score</code></td><td>Answer to "How likely are you to recommend us?", 0 to 10</td><td>10</td></tr>
+    <tr><td><code>comment</code></td><td>Answer to "Why did you give this score?" (can be blank)</td><td>Opening the account was smooth and fully online.</td></tr>
+    <tr><td><code>annual_revenue_inr</code></td><td>Yearly revenue the bank earns from this customer, in rupees</td><td>12200</td></tr>
+  </table></div>
+</section>
+
+<hr class="sec">
+<section id="o">
+  <p class="kicker">Own it</p>
+  <h2>Your project</h2>
+
+  <!-- P6 -->
+  <h3 id="p-project"><span class="num">P6</span>Milestones, stretch goals and rubric</h3>
+  <div class="tw"><table class="tbl">
+    <tr><th>Milestone</th><th>Build</th><th>Done when…</th><th class="num">Time</th></tr>
+    <tr><td><b>M0 · Data</b></td><td>venv, <code>nps_by_hand.py</code></td><td>prints Overall NPS 18.5 and the three months</td><td class="num">30 min</td></tr>
+    <tr><td><b>M1 · Hands</b></td><td>config + the three tool files</td><td><code>try_tools.py</code> prints every tool's result, and the numbers agree with <code>nps_by_hand.py</code></td><td class="num">2 h</td></tr>
+    <tr><td><b>M2 · One brain</b></td><td>ScoreAnalystAgent alone with <code>Runner.run</code></td><td>its scorecard copies every number exactly, with signs</td><td class="num">1 h</td></tr>
+    <tr><td><b>M3 · The team</b></td><td>the other four agents + orchestrator + <code>main.py</code></td><td><code>--trace</code> shows three CALLs before any OUTPUT</td><td class="num">2 h</td></tr>
+    <tr><td><b>M4 · Trust</b></td><td><code>fact_check.py</code></td><td>3 runs: wording differs, fact check passes every time</td><td class="num">1 h</td></tr>
+    <tr><td><b>M5 · Present</b></td><td>the brief + one slide</td><td>you can defend which fix goes first, with both rankings</td><td class="num">1 h</td></tr>
+  </table></div>
+  <h4>Stretch goals (pick two)</h4>
+  <ol class="walk">
+    <li><strong>LLM theme tagger</strong> — tag each comment with an LLM that must pick from a fixed list of themes (a <code>Literal[...]</code> type), cache the tags to CSV, and compare the top themes with your keyword rules.</li>
+    <li><strong>A guardrail that blocks bad briefs</strong> — if <code>fact_check</code> fails, send the brief back to the writer with the failed checks, at most twice.</li>
+    <li><strong>A label-aware fact check</strong> — check each number next to its label (for example, the line that mentions 2026-08), not just anywhere in the brief.</li>
+    <li><strong>Close-the-loop drafts</strong> — a new agent drafts a callback note per detractor; a human approves every note before anything is sent.</li>
+    <li><strong>Your own data</strong> — any CSV with the same columns runs with <code>--survey</code>. Different segments? Edit <code>SEGMENT_COLUMNS</code>.</li>
+    <li><strong>A month-on-month view</strong> — re-run on each month's slice and have the writer compare this brief with last month's.</li>
+  </ol>
+  <h4>Rubric (100 points)</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Criterion</th><th>What earns full marks</th><th class="num">Points</th></tr>
+    <tr><td>Correct numbers</td><td>fact check passes; signs and units right; no number the tools didn't produce</td><td class="num">25</td></tr>
+    <tr><td>Finds the three hidden stories</td><td>what caused the drop · where the money at risk sits · a data-quality problem in the scores</td><td class="num">25</td></tr>
+    <tr><td>Agent design</td><td>numbered steps, fixed sections and labels, grounding rules, exact keys in hand-offs</td><td class="num">20</td></tr>
+    <tr><td>Parallel phase verified</td><td><code>--trace</code> output included in the submission</td><td class="num">10</td></tr>
+    <tr><td>Honest caveats</td><td>low samples, assumptions, alternative NPS numbers — all stated</td><td class="num">10</td></tr>
+    <tr><td>Code quality</td><td>commented, plain functions testable without an LLM, no crashes on bad input</td><td class="num">10</td></tr>
+  </table></div>
+</section>
+
+<hr class="sec">
+<section id="wrap">
+  <p class="kicker">Wrap-up</p>
+  <h2>What to remember</h2>
+  <ol class="walk">
+    <li><strong>NPS = % promoters − % detractors</strong>, on all answers. 9–10 / 7–8 / 0–6. A score from −100 to +100, not a percentage.</li>
+    <li><strong>Small groups wobble.</strong> Show the margin of error; never crown a 26-answer segment.</li>
+    <li><strong>Loud ≠ expensive.</strong> Rank fixes by NPS points <em>and</em> by rupees at risk, and show the trade-off.</li>
+    <li><strong>Code computes, agents reason.</strong> Every number, verdict and alert comes from Python or a table.</li>
+    <li><strong>Same skeleton as Section 4:</strong> parallel analysis → dependent planning → synthesis, with a hand-off form between phases.</li>
+    <li><strong>Check the output with code.</strong> A fact check after every run turns a demo into something you can send to a CEO.</li>
+  </ol>
+  <div class="box skip"><span class="tag">Disclaimer</span><p>Future with Shivank Bank and its survey are fictional, generated for learning. The churn rates are illustrative assumptions.</p></div>
+
+</section>
+</main>
+</div>
+<footer>
+  <strong>Future with Shivank</strong> · AI Agents in Finance · Project: NPS analyst in a box<br>
+  Fictional bank, generated data, for learning only. Agent wording varies run to run; the numbers come from code.
+</footer>
+<script>
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(e){var n=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,t=0,r={},a={manual:e.Prism&&e.Prism.manual,disableWorkerMessageHandler:e.Prism&&e.Prism.disableWorkerMessageHandler,util:{encode:function e(n){return n instanceof i?new i(n.type,e(n.content),n.alias):Array.isArray(n)?n.map(e):n.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).slice(8,-1)},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function e(n,t){var r,i;switch(t=t||{},a.util.type(n)){case"Object":if(i=a.util.objId(n),t[i])return t[i];for(var l in r={},t[i]=r,n)n.hasOwnProperty(l)&&(r[l]=e(n[l],t));return r;case"Array":return i=a.util.objId(n),t[i]?t[i]:(r=[],t[i]=r,n.forEach((function(n,a){r[a]=e(n,t)})),r);default:return n}},getLanguage:function(e){for(;e;){var t=n.exec(e.className);if(t)return t[1].toLowerCase();e=e.parentElement}return"none"},setLanguage:function(e,t){e.className=e.className.replace(RegExp(n,"gi"),""),e.classList.add("language-"+t)},currentScript:function(){if("undefined"==typeof document)return null;if("currentScript"in document)return document.currentScript;try{throw new Error}catch(r){var e=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(r.stack)||[])[1];if(e){var n=document.getElementsByTagName("script");for(var t in n)if(n[t].src==e)return n[t]}return null}},isActive:function(e,n,t){for(var r="no-"+n;e;){var a=e.classList;if(a.contains(n))return!0;if(a.contains(r))return!1;e=e.parentElement}return!!t}},languages:{plain:r,plaintext:r,text:r,txt:r,extend:function(e,n){var t=a.util.clone(a.languages[e]);for(var r in n)t[r]=n[r];return t},insertBefore:function(e,n,t,r){var i=(r=r||a.languages)[e],l={};for(var o in i)if(i.hasOwnProperty(o)){if(o==n)for(var s in t)t.hasOwnProperty(s)&&(l[s]=t[s]);t.hasOwnProperty(o)||(l[o]=i[o])}var u=r[e];return r[e]=l,a.languages.DFS(a.languages,(function(n,t){t===u&&n!=e&&(this[n]=l)})),l},DFS:function e(n,t,r,i){i=i||{};var l=a.util.objId;for(var o in n)if(n.hasOwnProperty(o)){t.call(n,o,n[o],r||o);var s=n[o],u=a.util.type(s);"Object"!==u||i[l(s)]?"Array"!==u||i[l(s)]||(i[l(s)]=!0,e(s,t,o,i)):(i[l(s)]=!0,e(s,t,null,i))}}},plugins:{},highlightAll:function(e,n){a.highlightAllUnder(document,e,n)},highlightAllUnder:function(e,n,t){var r={callback:t,container:e,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};a.hooks.run("before-highlightall",r),r.elements=Array.prototype.slice.apply(r.container.querySelectorAll(r.selector)),a.hooks.run("before-all-elements-highlight",r);for(var i,l=0;i=r.elements[l++];)a.highlightElement(i,!0===n,r.callback)},highlightElement:function(n,t,r){var i=a.util.getLanguage(n),l=a.languages[i];a.util.setLanguage(n,i);var o=n.parentElement;o&&"pre"===o.nodeName.toLowerCase()&&a.util.setLanguage(o,i);var s={element:n,language:i,grammar:l,code:n.textContent};function u(e){s.highlightedCode=e,a.hooks.run("before-insert",s),s.element.innerHTML=s.highlightedCode,a.hooks.run("after-highlight",s),a.hooks.run("complete",s),r&&r.call(s.element)}if(a.hooks.run("before-sanity-check",s),(o=s.element.parentElement)&&"pre"===o.nodeName.toLowerCase()&&!o.hasAttribute("tabindex")&&o.setAttribute("tabindex","0"),!s.code)return a.hooks.run("complete",s),void(r&&r.call(s.element));if(a.hooks.run("before-highlight",s),s.grammar)if(t&&e.Worker){var c=new Worker(a.filename);c.onmessage=function(e){u(e.data)},c.postMessage(JSON.stringify({language:s.language,code:s.code,immediateClose:!0}))}else u(a.highlight(s.code,s.grammar,s.language));else u(a.util.encode(s.code))},highlight:function(e,n,t){var r={code:e,grammar:n,language:t};if(a.hooks.run("before-tokenize",r),!r.grammar)throw new Error('The language "'+r.language+'" has no grammar.');return r.tokens=a.tokenize(r.code,r.grammar),a.hooks.run("after-tokenize",r),i.stringify(a.util.encode(r.tokens),r.language)},tokenize:function(e,n){var t=n.rest;if(t){for(var r in t)n[r]=t[r];delete n.rest}var a=new s;return u(a,a.head,e),o(e,a,n,a.head,0),function(e){for(var n=[],t=e.head.next;t!==e.tail;)n.push(t.value),t=t.next;return n}(a)},hooks:{all:{},add:function(e,n){var t=a.hooks.all;t[e]=t[e]||[],t[e].push(n)},run:function(e,n){var t=a.hooks.all[e];if(t&&t.length)for(var r,i=0;r=t[i++];)r(n)}},Token:i};function i(e,n,t,r){this.type=e,this.content=n,this.alias=t,this.length=0|(r||"").length}function l(e,n,t,r){e.lastIndex=n;var a=e.exec(t);if(a&&r&&a[1]){var i=a[1].length;a.index+=i,a[0]=a[0].slice(i)}return a}function o(e,n,t,r,s,g){for(var f in t)if(t.hasOwnProperty(f)&&t[f]){var h=t[f];h=Array.isArray(h)?h:[h];for(var d=0;d<h.length;++d){if(g&&g.cause==f+","+d)return;var v=h[d],p=v.inside,m=!!v.lookbehind,y=!!v.greedy,k=v.alias;if(y&&!v.pattern.global){var x=v.pattern.toString().match(/[imsuy]*$/)[0];v.pattern=RegExp(v.pattern.source,x+"g")}for(var b=v.pattern||v,w=r.next,A=s;w!==n.tail&&!(g&&A>=g.reach);A+=w.value.length,w=w.next){var E=w.value;if(n.length>e.length)return;if(!(E instanceof i)){var P,L=1;if(y){if(!(P=l(b,A,e,m))||P.index>=e.length)break;var S=P.index,O=P.index+P[0].length,j=A;for(j+=w.value.length;S>=j;)j+=(w=w.next).value.length;if(A=j-=w.value.length,w.value instanceof i)continue;for(var C=w;C!==n.tail&&(j<O||"string"==typeof C.value);C=C.next)L++,j+=C.value.length;L--,E=e.slice(A,j),P.index-=A}else if(!(P=l(b,0,E,m)))continue;S=P.index;var N=P[0],_=E.slice(0,S),M=E.slice(S+N.length),W=A+E.length;g&&W>g.reach&&(g.reach=W);var z=w.prev;if(_&&(z=u(n,z,_),A+=_.length),c(n,z,L),w=u(n,z,new i(f,p?a.tokenize(N,p):N,k,N)),M&&u(n,w,M),L>1){var I={cause:f+","+d,reach:W};o(e,n,t,w.prev,A,I),g&&I.reach>g.reach&&(g.reach=I.reach)}}}}}}function s(){var e={value:null,prev:null,next:null},n={value:null,prev:e,next:null};e.next=n,this.head=e,this.tail=n,this.length=0}function u(e,n,t){var r=n.next,a={value:t,prev:n,next:r};return n.next=a,r.prev=a,e.length++,a}function c(e,n,t){for(var r=n.next,a=0;a<t&&r!==e.tail;a++)r=r.next;n.next=r,r.prev=n,e.length-=a}if(e.Prism=a,i.stringify=function e(n,t){if("string"==typeof n)return n;if(Array.isArray(n)){var r="";return n.forEach((function(n){r+=e(n,t)})),r}var i={type:n.type,content:e(n.content,t),tag:"span",classes:["token",n.type],attributes:{},language:t},l=n.alias;l&&(Array.isArray(l)?Array.prototype.push.apply(i.classes,l):i.classes.push(l)),a.hooks.run("wrap",i);var o="";for(var s in i.attributes)o+=" "+s+'="'+(i.attributes[s]||"").replace(/"/g,"&quot;")+'"';return"<"+i.tag+' class="'+i.classes.join(" ")+'"'+o+">"+i.content+"</"+i.tag+">"},!e.document)return e.addEventListener?(a.disableWorkerMessageHandler||e.addEventListener("message",(function(n){var t=JSON.parse(n.data),r=t.language,i=t.code,l=t.immediateClose;e.postMessage(a.highlight(i,a.languages[r],r)),l&&e.close()}),!1),a):a;var g=a.util.currentScript();function f(){a.manual||a.highlightAll()}if(g&&(a.filename=g.src,g.hasAttribute("data-manual")&&(a.manual=!0)),!a.manual){var h=document.readyState;"loading"===h||"interactive"===h&&g&&g.defer?document.addEventListener("DOMContentLoaded",f):window.requestAnimationFrame?window.requestAnimationFrame(f):window.setTimeout(f,16)}return a}(_self);"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+Prism.languages.python={comment:{pattern:/(^|[^\\])#.*/,lookbehind:!0,greedy:!0},"string-interpolation":{pattern:/(?:f|fr|rf)(?:("""|''')[\s\S]*?\1|("|')(?:\\.|(?!\2)[^\\\r\n])*\2)/i,greedy:!0,inside:{interpolation:{pattern:/((?:^|[^{])(?:\{\{)*)\{(?!\{)(?:[^{}]|\{(?!\{)(?:[^{}]|\{(?!\{)(?:[^{}])+\})+\})+\}/,lookbehind:!0,inside:{"format-spec":{pattern:/(:)[^:(){}]+(?=\}$)/,lookbehind:!0},"conversion-option":{pattern:/![sra](?=[:}]$)/,alias:"punctuation"},rest:null}},string:/[\s\S]+/}},"triple-quoted-string":{pattern:/(?:[rub]|br|rb)?("""|''')[\s\S]*?\1/i,greedy:!0,alias:"string"},string:{pattern:/(?:[rub]|br|rb)?("|')(?:\\.|(?!\1)[^\\\r\n])*\1/i,greedy:!0},function:{pattern:/((?:^|\s)def[ \t]+)[a-zA-Z_]\w*(?=\s*\()/g,lookbehind:!0},"class-name":{pattern:/(\bclass\s+)\w+/i,lookbehind:!0},decorator:{pattern:/(^[\t ]*)@\w+(?:\.\w+)*/m,lookbehind:!0,alias:["annotation","punctuation"],inside:{punctuation:/\./}},keyword:/\b(?:_(?=\s*:)|and|as|assert|async|await|break|case|class|continue|def|del|elif|else|except|exec|finally|for|from|global|if|import|in|is|lambda|match|nonlocal|not|or|pass|print|raise|return|try|while|with|yield)\b/,builtin:/\b(?:__import__|abs|all|any|apply|ascii|basestring|bin|bool|buffer|bytearray|bytes|callable|chr|classmethod|cmp|coerce|compile|complex|delattr|dict|dir|divmod|enumerate|eval|execfile|file|filter|float|format|frozenset|getattr|globals|hasattr|hash|help|hex|id|input|int|intern|isinstance|issubclass|iter|len|list|locals|long|map|max|memoryview|min|next|object|oct|open|ord|pow|property|range|raw_input|reduce|reload|repr|reversed|round|set|setattr|slice|sorted|staticmethod|str|sum|super|tuple|type|unichr|unicode|vars|xrange|zip)\b/,boolean:/\b(?:False|None|True)\b/,number:/\b0(?:b(?:_?[01])+|o(?:_?[0-7])+|x(?:_?[a-f0-9])+)\b|(?:\b\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\B\.\d+(?:_\d+)*)(?:e[+-]?\d+(?:_\d+)*)?j?(?!\w)/i,operator:/[-+%=]=?|!=|:=|\*\*?=?|\/\/?=?|<[<=>]?|>[=>]?|[&|^~]/,punctuation:/[{}[\];(),.:]/},Prism.languages.python["string-interpolation"].inside.interpolation.inside.rest=Prism.languages.python,Prism.languages.py=Prism.languages.python;
+Prism.languages.json={property:{pattern:/(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?=\s*:)/,lookbehind:!0,greedy:!0},string:{pattern:/(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?!\s*:)/,lookbehind:!0,greedy:!0},comment:{pattern:/\/\/.*|\/\*[\s\S]*?(?:\*\/|$)/,greedy:!0},number:/-?\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i,punctuation:/[{}[\],]/,operator:/:/,boolean:/\b(?:false|true)\b/,null:{pattern:/\bnull\b/,alias:"keyword"}},Prism.languages.webmanifest=Prism.languages.json;
+!function(e){var t="\\b(?:BASH|BASHOPTS|BASH_ALIASES|BASH_ARGC|BASH_ARGV|BASH_CMDS|BASH_COMPLETION_COMPAT_DIR|BASH_LINENO|BASH_REMATCH|BASH_SOURCE|BASH_VERSINFO|BASH_VERSION|COLORTERM|COLUMNS|COMP_WORDBREAKS|DBUS_SESSION_BUS_ADDRESS|DEFAULTS_PATH|DESKTOP_SESSION|DIRSTACK|DISPLAY|EUID|GDMSESSION|GDM_LANG|GNOME_KEYRING_CONTROL|GNOME_KEYRING_PID|GPG_AGENT_INFO|GROUPS|HISTCONTROL|HISTFILE|HISTFILESIZE|HISTSIZE|HOME|HOSTNAME|HOSTTYPE|IFS|INSTANCE|JOB|LANG|LANGUAGE|LC_ADDRESS|LC_ALL|LC_IDENTIFICATION|LC_MEASUREMENT|LC_MONETARY|LC_NAME|LC_NUMERIC|LC_PAPER|LC_TELEPHONE|LC_TIME|LESSCLOSE|LESSOPEN|LINES|LOGNAME|LS_COLORS|MACHTYPE|MAILCHECK|MANDATORY_PATH|NO_AT_BRIDGE|OLDPWD|OPTERR|OPTIND|ORBIT_SOCKETDIR|OSTYPE|PAPERSIZE|PATH|PIPESTATUS|PPID|PS1|PS2|PS3|PS4|PWD|RANDOM|REPLY|SECONDS|SELINUX_INIT|SESSION|SESSIONTYPE|SESSION_MANAGER|SHELL|SHELLOPTS|SHLVL|SSH_AUTH_SOCK|TERM|UID|UPSTART_EVENTS|UPSTART_INSTANCE|UPSTART_JOB|UPSTART_SESSION|USER|WINDOWID|XAUTHORITY|XDG_CONFIG_DIRS|XDG_CURRENT_DESKTOP|XDG_DATA_DIRS|XDG_GREETER_DATA_DIR|XDG_MENU_PREFIX|XDG_RUNTIME_DIR|XDG_SEAT|XDG_SEAT_PATH|XDG_SESSION_DESKTOP|XDG_SESSION_ID|XDG_SESSION_PATH|XDG_SESSION_TYPE|XDG_VTNR|XMODIFIERS)\\b",a={pattern:/(^(["']?)\w+\2)[ \t]+\S.*/,lookbehind:!0,alias:"punctuation",inside:null},n={bash:a,environment:{pattern:RegExp("\\$"+t),alias:"constant"},variable:[{pattern:/\$?\(\([\s\S]+?\)\)/,greedy:!0,inside:{variable:[{pattern:/(^\$\(\([\s\S]+)\)\)/,lookbehind:!0},/^\$\(\(/],number:/\b0x[\dA-Fa-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:[Ee]-?\d+)?/,operator:/--|\+\+|\*\*=?|<<=?|>>=?|&&|\|\||[=!+\-*/%<>^&|]=?|[?~:]/,punctuation:/\(\(?|\)\)?|,|;/}},{pattern:/\$\((?:\([^)]+\)|[^()])+\)|`[^`]+`/,greedy:!0,inside:{variable:/^\$\(|^`|\)$|`$/}},{pattern:/\$\{[^}]+\}/,greedy:!0,inside:{operator:/:[-=?+]?|[!\/]|##?|%%?|\^\^?|,,?/,punctuation:/[\[\]]/,environment:{pattern:RegExp("(\\{)"+t),lookbehind:!0,alias:"constant"}}},/\$(?:\w+|[#?*!@$])/],entity:/\\(?:[abceEfnrtv\\"]|O?[0-7]{1,3}|U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{1,2})/};e.languages.bash={shebang:{pattern:/^#!\s*\/.*/,alias:"important"},comment:{pattern:/(^|[^"{\\$])#.*/,lookbehind:!0},"function-name":[{pattern:/(\bfunction\s+)[\w-]+(?=(?:\s*\(?:\s*\))?\s*\{)/,lookbehind:!0,alias:"function"},{pattern:/\b[\w-]+(?=\s*\(\s*\)\s*\{)/,alias:"function"}],"for-or-select":{pattern:/(\b(?:for|select)\s+)\w+(?=\s+in\s)/,alias:"variable",lookbehind:!0},"assign-left":{pattern:/(^|[\s;|&]|[<>]\()\w+(?:\.\w+)*(?=\+?=)/,inside:{environment:{pattern:RegExp("(^|[\\s;|&]|[<>]\\()"+t),lookbehind:!0,alias:"constant"}},alias:"variable",lookbehind:!0},parameter:{pattern:/(^|\s)-{1,2}(?:\w+:[+-]?)?\w+(?:\.\w+)*(?=[=\s]|$)/,alias:"variable",lookbehind:!0},string:[{pattern:/((?:^|[^<])<<-?\s*)(\w+)\s[\s\S]*?(?:\r?\n|\r)\2/,lookbehind:!0,greedy:!0,inside:n},{pattern:/((?:^|[^<])<<-?\s*)(["'])(\w+)\2\s[\s\S]*?(?:\r?\n|\r)\3/,lookbehind:!0,greedy:!0,inside:{bash:a}},{pattern:/(^|[^\\](?:\\\\)*)"(?:\\[\s\S]|\$\([^)]+\)|\$(?!\()|`[^`]+`|[^"\\`$])*"/,lookbehind:!0,greedy:!0,inside:n},{pattern:/(^|[^$\\])'[^']*'/,lookbehind:!0,greedy:!0},{pattern:/\$'(?:[^'\\]|\\[\s\S])*'/,greedy:!0,inside:{entity:n.entity}}],environment:{pattern:RegExp("\\$?"+t),alias:"constant"},variable:n.variable,function:{pattern:/(^|[\s;|&]|[<>]\()(?:add|apropos|apt|apt-cache|apt-get|aptitude|aspell|automysqlbackup|awk|basename|bash|bc|bconsole|bg|bzip2|cal|cargo|cat|cfdisk|chgrp|chkconfig|chmod|chown|chroot|cksum|clear|cmp|column|comm|composer|cp|cron|crontab|csplit|curl|cut|date|dc|dd|ddrescue|debootstrap|df|diff|diff3|dig|dir|dircolors|dirname|dirs|dmesg|docker|docker-compose|du|egrep|eject|env|ethtool|expand|expect|expr|fdformat|fdisk|fg|fgrep|file|find|fmt|fold|format|free|fsck|ftp|fuser|gawk|git|gparted|grep|groupadd|groupdel|groupmod|groups|grub-mkconfig|gzip|halt|head|hg|history|host|hostname|htop|iconv|id|ifconfig|ifdown|ifup|import|install|ip|java|jobs|join|kill|killall|less|link|ln|locate|logname|logrotate|look|lpc|lpr|lprint|lprintd|lprintq|lprm|ls|lsof|lynx|make|man|mc|mdadm|mkconfig|mkdir|mke2fs|mkfifo|mkfs|mkisofs|mknod|mkswap|mmv|more|most|mount|mtools|mtr|mutt|mv|nano|nc|netstat|nice|nl|node|nohup|notify-send|npm|nslookup|op|open|parted|passwd|paste|pathchk|ping|pkill|pnpm|podman|podman-compose|popd|pr|printcap|printenv|ps|pushd|pv|quota|quotacheck|quotactl|ram|rar|rcp|reboot|remsync|rename|renice|rev|rm|rmdir|rpm|rsync|scp|screen|sdiff|sed|sendmail|seq|service|sftp|sh|shellcheck|shuf|shutdown|sleep|slocate|sort|split|ssh|stat|strace|su|sudo|sum|suspend|swapon|sync|sysctl|tac|tail|tar|tee|time|timeout|top|touch|tr|traceroute|tsort|tty|umount|uname|unexpand|uniq|units|unrar|unshar|unzip|update-grub|uptime|useradd|userdel|usermod|users|uudecode|uuencode|v|vcpkg|vdir|vi|vim|virsh|vmstat|wait|watch|wc|wget|whereis|which|who|whoami|write|xargs|xdg-open|yarn|yes|zenity|zip|zsh|zypper)(?=$|[)\s;|&])/,lookbehind:!0},keyword:{pattern:/(^|[\s;|&]|[<>]\()(?:case|do|done|elif|else|esac|fi|for|function|if|in|select|then|until|while)(?=$|[)\s;|&])/,lookbehind:!0},builtin:{pattern:/(^|[\s;|&]|[<>]\()(?:\.|:|alias|bind|break|builtin|caller|cd|command|continue|declare|echo|enable|eval|exec|exit|export|getopts|hash|help|let|local|logout|mapfile|printf|pwd|read|readarray|readonly|return|set|shift|shopt|source|test|times|trap|type|typeset|ulimit|umask|unalias|unset)(?=$|[)\s;|&])/,lookbehind:!0,alias:"class-name"},boolean:{pattern:/(^|[\s;|&]|[<>]\()(?:false|true)(?=$|[)\s;|&])/,lookbehind:!0},"file-descriptor":{pattern:/\B&\d\b/,alias:"important"},operator:{pattern:/\d?<>|>\||\+=|=[=~]?|!=?|<<[<-]?|[&\d]?>>|\d[<>]&?|[<>][&=]?|&[>&]?|\|[&|]?/,inside:{"file-descriptor":{pattern:/^\d/,alias:"important"}}},punctuation:/\$?\(\(?|\)\)?|\.\.|[{}[\];\\]/,number:{pattern:/(^|\s)(?:[1-9]\d*|0)(?:[.,]\d+)?\b/,lookbehind:!0}},a.inside=e.languages.bash;for(var s=["comment","function-name","for-or-select","assign-left","parameter","string","environment","function","keyword","builtin","boolean","file-descriptor","operator","punctuation","number"],o=n.variable[1].inside,i=0;i<s.length;i++)o[s[i]]=e.languages.bash[s[i]];e.languages.sh=e.languages.bash,e.languages.shell=e.languages.bash}(Prism);
+</script>
+<script>
+
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  $("#themeBtn").addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme") || (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("fws-theme", next); } catch (e) {}
+  });
+
+  /* ---------- mobile contents ---------- */
+  var toc = $("#toc"), tocBtn = $("#tocBtn");
+  tocBtn.addEventListener("click", function () {
+    var open = toc.classList.toggle("open");
+    tocBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  $$("#toc a").forEach(function (a) { a.addEventListener("click", function () { toc.classList.remove("open"); tocBtn.setAttribute("aria-expanded", "false"); }); });
+
+  /* ---------- progress + active toc ---------- */
+  var bar = $("#progress");
+  window.addEventListener("scroll", function () {
+    var h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+  }, { passive: true });
+  var links = $$("#toc a"), targets = links.map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); });
+  function setActive() {
+    var y = scrollY + Math.min(260, innerHeight * 0.35), idx = 0;
+    targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top + scrollY <= y) idx = i; });
+    links.forEach(function (a, i) { a.classList.toggle("active", i === idx); });
+  }
+  window.addEventListener("scroll", setActive, { passive: true }); setActive();
+
+  /* ---------- copy buttons ---------- */
+  $$(".code").forEach(function (box) {
+    var head = $(".head", box), code = $("pre code", box);
+    if (!head || !code) return;
+    var sp = document.createElement("span"); sp.className = "sp"; head.appendChild(sp);
+    var b = document.createElement("button"); b.className = "copy"; b.type = "button"; b.textContent = "Copy";
+    b.addEventListener("click", function () {
+      var txt = code.textContent;
+      var done = function () { b.textContent = "Copied ✓"; setTimeout(function () { b.textContent = "Copy"; }, 1400); };
+      try {
+        navigator.clipboard.writeText(txt).then(done, function () { fallback(txt); done(); });
+      } catch (e) { fallback(txt); done(); }
+    });
+    head.appendChild(b);
+  });
+  function fallback(t) {
+    try { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } catch (e) {}
+  }
+
+  /* ---------- generic stepper ---------- */
+  function stepper(rootId, steps, marker, render) {
+    var el = document.getElementById(rootId); if (!el) return;
+    var i = 0, panel = $(".panel", el), counter = $(".counter", el), dots = $(".dots", el);
+    var prev = $('[data-act="prev"]', el), next = $('[data-act="next"]', el);
+    dots.innerHTML = steps.map(function () { return "<i></i>"; }).join("");
+    var allIds = {};
+    steps.forEach(function (s) { (s.hl || []).forEach(function (id) { allIds[id] = 1; }); });
+    function show() {
+      Object.keys(allIds).forEach(function (id) {
+        var n = document.getElementById(id); if (!n) return;
+        n.classList.remove("hl");
+        if (n.classList.contains("ar")) n.setAttribute("marker-end", "url(#" + marker + ")");
+      });
+      (steps[i].hl || []).forEach(function (id) {
+        var n = document.getElementById(id); if (!n) return;
+        n.classList.add("hl");
+        if (n.classList.contains("ar")) n.setAttribute("marker-end", "url(#" + marker + "h)");
+      });
+      panel.innerHTML = render(steps[i], i);
+      counter.textContent = "Step " + (i + 1) + " of " + steps.length;
+      $$("i", dots).forEach(function (d, k) { d.classList.toggle("on", k <= i); });
+      prev.disabled = i === 0; next.disabled = i === steps.length - 1;
+    }
+    prev.addEventListener("click", function () { if (i > 0) { i--; show(); } });
+    next.addEventListener("click", function () { if (i < steps.length - 1) { i++; show(); } });
+    show();
+  }
+  function pre(t, cls) { return '<pre' + (cls ? ' class="' + cls + '"' : "") + ">" + esc(t) + "</pre>"; }
+
+
+
+  function sign1(x) { var v = Math.round(x * 10) / 10; if (v === 0) v = 0; return (v >= 0 ? "+" : "") + v.toFixed(1); }
+  function health(n) { return n >= 50 ? "EXCELLENT" : n >= 30 ? "GOOD" : n >= 0 ? "NEEDS WORK" : "CRITICAL"; }
+
+  /* ---------- P2 NPS builder ---------- */
+  (function () {
+    var P = $("#np-p"), A = $("#np-a"), D = $("#np-d"), bar = $("#np-bar"), out = $("#np-out");
+    if (!P) return;
+    var BASE = [268, 175, 157];
+    function seg(cls, k, n, label) {
+      var w = n ? (k / n) * 100 : 0;
+      return '<i class="' + cls + '" style="width:' + w + '%">' + (w > 9 ? label + " " + Math.round(w) + "%" : "") + "</i>";
+    }
+    function calc(msg) {
+      var p = +P.value, a = +A.value, d = +D.value, n = p + a + d;
+      $("#np-pv").textContent = p; $("#np-av").textContent = a; $("#np-dv").textContent = d;
+      if (!n) { bar.innerHTML = ""; out.innerHTML = "No answers yet — move a slider."; return; }
+      var pp = p / n, dd = d / n, nps = (pp - dd) * 100;
+      var moe = 1.96 * Math.sqrt((pp + dd - Math.pow(pp - dd, 2)) / n) * 100;
+      bar.innerHTML = seg("pro", p, n, "P") + seg("pas", a, n, "Pa") + seg("det", d, n, "D");
+      out.innerHTML = "NPS = " + (pp * 100).toFixed(1) + "% promoters − " + (dd * 100).toFixed(1) + "% detractors = <b>" + sign1(nps) +
+        "</b> &nbsp;(±" + moe.toFixed(1) + " at 95%, " + n + " answers) → <span class='pill'>" + health(nps) + "</span>" +
+        (msg ? "<br>" + msg : "");
+    }
+    [P, A, D].forEach(function (s) { s.addEventListener("input", function () { calc(); }); });
+    $$("[data-np]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var act = b.getAttribute("data-np"), msg = "";
+        if (act === "pas") { A.value = Math.min(600, +A.value + 50); msg = "Nobody new is unhappy, yet the NPS <b>fell</b>: passives add nothing to the top line but they grow the total you divide by."; }
+        if (act === "d2p") { var k = Math.min(10, +D.value); D.value = +D.value - k; A.value = +A.value + k; msg = "Each detractor who becomes a passive adds 100 ÷ (answers) points. 10 × 100 ÷ 600 ≈ <b>+1.7</b>. This is exactly the maths inside <code>estimate_fix_impact</code>."; }
+        if (act === "d2pro") { var m = Math.min(10, +D.value); D.value = +D.value - m; P.value = +P.value + m; msg = "Twice the gain (≈ <b>+3.3</b>): the customer stops counting against you <em>and</em> starts counting for you. Our what-if tool assumes the cautious version — detractors become passives, not promoters."; }
+        if (act === "reset") { P.value = BASE[0]; A.value = BASE[1]; D.value = BASE[2]; msg = "Our survey: 268 / 175 / 157 → +18.5, the number every tool and agent must agree on."; }
+        calc(msg);
+      });
+    });
+    calc();
+  })();
+
+  /* ---------- problem statement: customer #10 ---------- */
+  (function () {
+    var btn = $("#tc-btn"), out = $("#tc-out");
+    if (!btn) return;
+    var fixed = false;
+    function draw() {
+      var p = fixed ? 4 : 3, a = 2, d = fixed ? 4 : 5, n = 10, nps = (p - d) / n * 100;
+      $("#tc-score10").textContent = fixed ? "10" : "0";
+      $("#tc-grp10").innerHTML = fixed ? '<span class="gp s-pro">Promoter</span>' : '<span class="gp s-det">Detractor</span>';
+      out.innerHTML = p + " promoters (" + p * 10 + "%) − " + d + " detractors (" + d * 10 + "%), with " + a + " passives in the total → NPS = <b>" + (nps > 0 ? "+" : nps < 0 ? "−" : "") + Math.abs(Math.round(nps)) + "</b>" +
+        (fixed ? " &nbsp;— one misread answer moved the NPS by 20 points." : "");
+      btn.textContent = fixed ? "Back to the score as reported (0)" : "What if customer #10 meant 10, not 0?";
+    }
+    btn.addEventListener("click", function () { fixed = !fixed; draw(); });
+    draw();
+  })();
+
+  })();
+
+</script>
+</body>
+</html>
