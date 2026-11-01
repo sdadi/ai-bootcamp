@@ -28,12 +28,12 @@ from strands.models.openai import OpenAIModel
 
 load_dotenv()
 
-MODEL_ID = os.getenv("GROQ_MODEL_ID", "openai/gpt-oss-120b")
+MODEL_ID = os.getenv("GROQ_LLM_MODEL", "openai/gpt-oss-120b")
 
 model = OpenAIModel(
     client_args={
         "api_key": os.environ["GROQ_API_KEY"],
-        "base_url": os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),  # or a local OpenAI-compatible server
+        "base_url": os.getenv("GROQ_BASE_URL"),  # or a local OpenAI-compatible server
         "max_retries": 5,  # retry dropped connections (the client default is 2)
     },
     model_id=MODEL_ID,

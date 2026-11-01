@@ -1,0 +1,9 @@
+numpy
+sentence-transformers
+chromadb
+python-dotenv
+langchain-core
+langchain-huggingface
+langchain-openai
+langchain-groq
+gradio
