@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Shivank Agarwal">
+<title>Chapter 1 — The Building Blocks of LLM Systems | LLM System Design by Shivank Agarwal</title>
+<style>
+:root{
+  --ink:#1e293b; --ink2:#334155; --muted:#64748b; --bg:#f7f8fb; --card:#ffffff; --line:#94a3b8; --soft:#eef2f7;
+  --brand:#4f46e5; --brand2:#0891b2; --accent:#ea580c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0;z-index:999}
+
+/* ---------- Sidebar ---------- */
+#side{position:fixed;top:0;left:0;bottom:0;width:290px;background:#0f172a;color:#cbd5e1;overflow-y:auto;padding:22px 16px 40px;font-size:.86rem;z-index:50;transition:transform .3s}
+#side .brand{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#a5b4fc;font-weight:700}
+#side h3{color:#fff;margin:.3em 0 .2em;font-size:1.05rem;line-height:1.35}
+#side .by{font-size:.78rem;color:#94a3b8;margin-bottom:14px}
+#side a{display:block;color:#cbd5e1;text-decoration:none;padding:4px 10px;border-radius:7px;line-height:1.45}
+#side a:hover{background:#1e293b;color:#fff}
+#side .grp-t{color:#fbbf24;font-weight:700;margin-top:14px;padding:0 10px;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+#side .sub{padding-left:24px;font-size:.8rem;color:#94a3b8}
+#menuBtn{display:none;position:fixed;top:12px;left:12px;z-index:60;background:#0f172a;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+main{margin-left:290px;padding:34px 4.5vw 90px;max-width:1180px}
+@media (max-width:960px){#side{transform:translateX(-100%)}#side.open{transform:none}#menuBtn{display:block}main{margin-left:0;padding:64px 16px 70px}}
+
+/* ---------- Typography ---------- */
+h1{font-size:2.4rem;line-height:1.2;margin:.25em 0 .3em;letter-spacing:-.01em}
+h2.chapter{font-size:1.9rem;line-height:1.3;margin-top:56px;padding:26px 28px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+h2.chapter small{display:block;font-size:1rem;opacity:.92;font-weight:400;margin-top:4px}
+h3.sec{font-size:1.55rem;line-height:1.35;margin:64px 0 10px;padding-bottom:8px;border-bottom:3px solid #e0e7ff}
+h3.sec .num{color:var(--brand)}
+h4{font-size:1.2rem;margin:34px 0 8px;color:#1e3a8a}
+h5{font-size:1rem}
+p{margin:.65em 0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+b,strong{color:#0f172a}
+a{color:var(--brand)}
+code{background:#eef2ff;padding:1px 6px;border-radius:5px;font-size:.86em;color:#9d174d;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.84rem;line-height:1.6;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+pre .c{color:#94a3b8} pre .k{color:#c4b5fd} pre .s{color:#86efac} pre .o{color:#fcd34d}
+.lede{font-size:1.1rem;color:var(--ink2)}
+
+/* ---------- Tables ---------- */
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;font-size:.92rem;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+th{background:#1e293b;color:#fff;text-align:left;padding:10px 12px;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid #edf0f4;vertical-align:top}
+tr:nth-child(even) td{background:#fafbfd}
+td code{white-space:nowrap}
+
+/* ---------- Hero ---------- */
+.hero{background:#fff;border-radius:22px;padding:34px 34px 28px;box-shadow:0 6px 28px rgba(15,23,42,.06);border:1px solid #e2e8f0}
+.hero .kicker{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);background:#eef2ff;padding:4px 12px;border-radius:30px}
+.author{display:flex;align-items:center;gap:12px;margin:14px 0 6px}
+.author .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.author b{display:block;line-height:1.2}
+.author span{font-size:.85rem;color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+.legend div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.5}
+.learn{columns:2;column-gap:28px}
+@media(max-width:800px){.learn{columns:1}}
+
+/* ---------- Callout boxes ---------- */
+.box{border-radius:14px;padding:14px 18px;margin:18px 0;border-left:5px solid;background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.box>.t{display:block;margin-bottom:4px;font-weight:700}
+.box p:first-of-type{margin-top:.2em}
+.analogy{border-color:#ea580c;background:#fff7ed}
+.real{border-color:#2563eb;background:#eff6ff}
+.example{border-color:#0d9488;background:#f0fdfa}
+.interview{border-color:#16a34a;background:#f0fdf4}
+.deep{border-color:#7c3aed;background:#f5f3ff}
+.warn{border-color:#d97706;background:#fffbeb}
+.takeaways{border-color:#4f46e5;background:#eef2ff}
+.plain{border-color:#64748b;background:#f8fafc}
+
+/* ---------- Diagram canvas ---------- */
+.fig{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:26px 16px 16px;margin:22px 0;box-shadow:0 2px 10px rgba(15,23,42,.04);overflow-x:auto}
+.fig .ft{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin:-8px 0 14px 4px}
+.cap{text-align:center;font-size:.86rem;color:var(--muted);margin-top:14px}
+
+/* nodes */
+.node{display:inline-block;padding:10px 14px;border-radius:11px;border:1.5px solid #cbd5e1;background:#f8fafc;font-weight:600;text-align:center;font-size:.88rem;line-height:1.4;min-width:110px;color:#1e293b}
+.node small{display:block;font-weight:400;opacity:.85;font-size:.78rem;margin-top:2px}
+.n-blue{background:#eff6ff;border-color:#60a5fa;color:#1e3a8a}
+.n-green{background:#f0fdf4;border-color:#4ade80;color:#14532d}
+.n-orange{background:#fff7ed;border-color:#fb923c;color:#7c2d12}
+.n-red{background:#fef2f2;border-color:#f87171;color:#7f1d1d}
+.n-purple{background:#f5f3ff;border-color:#a78bfa;color:#4c1d95}
+.n-yellow{background:#fefce8;border-color:#facc15;color:#713f12}
+.n-teal{background:#f0fdfa;border-color:#2dd4bf;color:#134e4a}
+.n-pink{background:#fdf2f8;border-color:#f472b6;color:#831843}
+.n-gray{background:#f1f5f9;border-color:#94a3b8;color:#334155}
+.n-dark{background:#1e293b;border-color:#0f172a;color:#fff}
+.n-navy{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.db{border-radius:50% / 14%;padding:16px 16px}
+.pill{border-radius:30px}
+.diamond{width:190px;height:106px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;font-weight:700;padding:0 38px;background:#e0e7ff;color:#312e81;flex-shrink:0;line-height:1.3}
+
+/* layout helpers */
+.fv{display:flex;flex-direction:column;align-items:center}
+.fh{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.cols{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.grp{border:1.5px dashed #cbd5e1;border-radius:14px;padding:24px 14px 14px;position:relative;background:#fbfcfe;margin:12px 4px}
+.grp>.gt{position:absolute;top:-11px;left:14px;white-space:nowrap;background:#fff;padding:0 8px;font-weight:700;font-size:.76rem;color:#475569;border-radius:6px;border:1px solid #e2e8f0}
+.ladder .step{display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
+
+/* arrows (static, clean) */
+.va{width:2px;height:32px;background:var(--line);position:relative;margin:4px auto 10px}
+.va::after{content:'';position:absolute;bottom:-8px;left:-5px;border:6px solid transparent;border-top-color:var(--line)}
+.va>span{position:absolute;left:12px;top:5px;white-space:nowrap;font-size:.72rem;background:#f1f5f9;padding:1px 8px;border-radius:6px;color:#334155;border:1px solid #e2e8f0}
+.ha{height:2px;width:46px;background:var(--line);position:relative;margin:0 12px 0 4px;flex-shrink:0}
+.ha::after{content:'';position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-left-color:var(--line)}
+.ha>span{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.7rem;background:#f1f5f9;padding:0 7px;border-radius:6px;border:1px solid #e2e8f0}
+.ha:has(>span){width:104px}
+.ha.long{width:110px}
+.dash{background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.dashv{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.lbl{font-size:.74rem;background:#f1f5f9;padding:2px 9px;border-radius:6px;color:#334155;display:inline-block;margin:3px;border:1px solid #e2e8f0}
+
+/* CSS tree */
+.tree{overflow-x:auto;padding-bottom:6px}
+.tree ul{padding-top:20px;position:relative;display:flex;justify-content:center;margin:0;padding-left:0}
+.tree li{list-style:none;text-align:center;position:relative;padding:20px 5px 0;margin:0}
+.tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid #cbd5e1;width:50%;height:20px}
+.tree li::after{right:auto;left:50%;border-left:2px solid #cbd5e1}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid #cbd5e1;border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid #cbd5e1;height:20px}
+.tree>ul{padding-top:0}.tree>ul>li{padding-top:0}
+.tree .node{font-size:.78rem;min-width:auto;padding:7px 10px}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:14px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+@media(max-width:860px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 6px rgba(15,23,42,.06);border-top:4px solid #60a5fa;font-size:.95rem;line-height:1.65}
+.card h5{margin:0 0 6px;font-size:1.02rem;color:#0f172a}
+.card ul,.card ol{margin:.3em 0;padding-left:1.2em}
+.card pre{font-size:.78rem;margin:8px 0 0}
+.c-bad{border-top-color:#f87171}.c-good{border-top-color:#4ade80}.c-warn{border-top-color:#fbbf24}.c-vio{border-top-color:#a78bfa}.c-teal{border-top-color:#2dd4bf}
+.c-bad h5{color:#b91c1c}.c-good h5{color:#15803d}
+.quote{background:#f8fafc;border:1px solid #e2e8f0;padding:9px 13px;border-radius:9px;font-size:.92rem;font-family:"JetBrains Mono",Consolas,monospace;white-space:pre-wrap;line-height:1.55}
+
+/* ---------- Demos ---------- */
+.demo{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:18px 20px;margin:20px 0}
+.demo h5{margin:0 0 6px;color:#fcd34d;font-size:1rem}
+.demo p.hint{font-size:.85rem;color:#94a3b8;margin:4px 0 10px}
+.demo label{font-size:.9rem}
+.demo input[type=text],.demo input[type=number],.demo textarea,.demo select{width:100%;padding:9px 10px;border-radius:9px;border:0;font-size:.93rem;font-family:inherit;background:#f8fafc;color:#0f172a}
+.demo textarea{font-family:"JetBrains Mono",Consolas,monospace;font-size:.84rem}
+.demo button,.btn{background:#4f46e5;color:#fff;border:0;border-radius:9px;padding:8px 15px;margin:4px 6px 4px 0;font-weight:600;cursor:pointer;font-size:.88rem;font-family:inherit}
+.demo button.alt,.btn.alt{background:#334155}
+.demo button.red{background:#dc2626}
+.demo button:hover,.btn:hover{filter:brightness(1.12)}
+.panel{background:#1e293b;border-radius:11px;padding:12px 14px;min-height:56px}
+.mono{font-family:"JetBrains Mono",Consolas,monospace}
+.log{background:#020617;border-radius:10px;padding:10px 12px;max-height:190px;overflow-y:auto;font-family:"JetBrains Mono",Consolas,monospace;font-size:.8rem;margin-top:10px;line-height:1.6}
+.state{display:inline-block;padding:7px 14px;border-radius:9px;font-weight:700;margin:4px;opacity:.28;transition:all .3s;color:#fff}
+.state.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.kpi{font-size:1.45rem;font-weight:800;color:#fcd34d}
+.chip{display:inline-block;padding:3px 8px;margin:3px;border-radius:7px;font-family:"JetBrains Mono",Consolas,monospace;font-size:.86rem;color:#0f172a}
+.bar{height:18px;border-radius:6px;background:linear-gradient(90deg,#6366f1,#06b6d4);transition:width .3s;margin:3px 0}
+.lit{outline:3px solid #fbbf24;outline-offset:3px}
+.slot{display:inline-block;padding:4px 8px;margin:2px;border-radius:6px;background:#4ade80;color:#052e16;font-family:monospace;font-size:.78rem;font-weight:700}
+.ok{color:#4ade80;font-weight:700}.no{color:#f87171;font-weight:700}
+.seqctl{text-align:center;margin-top:10px}
+.seqcap{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 14px;margin-top:8px;min-height:44px;font-size:.92rem}
+
+/* formula */
+.formula{font-size:1.12rem;text-align:center;margin:16px 0;font-family:"Cambria Math",Georgia,serif}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 6px}
+.frac span:first-child{border-bottom:2px solid #0f172a;padding:0 6px}
+
+/* ER diagram */
+.er{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:860px){.er{grid-template-columns:1fr}}
+.ent{background:#fff;border:1.5px solid #a78bfa;border-radius:10px;overflow:hidden;font-size:.82rem}
+.ent b{display:block;background:#ede9fe;color:#4c1d95;padding:6px 10px;text-align:center}
+.ent div{padding:4px 10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px}
+.ent i{color:#64748b;font-style:normal}.ent em{color:#be185d;font-style:normal;font-weight:700}
+.rel{font-size:.78rem;text-align:center;color:#475569;background:#f1f5f9;border-radius:8px;padding:5px}
+
+/* misc */
+details{background:#fff;border-radius:12px;padding:11px 16px;margin:10px 0;box-shadow:0 1px 6px rgba(15,23,42,.05);border-left:4px solid #a78bfa}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px;color:#5b21b6}
+.phone{max-width:340px;margin:auto;border:3px solid #1e293b;border-radius:28px;padding:18px 14px;background:#f8fafc}
+.footer{text-align:center;color:var(--muted);margin-top:70px;font-size:.88rem;border-top:1px solid #e2e8f0;padding-top:22px}
+.footer b{color:#1e293b}
+.toc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.toc-chips span{background:#eef2ff;color:#3730a3;border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:600}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:10px 0}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:27px;height:27px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem}
+.kv dt{font-family:"JetBrains Mono",Consolas,monospace;color:#9d174d;font-size:.85rem}
+.kv dd{margin:0}
+
+/* ---------- Narrow screens: turn horizontal chains into vertical ones ---------- */
+@media (max-width:1080px){
+  .fh:has(>.ha), .ladder .step{flex-direction:column}
+  .fh:has(>.ha)>.ha, .ladder .step>.ha{width:2px!important;height:32px;margin:4px auto 10px}
+  .fh:has(>.ha)>.ha::after, .ladder .step>.ha::after{right:auto;left:-5px;top:auto;bottom:-8px;border-left-color:transparent;border-top-color:var(--line)}
+  .fh:has(>.ha)>.ha>span, .ladder .step>.ha>span{left:12px;bottom:auto;top:5px;transform:none}
+  .fh:has(>.ha)>.ha.dash, .ladder .step>.ha.dash{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+  .grid2 .fh .node, .fig .node{max-width:100%}
+  h1{font-size:1.9rem}
+  .hero{padding:24px 18px}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="menuBtn" onclick="document.getElementById('side').classList.toggle('open')">☰ Contents</button>
+<nav id="side">
+  <div class="brand">Future with Shivank</div>
+  <h3>LLM System Design<br>Chapter 1 · Building Blocks</h3>
+  <div class="by">by Shivank Agarwal</div>
+  <a href="#start">🏁 Start here</a>
+  <div class="grp-t">Foundations</div>
+  <a href="#c1-mindset">1.1 A new way of thinking</a>
+  <a href="#c1-family">1.2 Where LLMs fit</a>
+  <a href="#c1-map">1.3 The big picture</a>
+  <a class="sub" href="#c1-tokens">Tokens</a>
+  <a class="sub" href="#c1-cwdemo">Long chats: 2 strategies</a>
+  <a class="sub" href="#c1-emb">Embeddings</a>
+  <a class="sub" href="#c1-train">Pre-training &amp; fine-tuning</a>
+  <div class="grp-t">Talking to the model</div>
+  <a href="#c1-prompt">1.4 Prompts</a>
+  <a class="sub" href="#c1-cw">Context window</a>
+  <a class="sub" href="#c1-reason">Reasoning</a>
+  <a class="sub" href="#c1-tech">5 prompting techniques</a>
+  <div class="grp-t">LLMs + code</div>
+  <a href="#c1-code">1.5 How AI understands code</a>
+  <a class="sub" href="#c1-vs">Vector search</a>
+  <a class="sub" href="#c1-ast">Syntax trees (AST)</a>
+  <a class="sub" href="#c1-kg">Knowledge graphs</a>
+  <a class="sub" href="#c1-choose">Choosing a model</a>
+  <a class="sub" href="#c1-temp">Temperature</a>
+  <div class="grp-t">Giving the model knowledge</div>
+  <a href="#c1-rag">1.6 RAG</a>
+  <a class="sub" href="#c1-naive">Why basic RAG fails</a>
+  <a class="sub" href="#c1-graphrag">GraphRAG</a>
+  <a href="#c1-ce">1.7 Context engineering</a>
+  <a href="#c1-agent">1.8 AI agents</a>
+  <div class="grp-t">Running it for real</div>
+  <a href="#c1-mod">1.9 Modalities</a>
+  <a href="#c1-res">1.10 Where your data lives</a>
+  <a href="#c1-bench">1.11 Measuring performance</a>
+  <a href="#c1-fail">1.12 When things go wrong</a>
+  <a href="#c1-sum">1.13 Summary + quiz</a>
+  <a class="sub" href="#c1-gloss">Glossary</a>
+</nav>
+
+<main>
+<section id="start" class="hero">
+  <span class="kicker">LLM System Design · Chapter 1</span>
+  <h1>The Building Blocks of LLM Systems</h1>
+  <div class="author"><div class="av">SA</div><div><b>Shivank Agarwal</b><span>Future with Shivank</span></div></div>
+  <p class="lede">Before we design big AI products like coding assistants or learning apps, we need to understand the small pieces they are made of: <b>tokens, embeddings, prompts, context windows, RAG, agents</b> and a few more. Think of this chapter as learning the alphabet before writing sentences.</p>
+  <p>You do <b>not</b> need any AI background to read this. If you can write a little Python and know what an API is, you are ready. Every idea comes with an everyday analogy, a real product where you have already seen it, and a worked example.</p>
+  <h4 style="margin-top:20px">By the end of this chapter you will be able to…</h4>
+  <ul class="learn">
+    <li>Explain what an LLM is (and is not) to a friend</li>
+    <li>Estimate how tokens affect speed and cost</li>
+    <li>Explain embeddings and "search by meaning"</li>
+    <li>Write well-structured prompts</li>
+    <li>Explain how RAG cuts down wrong answers</li>
+    <li>Know when to use a knowledge graph</li>
+    <li>Describe how an AI agent loops through tasks</li>
+    <li>Name the key speed and quality metrics</li>
+  </ul>
+  <div class="legend">
+    <div>🧠 <b>Think of it like…</b> an everyday analogy</div>
+    <div>🌍 <b>Real-world example</b> where you have already seen this</div>
+    <div>🔍 <b>Worked example</b> step by step, with real values</div>
+    <div>⚠️ <b>Watch out</b> a common mistake beginners make</div>
+    <div>🎯 <b>Interview tip</b> a line you can say in an interview</div>
+    <div>🚀 <b>Going deeper</b> optional, for the curious</div>
+    <div>🎮 <b>Try it</b> an interactive demo you can click</div>
+  </div>
+  <div class="box plain"><span class="t">About the code in these notes</span>Code examples use the OpenAI Python SDK with real model names that are current at the time of writing (November 2026): <code>gpt-6-astra</code> (most capable), <code>gpt-6.1-terra</code> (fast and balanced), <code>gpt-6-luna</code> (cheapest, for high volume) and <code>text-embedding-3-small</code> for embeddings. Each example shows the output you would see, so you can follow along just by reading. Model names change every few months; the <i>ideas</i> do not.</div>
+</section>
+
+<h2 class="chapter" id="c1">Chapter 1 · The Building Blocks of LLM Systems<small>Tokens · embeddings · prompts · context · RAG · agents · metrics · failure modes</small></h2>
+
+<!-- ============ 1.1 ============ -->
+<h3 class="sec" id="c1-mindset"><span class="num">1.1</span> A new way of thinking: from "always the same" to "probably right"</h3>
+<p>Almost all the software you have written so far is <b>deterministic</b>. That is a fancy word for a simple idea: <i>the same input always gives the same output</i>. If <code>add(2, 2)</code> returns <code>4</code> today, it will return <code>4</code> tomorrow and a million times after that. A unit test that passes once will pass forever.</p>
+<p>Large Language Models (LLMs) break this rule. They are <b>probabilistic</b>: give the same input twice and you may get two different answers. Usually both are fine. Sometimes one is wrong. Our job as engineers is to build a <b>system around the model</b> that turns this "probably right" behaviour into something users can depend on. That is what this whole series is about.</p>
+<div class="fig"><div class="ft">Same input, different outputs</div>
+  <div class="grid2">
+    <div class="grp"><span class="gt">Traditional software (deterministic)</span>
+      <div class="fv"><span class="node n-blue">Input: 2 + 2</span><div class="va"></div><span class="node n-green">Always 4 ✅</span></div>
+      <p style="text-align:center;font-size:.86rem;color:#64748b">A calculator, a bank balance check, a sorting function.</p></div>
+    <div class="grp"><span class="gt">LLM (probabilistic)</span>
+      <div class="fv"><span class="node n-blue">Input: "Write a tagline for a chai shop"</span><div class="va"></div>
+        <div class="fh" style="gap:8px"><span class="node n-green">"Sip the moment."</span><span class="node n-green">"Your daily dose of warmth."</span><span class="node n-red">"Best coffee in town!" 🤔</span></div></div>
+      <p style="text-align:center;font-size:.86rem;color:#64748b">Each run can differ, and one run can even be wrong.</p></div>
+  </div>
+</div>
+
+<h4>So what exactly is an LLM?</h4>
+<p>A <b>Large Language Model</b> is an AI model that has read an enormous amount of text and code (books, websites, documentation, code repositories) and learned the patterns of language from it. Because of that, it can write, summarise, translate, answer questions, reason through problems and write code. Popular examples are <b>GPT</b> (by OpenAI), <b>Claude</b> (by Anthropic), <b>Gemini</b> (by Google), <b>Llama</b> (by Meta), <b>DeepSeek</b> and <b>Grok</b>. Each has its own strengths, such as reasoning, creativity, speed or price.</p>
+<p>You talk to an LLM by sending it text called a <b>prompt</b>. It replies with text. Good prompts include clear <b>instructions</b> and <b>guardrails</b> (rules about what not to do) so the reply is what you expect.</p>
+
+<div class="box example"><span class="t">🔍 Worked example: your first LLM call</span>
+<p>Here is the smallest useful program. We send one prompt and print the answer.</p>
+<pre><code><span class="k">from</span> openai <span class="k">import</span> OpenAI
+client = OpenAI()   <span class="c"># reads your OPENAI_API_KEY from the environment</span>
+
+reply = client.chat.completions.create(
+    model=<span class="s">"gpt-6.1-terra"</span>,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Write a 5-word tagline for a chai shop."</span>}],
+)
+print(reply.choices[0].message.content)</code></pre>
+<p><b>Output (run 1):</b> <code>Sip slowly. Smile widely. Repeat.</code><br><b>Output (run 2):</b> <code>Fresh chai, warm conversations daily.</code></p>
+<p>Same code, same prompt, two different answers. That is the probabilistic nature in action.</p></div>
+
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A calculator is like a government form: fixed rules, fixed result. An LLM is like a very well-read friend. Ask them the same question twice and they will phrase the answer differently, and once in a while they will confidently say something wrong. You would not fire such a useful friend; you would build habits around them: give them the right notes, double-check important facts, and keep a backup plan. That is exactly what <b>LLM system design</b> is.</div>
+<div class="box real"><span class="t">🌍 Real-world example</span>When you chat with a food-delivery app's support bot and it says "Your refund of ₹249 has been processed", that answer did not come from the LLM's memory. The system looked up your order in a database, gave those facts to the LLM, and asked it to write a friendly reply. The LLM is only one part of a bigger system. You will see this pattern again and again.</div>
+
+<!-- ============ 1.2 ============ -->
+<h3 class="sec" id="c1-family"><span class="num">1.2</span> Where LLMs fit: the AI family tree</h3>
+<p>People use words like AI, ML, deep learning and GenAI as if they mean the same thing. They don't. The picture below shows how they nest inside each other, like Russian dolls.</p>
+<div class="fig"><div class="ft">The AI family (each circle sits inside the bigger one)</div>
+<svg viewBox="0 0 760 420" width="100%" style="max-width:760px;display:block;margin:auto" font-family="Inter,Segoe UI,Arial">
+  <rect x="10" y="10" width="740" height="400" rx="26" fill="#eef2ff" stroke="#818cf8" stroke-width="2"/>
+  <text x="30" y="40" font-size="16" font-weight="700" fill="#312e81">Artificial Intelligence (AI)</text>
+  <text x="30" y="60" font-size="12" fill="#4338ca">Any machine that does "smart" things</text>
+  <rect x="50" y="78" width="660" height="316" rx="24" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2"/>
+  <text x="70" y="104" font-size="15" font-weight="700" fill="#075985">Machine Learning (ML)</text>
+  <text x="70" y="122" font-size="12" fill="#0369a1">Learns patterns from data instead of hand-written rules</text>
+  <rect x="90" y="140" width="580" height="240" rx="22" fill="#dcfce7" stroke="#4ade80" stroke-width="2"/>
+  <text x="110" y="166" font-size="15" font-weight="700" fill="#14532d">Deep Learning (DL)</text>
+  <text x="110" y="184" font-size="12" fill="#166534">Many-layered neural networks; great with images, audio, text</text>
+  <rect x="130" y="200" width="300" height="166" rx="20" fill="#fef9c3" stroke="#facc15" stroke-width="2"/>
+  <text x="148" y="226" font-size="14" font-weight="700" fill="#713f12">Generative AI</text>
+  <text x="148" y="244" font-size="12" fill="#854d0e">Creates new text, images, audio</text>
+  <ellipse cx="520" cy="290" rx="150" ry="78" fill="#fce7f3" fill-opacity=".75" stroke="#f472b6" stroke-width="2"/>
+  <text x="560" y="268" font-size="14" font-weight="700" fill="#831843">NLP</text>
+  <text x="530" y="286" font-size="11.5" fill="#9d174d">Understanding human</text>
+  <text x="530" y="301" font-size="11.5" fill="#9d174d">language (older field)</text>
+  <rect x="300" y="290" width="150" height="58" rx="14" fill="#4f46e5"/>
+  <text x="375" y="315" font-size="14" font-weight="800" fill="#fff" text-anchor="middle">LLMs &amp; SLMs</text>
+  <text x="375" y="334" font-size="11" fill="#e0e7ff" text-anchor="middle">where GenAI meets NLP</text>
+</svg>
+<div class="cap">LLMs sit where "generating new content" overlaps with "understanding human language".</div></div>
+
+<div class="tbl"><table>
+<tr><th>Term</th><th>What it means in plain words</th><th>Everyday example</th></tr>
+<tr><td><b>AI</b> (Artificial Intelligence)</td><td>The big umbrella: any computer system that does tasks we think need intelligence: learning, reasoning, understanding language, seeing.</td><td>Google Maps choosing the fastest route</td></tr>
+<tr><td><b>ML</b> (Machine Learning)</td><td>A part of AI where we don't write the rules ourselves. We show the system many examples and it <i>learns</i> the rules.</td><td>Gmail's spam filter learned from millions of emails marked "spam" / "not spam"</td></tr>
+<tr><td><b>Deep Learning</b></td><td>A part of ML that uses neural networks with many layers. It can learn directly from messy, raw data like photos, sound and text.</td><td>Face unlock on your phone; voice typing</td></tr>
+<tr><td><b>Generative AI</b></td><td>Models that don't just analyse data but <b>create new content</b> (text, images, music, video) that never existed before.</td><td>ChatGPT writing an essay; an app turning your selfie into a cartoon</td></tr>
+<tr><td><b>NLP</b> (Natural Language Processing)</td><td>The field focused on making computers understand and produce human language. It existed for decades before LLMs.</td><td>Google Translate; autocorrect</td></tr>
+<tr><td><b>LLM</b> (Large Language Model)</td><td>A huge, general-purpose language model trained on a big part of the internet. A jack-of-all-trades.</td><td>Ask it for a poem, a legal summary, Python code or history facts</td></tr>
+<tr><td><b>SLM</b> (Small Language Model)</td><td>A compact model trained on smaller, focused, high-quality data (support chats, medical notes). It has millions to a few billion "parameters" (learned numbers) instead of hundreds of billions. Cheaper, faster, and small enough to run on a phone, laptop or car.</td><td>Smart reply suggestions on your phone that work even offline</td></tr>
+</table></div>
+
+<div class="box example"><span class="t">🔍 Worked example: rules vs learning (the heart of ML)</span>
+<div class="grid2">
+<div><b>Old way: you write the rules</b>
+<pre><code><span class="k">def</span> is_spam(email):
+    <span class="k">if</span> <span class="s">"lottery"</span> <span class="k">in</span> email: <span class="k">return</span> True
+    <span class="k">if</span> <span class="s">"free money"</span> <span class="k">in</span> email: <span class="k">return</span> True
+    <span class="k">return</span> False
+<span class="c"># Spammers write "l0ttery" → rule fails</span></code></pre></div>
+<div><b>ML way: the model learns the rules</b>
+<pre><code><span class="c"># Show 1 million labelled examples:</span>
+<span class="c">#  "You won a l0ttery!!"   → spam</span>
+<span class="c">#  "Meeting moved to 3pm"  → not spam</span>
+model.fit(emails, labels)
+model.predict(<span class="s">"Claim your fr33 prize"</span>)
+<span class="c"># → spam (it learned the pattern itself)</span></code></pre></div></div></div>
+
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>An <b>LLM</b> is like the senior general physician at a big multi-speciality hospital: knows a bit about everything, but the consultation is expensive and you may wait in a queue. An <b>SLM</b> is like the dentist in your neighbourhood: only handles teeth, but is quick, cheap and right next door.</div>
+
+<!-- ============ 1.3 ============ -->
+<h3 class="sec" id="c1-map"><span class="num">1.3</span> The big picture: the parts of an LLM system</h3>
+<p>Here is a map of every concept in this section. Don't try to memorise it now; we will walk through each box one by one. Notice the three layers: first the <b>language</b> the model speaks (tokens and embeddings), then how the <b>brain is built</b> (training), and finally how <b>you use it</b> (prompts, context, reasoning, search).</p>
+<div class="fig"><div class="ft">Concept map of an LLM system</div>
+  <div class="fv">
+    <div class="grp" style="background:#fefce8"><span class="gt">① The language of AI</span>
+      <div class="fh"><span class="node n-yellow">Tokens<small>the smallest pieces of text</small></span><div class="ha"><span>turned into</span></div><span class="node n-yellow">Embeddings<small>numbers that capture meaning</small></span></div></div>
+    <div class="va"></div>
+    <div class="grp" style="background:#eff6ff"><span class="gt">② Building the brain (done once, by the model company)</span>
+      <div class="fh"><span class="node n-blue">Pre-training<small>general knowledge</small></span><div class="ha"><span>then</span></div><span class="node n-blue">Fine-tuning<small>specialist knowledge</small></span></div></div>
+    <div class="va"></div>
+    <div class="grp" style="background:#f0fdf4"><span class="gt">③ Using the brain (done every time a user asks something)</span>
+      <div class="fh"><span class="node n-orange">Prompt<small>your input</small></span><div class="ha"><span>improved by</span></div><span class="node n-orange">Prompt engineering<small>writing better input</small></span></div>
+      <div class="va"><span>fits into</span></div>
+      <div class="fh"><span class="node n-teal db">Vector search<small>finds helpful facts</small></span><div class="ha long"><span>adds facts into</span></div><span class="node n-purple">Context window<small>short-term memory</small></span></div>
+      <div class="va"><span>used for</span></div>
+      <div class="fv"><span class="node n-green pill">Reasoning<small>logic → answer</small></span></div>
+    </div>
+  </div>
+  <div class="cap">Language → building the brain → using the brain.</div>
+</div>
+
+<h4 id="c1-tokens">🧩 Tokens: the Lego bricks of text</h4>
+<p>An LLM does not read words the way you do. It reads <b>tokens</b>: small chunks of text, often a whole short word, sometimes part of a long word, sometimes a single punctuation mark. Splitting text into tokens is called <b>tokenization</b>. Each token is then turned into a number (its <b>token ID</b>), because computers only work with numbers.</p>
+<div class="box example"><span class="t">🔍 Worked example: how a sentence becomes tokens</span>
+<div class="tbl"><table>
+<tr><th>Text</th><th>Tokens (roughly)</th><th>Token IDs (illustrative)</th></tr>
+<tr><td>The cat sat on the mat.</td><td><code>The</code> <code> cat</code> <code> sat</code> <code> on</code> <code> the</code> <code> mat</code> <code>.</code></td><td>[791, 8415, 7731, 389, 279, 5634, 13]</td></tr>
+<tr><td>unbelievable</td><td><code>un</code> <code>believ</code> <code>able</code></td><td>[359, 32927, 481]</td></tr>
+<tr><td>Bengaluru</td><td><code>Beng</code> <code>al</code> <code>uru</code></td><td>[33, 1286, 5797]</td></tr>
+</table></div>
+<p>Notice three things: (1) common words are usually <b>one token</b>; (2) long or rare words get <b>split into pieces</b>; (3) the space before a word is often part of the token. A handy rule of thumb for English: <b>1 token ≈ 4 characters ≈ ¾ of a word</b>. So 1,000 words ≈ 1,300 tokens. Languages like Hindi or Tamil usually need <b>more</b> tokens for the same sentence, which makes them a bit slower and costlier to process.</p></div>
+
+<div class="demo"><h5>🎮 Try it: tokenize your own sentence</h5>
+  <p class="hint">Type anything. This is a simplified tokenizer for learning. Real tokenizers (called BPE, Byte-Pair Encoding) use a learned vocabulary, but the idea is the same.</p>
+  <input type="text" id="tokIn" value="Swiggy delivered my unbelievably spicy biryani in 25 minutes!">
+  <div id="tokOut" style="margin-top:12px"></div>
+  <div id="tokStat" class="mono" style="font-size:.85rem;margin-top:8px;color:#93c5fd"></div>
+</div>
+
+<p><b>Why should a system designer care about tokens?</b> Because tokens decide three very practical things: how fast the answer comes, how much you pay, and how much you can send at once.</p>
+<div class="grid3">
+  <div class="card"><h5>⏱ Speed (latency)</h5>The model reads all your <b>input tokens together, in parallel</b>, which is fast. But it writes its <b>output one token at a time</b>, because each new token depends on the ones before it. Generating 500 tokens takes much longer than reading 500 tokens. <b>Want faster answers? Ask for shorter answers.</b></div>
+  <div class="card c-warn"><h5>💸 Cost</h5>LLM companies charge <b>per million tokens</b>, with output tokens usually costing several times more than input tokens. Sending a 2,000-token prompt just to answer "yes or no" is like hiring a taxi to cross the road. Keep prompts lean, and reuse (cache) anything you send repeatedly.</div>
+  <div class="card c-vio"><h5>📏 Size limit</h5>Every model has a maximum number of tokens it can handle at once, called its <b>context window</b> (for example 128K or 400K tokens). You cannot paste a user's entire year of chat history into every request, so you need strategies like the two in the demo below.</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>In an exam you read the whole question paper in a minute (input, parallel), but you write the answer word by word (output, one at a time). That is why a short answer finishes the exam faster. And like an auto-rickshaw that charges per kilometre, an LLM charges per token. A long detour costs real money. 🛺</div>
+
+<div class="box example"><span class="t">🔍 Worked example: what does a support bot cost per month?</span>
+<p>Say your app's support bot handles <b>10,000 chats a day</b>. Each chat sends about <b>1,500 input tokens</b> (instructions + history + question) and gets back <b>300 output tokens</b>. Assume an <i>illustrative</i> price of <b>$1 per million input tokens</b> and <b>$4 per million output tokens</b> (real prices vary by model).</p>
+<div class="tbl"><table>
+<tr><th>Step</th><th>Calculation</th><th>Result</th></tr>
+<tr><td>Input tokens per day</td><td>10,000 × 1,500</td><td>15 million</td></tr>
+<tr><td>Output tokens per day</td><td>10,000 × 300</td><td>3 million</td></tr>
+<tr><td>Daily cost</td><td>15 × $1 + 3 × $4</td><td><b>$27 / day</b></td></tr>
+<tr><td>Monthly cost</td><td>$27 × 30</td><td><b>≈ $810 / month</b></td></tr>
+</table></div>
+<p>Now imagine someone adds a 3,000-token "company policy" document to every prompt. Input jumps to 4,500 tokens per chat and the monthly bill nearly <b>triples</b> on the input side. This is why engineers watch tokens closely.</p></div>
+
+<div class="fig" id="c1-cwdemo"><div class="ft">Two ways to handle a long conversation</div>
+  <div class="demo" style="margin:0">
+    <h5>🎮 Try it: the window can hold only 2 messages. Press "Send next message" and compare the two strategies</h5>
+    <button onclick="cwNext()">➕ Send next message</button><button class="alt" onclick="cwReset()">↺ Reset</button>
+    <div class="grid2" style="margin-top:10px">
+      <div class="panel"><b style="color:#fcd34d">Strategy A: Sliding window</b><div style="font-size:.8rem;color:#94a3b8">Keep only the newest messages; drop the oldest.</div><div id="cwA" class="mono" style="margin-top:8px"></div><div id="cwAn" style="font-size:.82rem;color:#fca5a5"></div></div>
+      <div class="panel"><b style="color:#4ade80">Strategy B: Summarization</b><div style="font-size:.8rem;color:#94a3b8">Squeeze older messages into a short summary.</div><div id="cwB" class="mono" style="margin-top:8px"></div><div id="cwBn" style="font-size:.82rem;color:#86efac"></div></div>
+    </div>
+  </div>
+  <div class="cap">Sliding window is free but forgets. Summarization remembers the gist but costs one extra (cheap) LLM call to write the summary.</div>
+</div>
+<div class="box real"><span class="t">🌍 Real-world example</span>Chat assistants quietly do this. When a conversation gets very long, older turns are summarised ("User is planning a Manali trip for 4 people in December, budget ₹60K, wants a hotel near Mall Road") so the model still "remembers" the important parts without paying for every old message again.</div>
+
+<h4 id="c1-emb">📍 Embeddings: a GPS address for meaning</h4>
+<p>Tokens tell the model <i>what</i> text it has. <b>Embeddings</b> capture <i>what the text means</i>. An embedding is a list of numbers (called a <b>vector</b>) that represents the meaning of a piece of text, an image or code. The magic property: <b>texts with similar meaning get vectors that are close to each other</b>, even if they share no words at all.</p>
+<p>This is very different from normal search. A normal search (like a dictionary lookup or SQL <code>WHERE name = 'x'</code>) needs an <b>exact match</b>. With embeddings we can find the <b>nearest neighbours</b>: things that are <i>conceptually</i> related. Search "how to combine numbers" and you can find a function called <code>sum()</code>.</p>
+
+<div class="fig"><div class="ft">Similar meanings live close together</div>
+<svg viewBox="0 0 660 350" width="100%" style="max-width:700px;display:block;margin:auto" font-family="Inter,Segoe UI,Arial">
+  <rect x="20" y="100" width="240" height="230" rx="18" fill="#f0fdf4" stroke="#4ade80" stroke-dasharray="6 5"/>
+  <text x="36" y="124" font-size="14" font-weight="700" fill="#14532d">Neighbourhood: maths</text>
+  <rect x="380" y="120" width="260" height="210" rx="18" fill="#fdf2f8" stroke="#f472b6" stroke-dasharray="6 5"/>
+  <text x="396" y="144" font-size="14" font-weight="700" fill="#831843">Neighbourhood: login &amp; security</text>
+  <circle cx="125" cy="180" r="34" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="125" y="185" font-size="13" text-anchor="middle" fill="#14532d">calculate</text>
+  <circle cx="90" cy="262" r="24" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="90" y="267" font-size="12" text-anchor="middle">sum</text>
+  <circle cx="170" cy="282" r="24" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/><text x="170" y="287" font-size="12" text-anchor="middle">add</text>
+  <circle cx="460" cy="205" r="34" fill="#fce7f3" stroke="#db2777" stroke-width="2"/><text x="460" y="210" font-size="13" text-anchor="middle">password</text>
+  <circle cx="570" cy="205" r="24" fill="#fce7f3" stroke="#db2777" stroke-width="2"/><text x="570" y="210" font-size="12" text-anchor="middle">auth</text>
+  <circle cx="510" cy="285" r="24" fill="#fce7f3" stroke="#db2777" stroke-width="2"/><text x="510" y="290" font-size="12" text-anchor="middle">login</text>
+  <rect x="225" y="14" width="210" height="54" rx="10" fill="#fef9c3" stroke="#ca8a04"/>
+  <text x="330" y="36" font-size="13" text-anchor="middle" fill="#713f12" font-weight="700">User question:</text>
+  <text x="330" y="55" font-size="13" text-anchor="middle" fill="#713f12">"How to combine numbers?"</text>
+  <line x1="265" y1="68" x2="150" y2="142" stroke="#0f172a" stroke-width="3"/>
+  <text x="110" y="94" font-size="12" fill="#0f172a" font-weight="700">Very close → returned ✅</text>
+  <line x1="400" y1="68" x2="455" y2="166" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 4"/>
+  <text x="430" y="96" font-size="12" fill="#64748b">Far away → ignored ❌</text>
+</svg>
+<div class="cap">"combine numbers" shares no words with "add" or "sum", yet its meaning lands in the maths neighbourhood.</div></div>
+
+<div class="box example"><span class="t">🔍 Worked example: measuring "closeness" with cosine similarity</span>
+<p>Real embeddings have hundreds or thousands of numbers. Let's use tiny 3-number vectors so we can do the maths by hand. Imagine each number measures one "feature": <i>[is it food?, is it sweet?, is it a vehicle?]</i></p>
+<div class="tbl"><table>
+<tr><th>Word</th><th>Vector</th></tr>
+<tr><td>gulab jamun</td><td>[0.9, 0.9, 0.0]</td></tr>
+<tr><td>rasgulla</td><td>[0.9, 0.8, 0.1]</td></tr>
+<tr><td>scooter</td><td>[0.0, 0.1, 0.9]</td></tr>
+</table></div>
+<p><b>Cosine similarity</b> measures the angle between two vectors. 1 means "pointing the same way" (same meaning), 0 means "unrelated". The formula is: multiply matching numbers and add them up (the <i>dot product</i>), then divide by the lengths of both vectors.</p>
+<p><b>gulab jamun vs rasgulla:</b> dot = 0.9×0.9 + 0.9×0.8 + 0×0.1 = 1.53. Lengths ≈ 1.273 and 1.208. Similarity = 1.53 ÷ (1.273 × 1.208) ≈ <b>0.99</b> → almost the same meaning ✅<br>
+<b>gulab jamun vs scooter:</b> dot = 0 + 0.09 + 0 = 0.09. Similarity ≈ 0.09 ÷ (1.273 × 0.906) ≈ <b>0.08</b> → unrelated ❌</p>
+<p>A vector database does exactly this, just with 1,536 numbers per vector and millions of vectors, using clever shortcuts to stay fast.</p></div>
+
+<div class="box example"><span class="t">🔍 Worked example: getting a real embedding</span>
+<pre><code>emb = client.embeddings.create(
+    model=<span class="s">"text-embedding-3-small"</span>,
+    input=<span class="s">"How do I reset my UPI PIN?"</span>,
+)
+vector = emb.data[0].embedding
+print(len(vector))      <span class="c"># how many numbers?</span>
+print(vector[:5])       <span class="c"># first five numbers</span></code></pre>
+<p><b>Output:</b></p>
+<pre><code>1536
+[0.0183, -0.0421, 0.0067, 0.0294, -0.0110]</code></pre>
+<p>Each sentence becomes 1,536 numbers. You will never read these numbers yourself. You store them and let the database compare them.</p></div>
+
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Every word has an address in a "city of meaning". Samosa, kachori and pakora all live on the same street (Snacks Lane). Password, login and OTP live in a different colony (Security Nagar). When someone asks "what goes well with evening chai?", the system walks to Snacks Lane, even though the word "samosa" never appeared in the question. 🏘️</div>
+<div class="box real"><span class="t">🌍 Real-world example</span>"Customers who viewed this also viewed…" on shopping sites, "songs like this" on music apps, and searching your phone's photo gallery for "beach" all use embeddings. None of those photos are labelled "beach"; the meaning is in the vectors.</div>
+<p><b>How many numbers should a vector have?</b> More numbers (say 3,072 instead of 1,536) can capture finer shades of meaning, but they also take more storage and make search slower. The rule: <b>pick the smallest size that meets your accuracy needs.</b></p>
+<div class="box deep"><span class="t">🚀 Going deeper: storage maths</span>Each number is usually stored as a 4-byte float. One 1,536-number vector = 1,536 × 4 ≈ <b>6 KB</b>. Ten million document chunks ≈ <b>61 GB</b> of raw vectors, before any index overhead. Double the dimensions and you double that. So "how many dimensions?" is really a question about <b>RAM, cost and speed</b>, not only accuracy.</div>
+
+<h4 id="c1-train">🏫 Pre-training and 🎓 fine-tuning: how the brain is built</h4>
+<div class="grid2">
+  <div class="card"><h5>Pre-training = going to school</h5>The first and most expensive stage. The model reads a massive snapshot of the internet: books, articles, websites, code. It is not trained for any one job. Instead it learns the basics of language and the world:
+  <ul><li>how grammar works</li><li>what words mean</li><li>how words and ideas connect</li><li>common facts about the world</li><li>the usual patterns of sentences</li></ul>
+  This costs tens of millions of dollars and months of computing, so only a few companies do it.</div>
+  <div class="card c-good"><h5>Fine-tuning = specialist coaching</h5>Take the pre-trained model and train it a little more on a <b>small, focused dataset</b> so it becomes an expert in one area: your company's jargon, a particular writing style, or rules of a field like medicine or law.<br><br>
+  Fine-tuning is <b>thousands of times cheaper and faster</b> than pre-training from scratch, because the model already knows the language; you are only adjusting it slightly.</div>
+</div>
+<div class="fig"><div class="ft">How fine-tuning works</div>
+  <div class="fv">
+    <div class="cols">
+      <div class="grp"><span class="gt">1. Pre-trained model</span><span class="node n-blue db">General model<small>knows language &amp; world facts</small></span></div>
+      <div class="grp"><span class="gt">2. Your special data</span><span class="node n-green db">Focused dataset<small>e.g. 2,000 example support replies</small></span></div>
+    </div>
+    <div class="va"><span>both go into</span></div>
+    <div class="grp"><span class="gt">3. Training run</span><span class="node n-yellow">Small adjustments<small>updates the model's weights slightly</small></span></div>
+    <div class="va"></div>
+    <div class="grp"><span class="gt">4. Result</span><span class="node n-red db">Fine-tuned specialist<small>speaks in your style</small></span></div>
+  </div>
+  <div class="cap">A general doctor + cardiology training = a cardiologist.</div>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: what fine-tuning data actually looks like</span>
+<p>Fine-tuning data is just many examples of "when the user says this, reply like that". Each line is one example in JSON:</p>
+<pre><code>{<span class="s">"messages"</span>: [
+  {<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: <span class="s">"You are BankBuddy. Be polite, brief, never promise timelines."</span>},
+  {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"my card got blocked why"</span>},
+  {<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: <span class="s">"Sorry about that! Cards are usually blocked after 3 wrong PIN attempts. You can unblock it in the app under Cards → Manage."</span>}
+]}</code></pre>
+<p>Give the model a few thousand of these and it learns <b>BankBuddy's tone and format</b>.</p></div>
+<div class="box warn"><span class="t">⚠️ Watch out: fine-tuning is not the best way to teach new facts</span>Beginners often think "my model doesn't know our 2026 price list, so let's fine-tune it". Fine-tuning <i>can</i> add knowledge, but facts change often and the model may still mix up old and new. For <b>fresh or changing facts</b>, it is more reliable to fetch them at question time and give them to the model (this is called <b>RAG</b>, section 1.6). Use fine-tuning for <b>style, format, tone and jargon</b>.<br><b>Easy rule: Facts → RAG. Behaviour → fine-tuning.</b></div>
+
+<!-- ============ 1.4 ============ -->
+<h3 class="sec" id="c1-prompt"><span class="num">1.4</span> Prompts: how we talk to the model</h3>
+<p>A <b>prompt</b> is everything you send to the model: the instruction, question, background text and examples. The quality of the answer depends heavily on the quality of the prompt. A simple prompt is just a question ("What is compound interest?"). A well-built prompt has <b>four parts</b>:</p>
+<div class="fig"><div class="ft">Anatomy of a structured prompt</div>
+  <div class="fv" style="align-items:stretch;max-width:780px;margin:auto">
+    <div class="fh" style="justify-content:space-between"><span class="node n-purple" style="min-width:210px">1. Persona<small>WHO should the model be?</small></span><div class="ha"></div><span class="node n-gray" style="flex:1">"You are a friendly personal-finance teacher."</span></div><div class="va"></div>
+    <div class="fh" style="justify-content:space-between"><span class="node n-orange" style="min-width:210px">2. Context<small>WHY / background</small></span><div class="ha"></div><span class="node n-gray" style="flex:1">"The user is a 22-year-old who just got their first salary. Focus on safe options."</span></div><div class="va"></div>
+    <div class="fh" style="justify-content:space-between"><span class="node n-green" style="min-width:210px">3. Instruction<small>WHAT to do</small></span><div class="ha"></div><span class="node n-gray" style="flex:1">"Explain compound interest using a ₹5,000 monthly SIP example."</span></div><div class="va"></div>
+    <div class="fh" style="justify-content:space-between"><span class="node n-pink" style="min-width:210px">4. Format<small>HOW the answer should look</small></span><div class="ha"></div><span class="node n-gray" style="flex:1">"Reply as JSON with a 'summary' and exactly 3 'tips'."</span></div>
+  </div>
+</div>
+<div class="tbl"><table><tr><th>Part</th><th>What it does</th><th>Example</th></tr>
+<tr><td><b>Instruction</b></td><td>The actual command</td><td>"Summarize the following meeting notes…"</td></tr>
+<tr><td><b>Context</b></td><td>Background the model needs to do the task well</td><td>"…These are notes from a sprint planning meeting. Focus only on action items and owners."</td></tr>
+<tr><td><b>Persona</b></td><td>Who the model should act as; this changes tone and depth</td><td>"You are a senior engineering manager writing for new joiners."</td></tr>
+<tr><td><b>Format</b></td><td>The exact shape of the output, so your code can use it</td><td>"Return a JSON list of {owner, task, due_date}."</td></tr></table></div>
+
+<div class="box example"><span class="t">🔍 Worked example: the four parts in real code</span>
+<p>In code, the <b>persona and rules</b> usually go in the <code>system</code> message (instructions from you, the developer), and the <b>user's request</b> goes in the <code>user</code> message.</p>
+<pre><code>reply = client.chat.completions.create(
+    model=<span class="s">"gpt-6.1-terra"</span>,
+    messages=[
+        {<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>:
+            <span class="s">"You are a friendly personal-finance teacher. "</span>          <span class="c"># persona</span>
+            <span class="s">"The user just got their first salary; suggest only safe options. "</span>  <span class="c"># context</span>
+            <span class="s">"Reply ONLY as JSON: {\"summary\": str, \"tips\": [3 strings]}"</span>},  <span class="c"># format</span>
+        {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+            <span class="s">"Explain compound interest with a ₹5,000 monthly SIP example."</span>},  <span class="c"># instruction</span>
+    ],
+)
+print(reply.choices[0].message.content)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>{"summary": "Compound interest means you earn returns on your returns. If you invest ₹5,000 every month at 12% a year, after 10 years you will have put in ₹6 lakh but could have about ₹11.6 lakh.",
+ "tips": ["Start early: time matters more than amount.",
+          "Don't stop the SIP when markets fall.",
+          "Increase the SIP amount when your salary rises."]}</code></pre>
+<p>Because we asked for JSON, our app can read <code>tips</code> directly and show them as a neat list. No messy text parsing.</p></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Ordering on a food app with "anything is fine" gets you anything. Ordering with "I'm vegetarian (context), I want something North Indian (persona of the cuisine), one paneer dish (instruction), half portion, less spicy, no onion (format)" gets you exactly what you want. 🍲</div>
+
+<h4 id="c1-cw">🧠 The context window: the model's short-term memory</h4>
+<p>The <b>context window</b> is the maximum number of tokens the model can "see" in one go. Think of it as its working memory. <b>Everything you send AND everything it writes back must fit inside this window.</b> That includes:</p>
+<ul><li>your system instructions (persona, rules, format)</li><li>the conversation history (earlier questions and answers)</li><li>any documents or data you attach</li><li>the user's latest question</li><li>the model's reply (yes, the answer uses up the window too)</li></ul>
+<p>The model has <b>no memory between requests</b>. Every single call, you must send everything it needs to know again. If the conversation grows beyond the window, the oldest parts are simply cut off, and the model "forgets" them.</p>
+<div class="fig"><div class="ft">How a 128K-token window gets used in one request (example budget)</div>
+  <div style="max-width:880px;margin:auto">
+    <div style="display:flex;height:40px;border-radius:10px;overflow:hidden;font-size:.76rem;font-weight:700;color:#0f172a">
+      <div style="width:4%;background:#c4b5fd;display:flex;align-items:center;justify-content:center" title="System">Sys</div>
+      <div style="width:22%;background:#fde68a;display:flex;align-items:center;justify-content:center">Chat history 28K</div>
+      <div style="width:47%;background:#99f6e4;display:flex;align-items:center;justify-content:center">Retrieved documents 60K</div>
+      <div style="width:2%;background:#fda4af"></div>
+      <div style="width:6%;background:#bbf7d0;display:flex;align-items:center;justify-content:center">Reply</div>
+      <div style="width:19%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#475569">Free space</div>
+    </div>
+    <div class="fh" style="margin-top:10px;justify-content:flex-start"><span class="lbl">🟪 System prompt ~5K</span><span class="lbl">🟨 History ~28K</span><span class="lbl">🟩 Documents ~60K</span><span class="lbl">🟥 User question ~1K</span><span class="lbl">🟢 Space kept for the reply ~8K</span><span class="lbl">⬜ Unused ~26K</span></div>
+  </div>
+  <div class="cap">Engineers plan this budget like a monthly salary: every section gets a limit.</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>In the film <i>Ghajini</i>, the hero can only remember the last 15 minutes. To get anything done he keeps photos, notes and tattoos in front of him. An LLM is the same: each request, you must put the important notes in front of it. Or think of an exam where you may bring <b>one A4 cheat sheet</b> but not the whole textbook. Choosing what goes on that sheet is a real skill.</div>
+
+<h4 id="c1-reason">🤔 Reasoning: how the model "thinks"</h4>
+<p><b>Reasoning</b> means taking information, working through it logically, and reaching a new conclusion. In an LLM, reasoning is an <b>emergent</b> ability: nobody programmed it directly. The model is trained only to predict the most likely next token, but after seeing billions of examples of explanations, proofs and step-by-step solutions, it learned to imitate how people reason.</p>
+<p>One powerful trick is <b>chain-of-thought</b>: the model writes out its thinking step by step before giving the final answer. Modern "reasoning models" do this automatically and can also decide to <b>use tools</b> (like web search) in the middle of thinking.</p>
+<div class="box example"><span class="t">🔍 Worked example: a model planning before it answers</span>
+<p><b>Prompt:</b> "Plan a 2-day Jaipur trip for a family of 4 under ₹20,000."</p>
+<div class="quote">Thought: The user wants a budget plan. I should break it into travel, stay, food and sightseeing.
+Thought: I don't know current hotel prices. I should search instead of guessing.
+Action: web_search("family hotels Jaipur price per night")
+Observation: Mid-range family rooms cost about ₹2,500–3,500 per night.
+Thought: 2 nights ≈ ₹6,000. That leaves ₹14,000 for food, local travel and tickets.
+Thought: Day 1 Amber Fort + Hawa Mahal; Day 2 City Palace + Johari Bazaar.
+Final answer: (a day-by-day plan with a cost table)</div>
+<p>Look at what happened: the model <b>planned</b>, noticed it lacked information, <b>chose a tool</b>, used the result, and continued. This "think → act → observe" pattern is the seed of <b>AI agents</b>, which we cover in section 1.8. 🌱</p></div>
+
+<h4 id="c1-tech">🛠 Five prompting techniques that work (bad vs good)</h4>
+<p><b>Prompt engineering</b> means adjusting your prompt (instructions, examples, constraints) until the model reliably gives what you need. Here are five techniques you will use every day.</p>
+
+<h4 style="font-size:1.05rem;color:#334155">1. Give context: share the surrounding information</h4>
+<div class="grid2"><div class="card c-bad"><h5>❌ Weak</h5><div class="quote">Why is my code failing?</div></div>
+<div class="card c-good"><h5>✅ Strong</h5><div class="quote">Here is the error: "KeyError: 'price' at line 32 in cart.py".
+Here is the function that reads the order JSON (pasted below).
+Here is one sample order JSON (pasted below).
+Using only this, explain why 'price' is missing and suggest a fix.</div></div></div>
+<p>The model cannot see your screen. Without the error, the code and the data, it can only guess.</p>
+
+<h4 style="font-size:1.05rem;color:#334155">2. Assign a role: tell the model who to be</h4>
+<div class="grid2"><div class="card c-bad"><h5>❌ Weak</h5><div class="quote">Review this login function.</div></div>
+<div class="card c-good"><h5>✅ Strong</h5><div class="quote">You are a senior security engineer reviewing code before release.
+Review this login function for a junior developer.
+Focus on SQL injection, password storage and missing input validation.
+List each risk with a one-line fix.</div></div></div>
+
+<h4 style="font-size:1.05rem;color:#334155">3. Show examples ("few-shot" prompting)</h4>
+<div class="grid2"><div class="card c-bad"><h5>❌ Weak</h5><div class="quote">Extract the order details from this WhatsApp message.</div></div>
+<div class="card c-good"><h5>✅ Strong</h5><div class="quote">Extract order details as JSON. Examples:
+Message: "bhaiya 2 kg aloo aur 1 dozen eggs bhej do"
+Output: {"items":[{"name":"potato","qty":"2 kg"},{"name":"eggs","qty":"12"}]}
+Message: "send 500g paneer pls"
+Output: {"items":[{"name":"paneer","qty":"500 g"}]}
+Message: "1 litre milk and 2 bread"
+Output:</div></div></div>
+<p>Two or three examples teach the exact format far better than a paragraph of explanation. That's "few-shot". With zero examples it's called "zero-shot".</p>
+
+<h4 style="font-size:1.05rem;color:#334155">4. Add guardrails: say clearly what NOT to do</h4>
+<div class="grid2"><div class="card c-bad"><h5>❌ Weak</h5><div class="quote">Write a script to delete old files in my Downloads folder.</div></div>
+<div class="card c-good"><h5>✅ Strong</h5><div class="quote">Write a Python script that finds files older than 30 days in ~/Downloads.
+RULES:
+- Do NOT delete anything by default.
+- First print a "DRY RUN" list of files that would be deleted.
+- Delete only if the user types YES to confirm.</div></div></div>
+
+<h4 style="font-size:1.05rem;color:#334155">5. Ask for step-by-step thinking (chain-of-thought)</h4>
+<div class="grid2"><div class="card c-bad"><h5>❌ Weak</h5><div class="quote">How many unique customers ordered last week?</div></div>
+<div class="card c-good"><h5>✅ Strong</h5><div class="quote">Find the number of unique customers in these order logs. Think step by step:
+1. Find where the customer ID appears in each line.
+2. Extract every customer ID into a list.
+3. Remove duplicates.
+4. Count what's left.
+Show each step, then give the final number.</div></div></div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"I treat prompts like code: they live in version control as templates, they ask for structured output (a JSON schema), they include explicit guardrails, and every prompt change is tested against a fixed set of example questions before it ships."</div>
+
+<!-- ============ 1.5 ============ -->
+<h3 class="sec" id="c1-code"><span class="num">1.5</span> How AI understands code</h3>
+<p>Let's apply these ideas to a real use case: <b>AI coding assistants</b> (tools like GitHub Copilot or Cursor). Understanding the <i>meaning</i> of code is not enough here. The tool must also understand the code's <b>structure</b> (what is inside what) and <b>relationships</b> (what calls what). Two ideas help with that: <b>syntax trees (ASTs)</b> and <b>knowledge graphs</b>. First, a quick look at vector search.</p>
+
+<h4 id="c1-vs">🔎 Vector search: finding code by meaning</h4>
+<p><b>Vector search</b> finds information by meaning instead of exact keywords. When a developer asks a question, the system finds the most relevant pieces of code to send to the LLM as context. Here's the flow:</p>
+<ol class="steps">
+<li><b>Ahead of time:</b> every function in the codebase is turned into an embedding and stored in a <b>vector database</b> (for example <b>pgvector</b>, an add-on for PostgreSQL, or <b>Pinecone</b>).</li>
+<li><b>At question time:</b> the developer's question is turned into an embedding using the same embedding model.</li>
+<li>The database compares the question vector with all stored vectors using <b>cosine similarity</b> or the <b>dot product</b> (both measure closeness).</li>
+<li>The closest matches ("top-k", e.g. the best 5) are returned.</li>
+<li>Those code pieces are added to the prompt so the LLM can answer using <i>your</i> code.</li>
+</ol>
+<div class="box example"><span class="t">🔍 Worked example</span>
+<p><b>Developer asks:</b> "Where do we check if an email address is valid?"</p>
+<div class="tbl"><table><tr><th>Function in codebase</th><th>Similarity to the question</th></tr>
+<tr><td><code>def is_valid_email(addr): …</code> (uses a regex)</td><td><b>0.89</b> ✅ top match</td></tr>
+<tr><td><code>def send_welcome_mail(user): …</code></td><td>0.61</td></tr>
+<tr><td><code>def calculate_gst(amount): …</code></td><td>0.12</td></tr></table></div>
+<p>Notice the word "check" never appears in <code>is_valid_email</code>, but the meaning matches.</p></div>
+<div class="box deep"><span class="t">🚀 Going deeper: cosine vs dot product</span>Cosine similarity = (A · B) ÷ (|A| × |B|). It only cares about direction, not length. If all vectors are first "normalised" to length 1, the denominator becomes 1, so cosine similarity and the plain dot product give the <b>same ranking</b>. That's why many systems normalise once and then use the cheaper dot product.</div>
+
+<h4>✍️ Text autocomplete vs code completion</h4>
+<p><b>Text autocomplete</b> (like your phone keyboard) only looks at the last few words and guesses the next one. It doesn't really understand meaning or structure. <b>Code completion</b> is harder: the suggestion must be <b>valid syntax</b> and must fit <b>where you are</b> in the code: inside which class, which function, with which variables available.</p>
+<div class="fig"><div class="ft">Text autocomplete looks back in a line; code completion looks at structure</div>
+  <div class="cols">
+    <div class="grp" style="background:#f5f3ff"><span class="gt">Code completion (structure-aware)</span>
+      <div class="fv"><div class="fh" style="gap:12px"><span class="node n-purple">class Cart</span><span class="node n-purple mono">def total(self, items):</span></div><div class="va"></div>
+      <div class="diamond">Knows the class, the function, the variables</div><div class="va"></div>
+      <span class="node n-green mono">return sum(i.price * i.qty for i in items)</span></div></div>
+    <div class="grp"><span class="gt">Text autocomplete (just the previous words)</span>
+      <div class="fv"><span class="node">See</span><div class="va"></div><span class="node">you</span><div class="va"></div><span class="node n-yellow">Prediction: "soon"</span></div></div>
+  </div>
+</div>
+
+<h4 id="c1-ast">🌳 Abstract Syntax Trees (ASTs): the skeleton of code</h4>
+<p>Embeddings give us the <i>meaning</i> of code. An <b>Abstract Syntax Tree (AST)</b> gives us its <i>structure</i>. An AST is a tree that shows how every part of the code sits inside another part: a project contains files, a file contains classes, a class contains methods, a method contains statements. Compilers and IDEs build ASTs all the time to highlight errors, rename variables safely and refactor code.</p>
+<div class="box example"><span class="t">🔍 Worked example: see a real AST with Python's built-in <code>ast</code> module</span>
+<div class="grid2">
+<pre><code><span class="k">import</span> ast
+code = <span class="s">"""
+class Cart:
+    def add(self, item):
+        self.items.append(item)
+
+    def total(self):
+        return sum(i.price for i in self.items)
+"""</span>
+tree = ast.parse(code)
+<span class="k">for</span> node <span class="k">in</span> ast.walk(tree):
+    <span class="k">if</span> isinstance(node, (ast.ClassDef, ast.FunctionDef)):
+        print(type(node).__name__, node.name,
+              <span class="s">"lines"</span>, node.lineno, <span class="s">"to"</span>, node.end_lineno)</code></pre>
+<div><b>Output:</b>
+<pre><code>ClassDef Cart lines 2 to 7
+FunctionDef add lines 3 to 4
+FunctionDef total lines 6 to 7</code></pre>
+<b>As a tree:</b>
+<pre><code><span class="o">ClassDef (Cart)</span>
+├── FunctionDef (add)
+│   ├── args: self, item
+│   └── Call: self.items.append(item)
+└── FunctionDef (total)
+    ├── args: self
+    └── Return: sum(...)</code></pre></div></div></div>
+<p><b>Why does an AI tool care?</b> Because of <b>chunking</b>. Before code can be embedded, it must be cut into pieces (chunks). If you cut blindly every 500 characters, you might slice a function in half, and each half makes no sense alone. With an AST, you cut along natural boundaries: <b>one whole function = one chunk</b>, or <b>one whole class = one chunk</b>.</p>
+<div class="grid2">
+  <div class="card c-bad"><h5>❌ Fixed-size chunks</h5><div class="quote">Chunk 1: "...def total(self):
+    return sum(i.pri"
+Chunk 2: "ce for i in self.items)
+def apply_coupon(..."</div>A function split in two. Neither chunk is useful on its own.</div>
+  <div class="card c-good"><h5>✅ AST-based chunks</h5><div class="quote">Chunk 1: def add(self, item): … (complete)
+Chunk 2: def total(self): … (complete)
+Chunk 3: def apply_coupon(self, code): … (complete)</div>Each chunk is a complete, meaningful unit.</div>
+</div>
+<p>In a large project the AST extends upward too: folders are parents, files are their children, classes inside files, methods inside classes. Here's an example food-delivery app:</p>
+<div class="fig"><div class="ft">A codebase seen as a tree</div>
+<div class="tree"><ul><li><span class="node n-dark">Project: FoodApp</span>
+ <ul>
+  <li><span class="node n-navy">Folder: api</span><ul><li><span class="node n-dark">File: main.py</span><ul><li><span class="node n-red">Func: start_server</span></li></ul></li></ul></li>
+  <li><span class="node n-navy">Folder: orders</span><ul>
+     <li><span class="node n-dark">File: cart.py</span><ul><li><span class="node n-red">Class: Cart</span></li></ul></li>
+     <li><span class="node n-dark">File: billing.py</span><ul><li><span class="node n-red">Class: Bill</span></li></ul></li></ul></li>
+  <li><span class="node n-navy">Folder: utils</span><ul><li><span class="node n-dark">File: helpers.py</span><ul>
+     <li><span class="node n-red">Func: format_rupees</span></li><li><span class="node n-red">Func: validate_pincode</span></li></ul></li></ul></li>
+ </ul></li></ul></div></div>
+<ul>
+<li><b>Project level:</b> the root node is the whole project; its children are folders and files.</li>
+<li><b>File level:</b> each file has its own AST with imports, classes, functions and global code.</li>
+<li><b>Class / function level:</b> classes contain methods; functions contain statements and expressions.</li>
+</ul>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>An AST is a book's <b>table of contents</b>. Instead of tearing random 500-word strips out of a book, you take "Chapter 3, Section 2" as one piece. The meaning stays intact. ✂️📘</div>
+
+<h4 id="c1-kg">🕸 Knowledge graphs: who is connected to whom</h4>
+<p>A <b>knowledge graph</b> stores information as <b>nodes</b> (things) and <b>edges</b> (relationships between things). On Instagram, nodes could be users, posts and hashtags, and edges could be <i>follows</i>, <i>liked</i> and <i>tagged in</i>. A graph easily answers questions like "which of my friends liked this post?" or "which hashtags are often used together?".</p>
+<p>For code, nodes are projects, folders, files, classes and functions, and edges are relationships like <i>contains</i>, <i>calls</i> and <i>imports</i>. The graph can answer questions embeddings cannot, such as <b>"which functions call <code>calculate_gst()</code>?"</b>.</p>
+<div class="grid2">
+ <div class="card"><h5>Nodes (things) in FoodApp</h5><span class="mono" style="font-size:.84rem">FoodApp (project) · api, orders, utils (folders) · main.py, cart.py, billing.py, helpers.py (files) · Cart, Bill (classes) · calculate_gst, format_rupees, validate_pincode (functions)</span></div>
+ <div class="tbl" style="margin:0"><table><tr><th>From</th><th>Relationship (edge)</th><th>To</th></tr>
+ <tr><td>FoodApp</td><td>hasFolder</td><td>orders</td></tr><tr><td>orders</td><td>hasFile</td><td>billing.py</td></tr><tr><td>billing.py</td><td>containsClass</td><td>Bill</td></tr><tr><td>Bill</td><td>hasMethod</td><td>calculate_gst</td></tr><tr><td>Cart.checkout</td><td>calls</td><td>Bill.calculate_gst</td></tr><tr><td>Bill.print</td><td>calls</td><td>format_rupees</td></tr></table></div>
+</div>
+<div class="fig"><div class="ft">The same codebase as a knowledge graph</div>
+<svg viewBox="0 0 980 280" width="100%" font-family="Inter,Segoe UI,Arial" font-size="12">
+ <defs><marker id="arK" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker></defs>
+ <g stroke="#64748b" stroke-width="1.8" fill="none" marker-end="url(#arK)">
+  <path d="M130,140 C190,140 190,50 238,50"/><path d="M130,140 L238,140"/><path d="M130,140 C190,140 190,230 238,230"/>
+  <path d="M342,140 C400,140 400,95 448,95"/><path d="M342,140 C400,140 400,185 448,185"/>
+  <path d="M612,185 L668,185"/><path d="M792,185 L838,185"/>
+  <path d="M530,113 C560,140 600,150 668,178" stroke-dasharray="5 4"/>
+ </g>
+ <g font-size="11" fill="#334155">
+  <rect x="152" y="66" width="66" height="16" rx="4" fill="#f1f5f9"/><text x="185" y="78" text-anchor="middle">hasFolder</text>
+  <rect x="152" y="131" width="66" height="16" rx="4" fill="#f1f5f9"/><text x="185" y="143" text-anchor="middle">hasFolder</text>
+  <rect x="152" y="196" width="66" height="16" rx="4" fill="#f1f5f9"/><text x="185" y="208" text-anchor="middle">hasFolder</text>
+  <rect x="368" y="104" width="50" height="16" rx="4" fill="#f1f5f9"/><text x="393" y="116" text-anchor="middle">hasFile</text>
+  <rect x="368" y="157" width="50" height="16" rx="4" fill="#f1f5f9"/><text x="393" y="169" text-anchor="middle">hasFile</text>
+  <rect x="602" y="190" width="78" height="16" rx="4" fill="#f1f5f9"/><text x="641" y="202" text-anchor="middle">containsClass</text>
+  <rect x="784" y="190" width="62" height="16" rx="4" fill="#f1f5f9"/><text x="815" y="202" text-anchor="middle">hasMethod</text>
+  <rect x="566" y="128" width="96" height="16" rx="4" fill="#fef9c3"/><text x="614" y="140" text-anchor="middle">calls (checkout)</text>
+ </g>
+ <g font-weight="700">
+  <rect x="20" y="122" width="110" height="36" rx="8" fill="#1e293b"/><text x="75" y="145" fill="#fff" text-anchor="middle">FoodApp</text>
+  <rect x="240" y="32" width="100" height="36" rx="8" fill="#1e3a8a"/><text x="290" y="55" fill="#fff" text-anchor="middle">api</text>
+  <rect x="240" y="122" width="100" height="36" rx="8" fill="#1e3a8a"/><text x="290" y="145" fill="#fff" text-anchor="middle">orders</text>
+  <rect x="240" y="212" width="100" height="36" rx="8" fill="#1e3a8a"/><text x="290" y="235" fill="#fff" text-anchor="middle">utils</text>
+  <rect x="450" y="77" width="160" height="36" rx="8" fill="#0f172a"/><text x="530" y="100" fill="#fff" text-anchor="middle">cart.py → Cart</text>
+  <rect x="450" y="167" width="160" height="36" rx="8" fill="#0f172a"/><text x="530" y="190" fill="#fff" text-anchor="middle">billing.py</text>
+  <rect x="670" y="167" width="120" height="36" rx="8" fill="#be123c"/><text x="730" y="190" fill="#fff" text-anchor="middle">Bill</text>
+  <rect x="840" y="167" width="130" height="36" rx="8" fill="#be123c"/><text x="905" y="190" fill="#fff" text-anchor="middle">calculate_gst</text>
+ </g>
+</svg>
+<div class="cap">The dashed edge says <i>Cart.checkout calls Bill.calculate_gst</i>: a fact you can only find by following relationships.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: asking a graph database a question</span>
+<p>Graph databases such as <b>Neo4j</b> use a query language called <b>Cypher</b>, where you literally draw the pattern with arrows:</p>
+<pre><code><span class="c">// "Which functions call calculate_gst?"</span>
+MATCH (caller:Function)-[:CALLS]->(f:Function {name: <span class="s">"calculate_gst"</span>})
+RETURN caller.name, caller.file</code></pre>
+<p><b>Output:</b></p>
+<pre><code>caller.name     | caller.file
+----------------+-------------
+Cart.checkout   | cart.py
+Invoice.render  | invoice.py</code></pre>
+<p>Vector search could not answer this reliably, because <code>Invoice.render</code> may look nothing like <code>calculate_gst</code> in meaning.</p></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>At a big Indian wedding, someone asks "how is the groom's uncle related to the bride's cousin?". You can't answer by finding people who <i>look similar</i>. You have to <b>follow the relationships</b>: uncle → brother of groom's father → whose wife's sister is → … That's a graph. <b>Embeddings answer "what looks alike?"; graphs answer "what is connected?".</b> 👨‍👩‍👧</div>
+
+<h4 id="c1-choose">⚖️ Choosing a model: there is no "one model to rule them all"</h4>
+<p>Every model is a trade-off between four things. You pick based on what your product needs most.</p>
+<div class="tbl"><table>
+<tr><th>Dimension</th><th>The question to ask</th><th>Example need</th></tr>
+<tr><td>📏 <b>Context window</b></td><td>How much text must the model read at once?</td><td>Summarising a 300-page contract needs a very large window.</td></tr>
+<tr><td>⏱ <b>Latency</b></td><td>How fast must the answer appear?</td><td>Code suggestions while typing must appear in under 0.2 seconds.</td></tr>
+<tr><td>🔐 <b>Security &amp; privacy</b></td><td>Can the data leave our servers?</td><td>Hospital records may require a self-hosted model.</td></tr>
+<tr><td>💸 <b>Cost</b></td><td>How much can we spend per request?</td><td>A free app with 10 million users needs a very cheap model.</td></tr></table></div>
+<div class="grid3">
+<div class="card c-vio"><h5>Big frontier model</h5>e.g. <code>gpt-6-astra</code>, Claude Opus 5.5. Best reasoning and long-context understanding, but slower and the most expensive.</div>
+<div class="card"><h5>Small fast model</h5>e.g. <code>gpt-6-luna</code>, Claude Haiku 5.5. Quick and cheap; great for simple tasks like classification and short replies; weaker on hard reasoning.</div>
+<div class="card c-good"><h5>Open model you host</h5>e.g. Llama 3.1 8B on your own GPUs. Data never leaves you; you control cost, but you also manage the servers. Smaller models can be fine-tuned for speed, sometimes at a cost in accuracy.</div>
+</div>
+<div class="box warn"><span class="t">⚠️ Watch out</span>Model names and rankings change every few months. In interviews and design docs, talk about the <b>dimensions</b> (context, latency, privacy, cost) rather than a favourite brand.</div>
+
+<h4 id="c1-temp">🎲 Temperature: the creativity knob</h4>
+<p>We said LLMs are probabilistic. Here is where that randomness comes from, and how to control it. When the model picks the next token, it first gives every possible token a <b>score</b>. Those scores are converted into <b>probabilities</b>, and then one token is <b>sampled</b> (picked randomly, weighted by probability). <b>Temperature</b> controls how "sharp" or "flat" those probabilities are.</p>
+<div class="grid2">
+ <div class="card"><h5>❄️ Low temperature (0 – 0.2)</h5>The most likely token almost always wins. Output is consistent and focused. Use for <b>code generation, extracting data, classification, JSON output</b>: anywhere you want the same answer every time.</div>
+ <div class="card c-warn"><h5>🔥 High temperature (0.7 – 1.0)</h5>Less likely tokens get a real chance. Output is varied and creative. Use for <b>brainstorming, marketing copy, stories, or generating varied practice questions</b>.</div>
+</div>
+<div class="demo"><h5>🎮 Try it: "The chai was ___" — move the temperature slider</h5>
+ <p class="hint">Bars show the probability of each next word. Press "Pick a word" a few times at low and high temperature and see how often the result changes.</p>
+ <label>Temperature: <b id="tVal">0.7</b></label>
+ <input type="range" id="tSlide" min="0.05" max="1.5" step="0.05" value="0.7" style="width:100%">
+ <div id="tBars" style="margin-top:10px"></div>
+ <button onclick="tempSample()">🎲 Pick a word</button> <span id="tPick" class="mono"></span>
+ <p class="hint" style="margin-top:10px">Behind the scenes: probability of word i = e<sup>score<sub>i</sub>/T</sup> ÷ (sum over all words of e<sup>score/T</sup>). Dividing scores by a small T exaggerates the gaps, so the top word dominates. A large T shrinks the gaps, so all words become more equally likely. (The scores here are a toy example.)</p>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: same prompt, two temperatures</span>
+<pre><code><span class="k">for</span> t <span class="k">in</span> [0, 1.0]:
+    <span class="k">for</span> run <span class="k">in</span> range(2):
+        r = client.chat.completions.create(model=<span class="s">"gpt-6.1-terra"</span>, temperature=t,
+              messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"Name a monsoon snack in 2 words."</span>}])
+        print(t, r.choices[0].message.content)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>0    Onion pakoda
+0    Onion pakoda
+1.0  Masala corn
+1.0  Bread pakora</code></pre></div>
+<p><b>What this means for system design:</b></p>
+<ul>
+<li><b>Testing:</b> you cannot write <code>assert reply == "Onion pakoda"</code> for LLM output. Tests must accept variation (for example, check that the reply is valid JSON, or have another model grade it), or force temperature to 0 for regression tests.</li>
+<li><b>Retries:</b> if the model returns broken JSON at temperature 0, retrying with the exact same request will likely fail in exactly the same way. A slightly higher temperature on retry gives it a chance to produce something different (and correct).</li>
+</ul>
+<div class="box warn"><span class="t">⚠️ Watch out</span>Even at temperature 0, outputs are not guaranteed to be 100% identical every time (tiny numeric differences on GPUs, batching, or model updates on the provider's side). So build tests that check <i>meaning and structure</i>, not exact strings.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Low temperature is your mother's dal recipe: tastes exactly the same every day. High temperature is an experimental chef who might add mango to it today. 🥭 When you're making a bank statement, call your mother. When you need new dish ideas, call the chef.</div>
+
+<!-- ============ 1.6 ============ -->
+<h3 class="sec" id="c1-rag"><span class="num">1.6</span> RAG: giving the model the right facts at the right time</h3>
+<p>Here is a common problem. A user asks your app's help bot: <i>"My refund hasn't come yet, what should I do?"</i> Your help centre has an article titled <i>"Money not credited after cancellation"</i>. The words are different, but the meaning is the same. How do we find that article and use it to answer? The answer is <b>RAG: Retrieval-Augmented Generation</b>.</p>
+<ul><li><b>Retrieval</b>: find the relevant information (from documents, a database, an API…)</li>
+<li><b>Augmented</b>: add that information into the prompt</li>
+<li><b>Generation</b>: let the LLM write the answer using that information</li></ul>
+<p>RAG has a few steps. The first three prepare your knowledge; the last ones happen every time a user asks something.</p>
+
+<h4>🧹 Step 1: Clean the data</h4>
+<p>Before you cut documents into chunks and embed them, clean them properly. This is more than removing extra spaces.</p>
+<div class="grid3">
+<div class="card"><h5>De-noising</h5>Remove HTML tags, repeated headers and footers, cookie banners and navigation links. They add tokens but no meaning, and they "dilute" the useful text.</div>
+<div class="card c-bad"><h5>PII scrubbing</h5>Remove <b>personally identifiable information</b> (PII) like phone numbers, emails, Aadhaar or PAN numbers and API keys <b>before</b> the data is sent to any external model.</div>
+<div class="card c-good"><h5>Normalisation</h5>Make formats consistent: one date format, one currency style, standard characters. "05/11/26", "Nov 5, 2026" and "2026-11-05" should all become one form.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: before and after cleaning</span>
+<div class="grid2"><div><b>Before</b><div class="quote">&lt;div class="nav"&gt;Home | Help | Login&lt;/div&gt;
+&lt;h2&gt;Refund not received?&lt;/h2&gt;
+Call Priya at 98450 12345 or mail priya@shop.in.
+Refunds take 5-7 days from 05/11/26.
+© 2026 Shop Pvt Ltd. All rights reserved.</div></div>
+<div><b>After</b><div class="quote">Refund not received?
+Call [PHONE] or mail [EMAIL].
+Refunds take 5-7 days from 2026-11-05.</div></div></div></div>
+
+<h4>🔢 Step 2: Turn knowledge into vectors</h4>
+<p>Split the cleaned documents (help articles, past resolved tickets) into chunks and convert each chunk into an embedding using an embedding model such as <code>text-embedding-3-small</code>. Store each chunk's text, its vector and some labels (called <b>metadata</b>: source, date, category) in a vector database.</p>
+
+<h4>🔍 Step 3: Search by meaning</h4>
+<p>When the user asks a question, embed the question too, and ask the vector database for the closest chunks. Comparing against millions of vectors one by one would be slow, so databases use <b>ANN (Approximate Nearest Neighbour)</b> algorithms, such as <b>HNSW</b>, that find "very close" results extremely fast without checking every single vector.</p>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span><b>ANN search</b> is like finding a book in a well-organised library. You don't check all 1 lakh books one by one. You go to the right floor → the right section → the right shelf, and look at a few dozen books. You might occasionally miss the perfect book on the next shelf (that's the "approximate" part), but you find a great one in seconds.</div>
+<div class="fig"><div class="ft">The RAG flow at question time</div>
+ <div class="fv">
+  <div class="grp"><span class="gt">The question</span><span class="node n-yellow db">User asks<small>"My refund hasn't come yet"</small></span></div><div class="va"></div>
+  <div class="grp"><span class="gt">Retrieval</span><div class="fv"><span class="node n-purple">Embed the question<small>text → 1,536 numbers</small></span><div class="va"></div><span class="node n-blue db">Vector search<small>find the closest chunks</small></span><div class="va"></div><span class="node n-blue">Top 3 chunks</span></div></div><div class="va"></div>
+  <div class="grp"><span class="gt">Augmentation + generation</span><div class="fv"><span class="node n-green" style="text-align:left">Augmented prompt<small>Context: [the 3 chunks]<br>Question: "My refund hasn't come yet"</small></span><div class="va"></div><span class="node n-green pill">LLM writes the answer</span></div></div>
+ </div></div>
+<div class="box example"><span class="t">🔍 Worked example: what the final prompt actually looks like</span>
+<div class="quote">SYSTEM: You are ShopKart's help assistant. Answer ONLY using the context below.
+If the answer is not in the context, say "Let me connect you to an agent."
+
+CONTEXT:
+[1] Refunds for cancelled orders reach the original payment method in 5-7 working days.
+[2] UPI refunds are usually faster: 1-3 working days.
+[3] If 7 working days have passed, raise a ticket from Orders → Help.
+
+QUESTION: My refund hasn't come yet. I paid by UPI 2 days ago.</div>
+<p><b>Model's answer:</b> "UPI refunds usually take 1–3 working days, so yours should arrive within a day. If it's still not there after 7 working days, you can raise a ticket from Orders → Help."</p>
+<p>The model didn't need to "know" ShopKart's policy. We <b>handed it the answer</b>, and it explained it nicely.</p></div>
+<div class="box example"><span class="t">🔍 Worked example: a minimal RAG in about 20 lines</span>
+<pre><code><span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> openai <span class="k">import</span> OpenAI
+client = OpenAI()
+
+docs = [<span class="s">"Refunds for cancelled orders take 5-7 working days."</span>,
+        <span class="s">"UPI refunds are usually faster: 1-3 working days."</span>,
+        <span class="s">"Delivery partners can't accept cash above ₹2,000."</span>]
+
+<span class="k">def</span> embed(texts):
+    out = client.embeddings.create(model=<span class="s">"text-embedding-3-small"</span>, input=texts)
+    <span class="k">return</span> np.array([d.embedding <span class="k">for</span> d <span class="k">in</span> out.data])
+
+doc_vecs = embed(docs)                                 <span class="c"># 1. index once</span>
+question = <span class="s">"I paid by UPI, when will my refund come?"</span>
+q_vec = embed([question])[0]                           <span class="c"># 2. embed the question</span>
+scores = doc_vecs @ q_vec                              <span class="c"># 3. similarity (vectors are normalised)</span>
+top = [docs[i] <span class="k">for</span> i <span class="k">in</span> scores.argsort()[::-1][:2]]   <span class="c"># 4. best 2 chunks</span>
+print(<span class="s">"Retrieved:"</span>, top)
+
+answer = client.chat.completions.create(model=<span class="s">"gpt-6.1-terra"</span>, messages=[
+    {<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: <span class="s">"Answer only from this context:\n"</span> + <span class="s">"\n"</span>.join(top)},
+    {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: question}])           <span class="c"># 5. augment + generate</span>
+print(answer.choices[0].message.content)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>Retrieved: ['UPI refunds are usually faster: 1-3 working days.', 'Refunds for cancelled orders take 5-7 working days.']
+Since you paid by UPI, your refund should usually arrive within 1-3 working days.</code></pre>
+<p>Notice the cash-delivery chunk was not retrieved: its meaning is far from the question.</p></div>
+<p>RAG is the most important technique for <b>higher accuracy and fewer made-up answers</b>, because the model's answer is <b>grounded</b> in real, verified information from your own sources.</p>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>RAG turns a closed-book exam into an <b>open-book exam</b> 📖. Without RAG, the student writes from memory and may confidently write something wrong. With RAG, they open the textbook to the right page first, then write.</div>
+
+<h4 id="c1-naive">😬 Why basic RAG is not always enough</h4>
+<div class="grid2">
+<div class="card c-bad"><h5>Problem 1: "Similar" is not the same as "relevant"</h5>Vector search is great at finding similar text, but similar is not always useful. If your help centre has five versions of the refund policy (2022, 2023, 2024…), all five look almost identical, so all five come back. The model gets <b>repetitive, confusing context</b> and may quote the outdated one.</div>
+<div class="card c-bad"><h5>Problem 2: Bad chunking hides the answer</h5>Documents have structure: <i>title → section → sub-section</i>. A question may match the document's <b>title</b> strongly, so the system returns the general introduction, while the actual answer sits five sections deeper and scores low on its own. The connection between "this section" and "that document" is lost.</div></div>
+<div class="fig"><div class="ft">The buried-answer problem</div>
+ <div class="fv">
+  <span class="node n-purple">Question: "How do I change the API timeout?"</span>
+  <div class="cols" style="margin-top:6px"><div class="fv"><div class="va dashv"><span>strong match on the title ✅</span></div></div><div class="fv"><div class="va dashv"><span>weak match, missed ❌</span></div></div></div>
+  <div class="grp" style="width:100%;max-width:900px"><span class="gt">One document: "API General Settings"</span>
+   <div class="fh" style="gap:10px">
+    <span class="node n-green">Introduction / overview<small>(high match score)</small></span>
+    <span class="node n-gray">Section 1: Authentication</span><span class="node n-gray">Section 2: Rate limits</span>
+    <div class="grp" style="background:#fff7ed"><span class="gt">The real answer</span><div class="fh" style="gap:8px"><span class="node n-red">Section 5: Advanced config</span><span class="node n-pink">"Set timeout_ms to 5000"</span></div></div>
+   </div></div>
+  <div class="va"></div><span class="node n-purple">What the LLM receives<small>only the overview — the real answer never arrives 😢</small></span>
+ </div></div>
+
+<h4>🕸 Why knowledge graphs help retrieval</h4>
+<p>To fix these limits, we add a <b>knowledge graph</b>, stored in a graph database such as <b>Neo4j</b> or <b>Amazon Neptune</b>. Instead of matching similar words, it records <b>relationships</b> explicitly:</p>
+<pre><code>Section 5          -[part_of]->      "API General Settings"
+Ticket #402        -[resolved_by]->  Commit a1b2c3
+Commit a1b2c3      -[written_by]->   Ananya</code></pre>
+<p>Now retrieval can <b>follow a path</b> through these links to reach a precise answer, even across several hops.</p>
+
+<h4 id="c1-graphrag">🚀 GraphRAG: RAG + knowledge graphs</h4>
+<p>Combining a knowledge graph with an LLM is called <b>GraphRAG</b>. The system follows chains of relationships to collect connected facts, then gives them to the LLM. It shines with structured, domain-specific data where questions involve "who / why / what caused what".</p>
+<div class="fig"><div class="ft">GraphRAG answering a multi-step question</div>
+ <div class="fv" id="gr">
+  <span class="node n-yellow db">Question:<small>"Who fixed the payment-timeout bug mentioned in the Checkout Guide?"</small></span><div class="va"></div>
+  <div class="grp"><span class="gt">Path through the graph</span><div class="fv">
+   <span class="node n-green" id="g1">1. Find the starting node: Checkout Guide</span><div class="va"></div>
+   <span class="node n-green" id="g2">2. Follow "has_section" → Section 4: Payment errors</span><div class="va"></div>
+   <span class="node n-green" id="g3">3. Follow "mentions" → Ticket #402 (payment timeout)</span><div class="va"></div>
+   <span class="node n-green" id="g4">4. Follow "resolved_by" → Commit a1b2c3</span><div class="va"></div>
+   <span class="node n-blue" id="g5">5. Follow "written_by" → Ananya</span></div></div><div class="va"></div>
+  <span class="node n-purple pill" id="g6">Answer: Ananya fixed it in commit a1b2c3</span>
+ </div>
+ <div style="text-align:center;margin-top:12px"><button class="btn" onclick="traverse()">▶ Walk the graph</button></div>
+</div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"Vector search tells me what is <i>similar</i>; a graph tells me what is <i>connected</i>. For multi-hop questions like root cause or 'who changed this', I'd use hybrid retrieval: vector search to find the starting point, then graph traversal to follow the links."</div>
+
+<!-- ============ 1.7 ============ -->
+<h3 class="sec" id="c1-ce"><span class="num">1.7</span> Context engineering: packing the perfect suitcase</h3>
+<p>Here is a mindset shift that experienced AI engineers share: <b>building with LLMs is mostly a data-pipeline problem, not a prompt-writing problem.</b> The clever wording of a prompt matters far less than <i>which information</i> you put in front of the model at the moment it answers.</p>
+<p>Your knowledge lives in <b>long-term memory</b> (a vector database with millions of chunks). The model can only see its <b>short-term memory</b> (the context window, a few thousand to a few hundred thousand tokens). <b>Context engineering</b> is the practice of designing, building and managing everything the model sees before it answers: the instructions, the right facts, the tools, and the rules.</p>
+<div class="fig"><div class="ft">The funnel: from millions of tokens to the few that matter</div>
+ <div class="fv">
+  <span class="node n-blue db" style="min-width:340px">Vector DB<small>long-term memory · millions of tokens</small></span><div class="va"><span>raw chunks (e.g. top 50)</span></div>
+  <span class="node n-orange" style="min-width:260px">Retrieve + re-rank<small>the filter</small></span><div class="va"><span>best few chunks (e.g. top 5)</span></div>
+  <span class="node n-green" style="min-width:200px">Context window<small>short-term memory · e.g. 128K tokens</small></span><div class="va"><span>final prompt</span></div>
+  <span class="node n-purple pill">LLM answers</span>
+ </div><div class="cap">Lots in → a careful filter → only the best reaches the model.</div></div>
+<div class="box plain"><span class="t">What is "re-ranking"?</span>Vector search is fast but rough: it might return 50 "kind of related" chunks. A <b>re-ranker</b> is a second, more careful model that reads the question and each of those 50 chunks together and scores how well each one actually answers the question. We keep only the top 5. Fast-and-rough first, slow-and-careful second.</div>
+<h4>The four jobs of context engineering</h4>
+<div class="grid2">
+<div class="card"><h5>1. Assemble information dynamically</h5>Build the context fresh for every turn:
+<ul><li><b>System instructions</b>: role and behaviour ("You are a helpful support agent")</li><li><b>Conversation history (memory)</b>: so the chat feels continuous</li><li><b>External knowledge (RAG)</b>: up-to-date facts from your database or the web</li></ul></div>
+<div class="card c-warn"><h5>2. Manage the window</h5><ul><li><b>Prioritise</b>: what matters most for <i>this</i> step?</li><li><b>Compress</b>: summarise or filter big data into fewer tokens</li></ul></div>
+<div class="card c-vio"><h5>3. Orchestrate tools</h5>Connect external tools and APIs (Application Programming Interfaces). The model needs clear descriptions to decide <b>when</b> to use a tool, <b>how</b> to call it, and how to <b>blend the result</b> into its answer.</div>
+<div class="card c-good"><h5>4. Keep it consistent and reliable</h5>Control what the model sees in a systematic way so that answers stay accurate, consistent and within policy across different users and sessions.</div></div>
+
+<div class="fig"><div class="ft">One request, end to end, with context engineering</div>
+ <div class="fv">
+  <div class="grp"><span class="gt">1. Input</span><div class="fh"><span class="node pill">User</span><div class="ha"></div><span class="node n-blue">Prompt<small>input text</small></span><div class="ha"></div><span class="node n-blue">Tokenization<small>words → numbers</small></span></div></div><div class="va"></div>
+  <div class="grp"><span class="gt">2. Retrieval (RAG)</span><div class="fv"><div class="fh" style="gap:16px"><span class="node n-orange">Embedding model<small>text → vector</small></span><span class="node n-green db">Vector DB<small>long-term memory</small></span></div><div class="va"></div><span class="node n-yellow">Vector search<small>nearest neighbours</small></span><div class="va"></div><span class="node n-orange">Retrieved context<small>relevant docs / code</small></span></div></div><div class="va"><span>+ the original question</span></div>
+  <div class="grp"><span class="gt">3. Context engineering</span><div class="fv"><span class="node n-purple">Fit everything in the window<small>prioritise · compress · order</small></span><div class="va"></div><span class="node n-purple">Assemble the final prompt</span></div></div><div class="va"></div>
+  <div class="grp"><span class="gt">4. The model</span><div class="fv"><div class="diamond">Temperature?<br>0 = precise<br>1 = creative</div>
+   <div class="cols"><div class="fv"><div class="va"><span>temp 0.2</span></div><span class="node n-purple">LLM<small>focused mode</small></span></div><div class="fv"><div class="va"><span>temp 0.8</span></div><span class="node n-purple">LLM<small>creative mode</small></span></div></div></div></div><div class="va"></div>
+  <div class="grp"><span class="gt">5. Output</span><div class="fv"><span class="node n-purple">Stream tokens<small>one at a time</small></span><div class="va"></div><span class="node pill">Final response</span></div></div>
+ </div></div>
+<div class="box example"><span class="t">🔍 Worked example: a context budget for a support bot (16K-token window)</span>
+<div class="tbl"><table><tr><th>Section</th><th>Budget</th><th>What goes in</th><th>If it doesn't fit…</th></tr>
+<tr><td>System instructions</td><td>800</td><td>Persona, tone, rules, output format</td><td>Never cut: rewrite shorter instead</td></tr>
+<tr><td>User profile</td><td>200</td><td>Name, plan, city, language</td><td>Keep only fields this question needs</td></tr>
+<tr><td>Conversation summary</td><td>500</td><td>Short summary of older turns</td><td>Re-summarise more aggressively</td></tr>
+<tr><td>Last 6 messages</td><td>2,000</td><td>Recent turns, word for word</td><td>Keep the last 4 instead</td></tr>
+<tr><td>Retrieved help articles</td><td>6,000</td><td>Top 5 re-ranked chunks</td><td>Keep top 3</td></tr>
+<tr><td>Tool results</td><td>1,500</td><td>e.g. order status JSON</td><td>Keep only relevant fields</td></tr>
+<tr><td>Reserved for the answer</td><td>1,000</td><td>The model's reply</td><td>—</td></tr>
+<tr><td><b>Safety margin</b></td><td>4,000</td><td>Unused buffer</td><td>—</td></tr></table></div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Packing for a flight with a 15 kg baggage limit. Your wardrobe (vector DB) has 200 items; the suitcase (context window) fits 20. A good packer chooses what this <i>specific trip</i> needs, folds things smartly (compression), and leaves a little room for shopping (the answer). Context engineering is that packing skill. 🧳</div>
+
+<!-- ============ 1.8 ============ -->
+<h3 class="sec" id="c1-agent"><span class="num">1.8</span> AI agents: from answering to doing</h3>
+<p>In a simple AI app, the LLM is called once (or a few times in a fixed order) and the code decides every step. That works well for routine tasks. But some goals are open-ended: "find out why last night's deployment failed and open a fix". Nobody can write the steps in advance. That's where <b>agents</b> come in.</p>
+<p>An <b>AI agent</b> is a system where an AI model <b>reasons, plans and takes a series of actions on its own</b> to reach a goal. The key difference: the path is <b>decided at run time by the model</b>, not hard-coded by you. You give the goal; the agent figures out the steps. It works in a loop often called <b>ReAct (Reason + Act)</b>:</p>
+<div class="fig"><div class="ft">The agent loop (repeat until the goal is done)</div>
+ <div style="display:grid;grid-template-columns:1fr 70px 1fr;grid-template-rows:auto 56px auto;align-items:center;justify-items:center;max-width:660px;margin:auto">
+  <span class="node n-blue" id="r1" style="width:230px">🗺 1. Plan<small>break the goal into steps</small></span><div class="ha"></div><span class="node n-orange" id="r2" style="width:230px">🛠 2. Act<small>pick a tool: search, run code, query a DB, read a file</small></span>
+  <div class="va" style="transform:rotate(180deg)"></div><div></div><div class="va"></div>
+  <span class="node n-purple" id="r4" style="width:230px">🤔 4. Reason<small>compare goal + plan + new info → next step, or "done"</small></span><div class="ha" style="transform:rotate(180deg)"></div><span class="node n-green" id="r3" style="width:230px">👀 3. Observe<small>add the tool's result to the context</small></span>
+ </div>
+ <div style="text-align:center;margin-top:12px"><button class="btn" onclick="agentStep()">⏭ Run the next step of the example below</button><button class="btn alt" onclick="agentReset()">↺ Reset</button></div>
+ <div class="seqcap" id="agentCap">Goal: "Is my Chennai → Bengaluru train tomorrow running on time? If it's late by more than an hour, tell my family on WhatsApp."</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A plain LLM is like asking a friend a question and getting an answer. An agent is like a <b>personal assistant</b> you tell "plan our Kerala trip". They check flights (act), see they're expensive (observe), think a train might be better (reason), change the plan (plan), and keep going until the booking is done. ✈️🚆</div>
+<div class="box deep"><span class="t">🚀 Going deeper: agents need seatbelts</span>Agents can get stuck in loops, burn money calling the model again and again, or call the wrong tool. Good designs always include: a <b>maximum number of steps</b> and a <b>token budget</b>, only the <b>tools this task needs</b> (with the smallest permissions), and <b>human approval</b> before any high-impact action like sending money or deleting data. Chapter 2 covers this as "excessive agency".</div>
+
+<!-- ============ 1.9 ============ -->
+<h3 class="sec" id="c1-mod"><span class="num">1.9</span> Modalities: more than just text</h3>
+<p>People understand the world through sight, sound and touch, not only text. Modern AI is similar. Each type of data is called a <b>modality</b>, and models that handle several at once are called <b>multimodal</b>.</p>
+<div class="grid3">
+<div class="card">📝 <b>Text</b><br>Written language: translation, summaries, chatbots.</div>
+<div class="card">🖼 <b>Images</b><br>Recognising objects, reading a photo of a bill, checking a damaged-product photo for a refund.</div>
+<div class="card">🎧 <b>Audio</b><br>Speech to text, voice assistants, call-centre analytics, music generation.</div>
+<div class="card">🎬 <b>Video</b><br>Moving images plus audio: summarising a lecture recording, content moderation.</div>
+<div class="card">🧊 <b>Spatial / 3D</b><br>Understanding depth and 3D space: self-driving cars, robots, AR apps.</div>
+<div class="card c-teal">🏗 <b>System-design impact</b><br>Images and video use <b>far more tokens</b> than text, so they cost more and are slower. Plan upload size limits, compress media, and process big files in the background.</div></div>
+
+<!-- ============ 1.10 ============ -->
+<h3 class="sec" id="c1-res"><span class="num">1.10</span> Where does your data live? Data residency and compliance</h3>
+<p>Speed and cost aren't the only concerns. Big companies, banks and hospitals also ask: <b>where is our data stored and processed, and who can see it?</b> This is called <b>data residency</b>, and it is often the <i>first</i> filter when choosing how to run an LLM. In India, for example, payment data must be stored in the country, and the Digital Personal Data Protection (DPDP) Act sets rules for handling personal data.</p>
+<div class="fig"><div class="ft">Three ways to run an LLM: more control means more work</div>
+ <div class="grid3">
+  <div class="card c-bad"><h5>🌐 Public API</h5>e.g. calling OpenAI or Anthropic directly over the internet. Easiest to start. But your data leaves your private network (your <b>VPC</b>, Virtual Private Cloud). For health records (<b>PHI</b>), card data (<b>PCI</b>) or other personal data (<b>PII</b>), this is often not allowed unless the provider signs a <b>zero-retention</b> agreement (they promise not to store your data).</div>
+  <div class="card c-warn"><h5>☁️ Private cloud</h5>e.g. Amazon Bedrock or Azure OpenAI inside your cloud account. Data stays inside your cloud boundary and region. You still depend on the cloud provider's availability and model list.</div>
+  <div class="card c-good"><h5>🏠 Self-hosted open model</h5>e.g. running Llama 3.1 or Mistral on your own GPUs. Full control: data never leaves. Needed for strict or offline ("air-gapped") environments. The price: you manage GPUs, scaling, updates and on-call.</div>
+ </div>
+ <div style="margin-top:16px;font-size:.86rem;max-width:760px;margin-left:auto;margin-right:auto"><b>Control over data →</b><div class="bar" style="width:100%;background:linear-gradient(90deg,#fecaca,#bbf7d0)"></div><b>Operational effort →</b><div class="bar" style="width:100%;background:linear-gradient(90deg,#bbf7d0,#fecaca)"></div></div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Getting clothes washed. <b>Public API</b> = giving them to a laundry shop across town. <b>Private cloud</b> = the laundry person comes and washes them inside your building. <b>Self-hosted</b> = buying your own washing machine: total control, but repairs are your problem. 🧺</div>
+
+<!-- ============ 1.11 ============ -->
+<h3 class="sec" id="c1-bench"><span class="num">1.11</span> Measuring performance: how good and how fast?</h3>
+<p>A simple engineering rule: <b>you can't improve what you don't measure.</b> For AI, "smart" and "fast" are different things, so we measure them separately.</p>
+<div class="grid2">
+<div class="card"><h5>🎓 Quality benchmarking</h5>How smart and accurate is the model <i>for my task</i>? Does it summarise our tickets well? Does it pick the right category? You run it on a fixed set of test examples and score the results.</div>
+<div class="card c-warn"><h5>⚡ Speed benchmarking</h5>How fast and efficient is it? How long until the first word appears, how many tokens per second, how many users at once? This answers the business question: <b>how fast and how expensive is it to run?</b></div></div>
+<h4>Building your own quality benchmark in 4 steps</h4>
+<p>Public leaderboards tell you which model is good at general tests. But you care about <i>your</i> task. So build a custom benchmark:</p>
+<ol class="steps">
+<li><b>Define the goal.</b> What exactly must the model do well? <i>"Summarise customer support tickets accurately, with the right sentiment and topic."</i></li>
+<li><b>Create a "golden set".</b> Hand-write 50–100 high-quality examples, each with an input and the ideal output.
+<div class="quote">Input: "This is the 3rd time I'm writing! I was charged twice for order #1234 and nobody replies!!"
+Ideal output: {"summary": "Customer charged twice for order #1234, no response to earlier messages.",
+               "sentiment": "negative", "topic": "billing"}</div></li>
+<li><b>Run the models.</b> Run every model you want to compare (say <code>gpt-6.1-terra</code> vs a self-hosted Llama 3.1 8B) on all inputs in the golden set.</li>
+<li><b>Evaluate.</b> Two options: <b>human evaluation</b> (an expert scores each answer 1–5; the most reliable, but slow) or <b>LLM-as-a-judge</b> (a strong model grades the answers; fast and scalable). A judge prompt might be:
+<div class="quote">You are an expert reviewer. Here is an INPUT, the IDEAL answer, and a MODEL answer.
+Score the MODEL answer from 1 to 5 for accuracy compared to the IDEAL.
+Reply as JSON: {"score": n, "reason": "..."}</div>
+<b>Example judge output:</b> <code>{"score": 4, "reason": "Correct issue and sentiment; missed that earlier messages went unanswered."}</code></li>
+</ol>
+<h4>The speed metrics everyone talks about</h4>
+<div class="fig"><div class="ft">One request on a timeline</div>
+ <div style="position:relative;height:118px;max-width:880px;margin:auto">
+  <div style="position:absolute;top:44px;left:0;right:0;height:14px;border-radius:8px;background:#e2e8f0"></div>
+  <div style="position:absolute;top:44px;left:0;width:20%;height:14px;border-radius:8px 0 0 8px;background:#fbbf24"></div>
+  <div style="position:absolute;top:44px;left:20%;width:80%;height:14px;border-radius:0 8px 8px 0;background:repeating-linear-gradient(90deg,#22c55e 0 10px,#86efac 10px 14px)"></div>
+  <div style="position:absolute;top:10px;left:0;font-size:.82rem">📤 Prompt sent</div>
+  <div style="position:absolute;top:10px;left:16%;font-size:.82rem">⚡ First token</div>
+  <div style="position:absolute;top:10px;right:0;font-size:.82rem">🏁 Last token</div>
+  <div style="position:absolute;top:66px;left:1%;font-size:.8rem;color:#92400e"><b>TTFT</b> (waiting)</div>
+  <div style="position:absolute;top:66px;left:42%;font-size:.8rem;color:#166534"><b>TPS</b> = tokens produced per second</div>
+  <div style="position:absolute;top:92px;left:26%;font-size:.8rem">◄────────── <b>Total latency</b> ──────────►</div>
+ </div></div>
+<div class="tbl"><table><tr><th>Metric</th><th>What it means</th><th>Why users feel it</th></tr>
+<tr><td><b>TTFT</b> (time to first token)</td><td>Time from sending the prompt to seeing the first word</td><td>The "is it working?" wait. Long TTFT feels broken.</td></tr>
+<tr><td><b>TPS</b> (tokens per second)</td><td>How fast tokens come after the first one</td><td>How quickly the answer "types itself out"</td></tr>
+<tr><td><b>Total latency</b></td><td>Time from prompt to the very last token</td><td>When the full answer is ready to use</td></tr>
+<tr><td><b>Throughput</b> (requests/sec)</td><td>How many requests the system handles at the same time</td><td>Whether the app stays fast at 9 pm peak</td></tr>
+<tr><td><b>Resource usage</b></td><td>GPU memory (VRAM) and compute used</td><td>Decides which hardware to buy or rent</td></tr></table></div>
+<div class="box example"><span class="t">🔍 Worked example: estimating total latency</span>A simple formula: <b>Total latency ≈ TTFT + (output tokens ÷ TPS)</b>.<br>If TTFT = 0.5 s, the answer is 300 tokens, and the model produces 60 tokens per second: 0.5 + 300 ÷ 60 = 0.5 + 5 = <b>5.5 seconds</b>.<br>Ask for a 100-token answer instead: 0.5 + 100 ÷ 60 ≈ <b>2.2 seconds</b>. Shorter output is the biggest speed lever you have, which is exactly the token lesson from section 1.3.</div>
+
+<!-- ============ 1.12 ============ -->
+<h3 class="sec" id="c1-fail"><span class="num">1.12</span> When things go wrong: the three classic failures</h3>
+<div class="grid3">
+<div class="card c-bad"><h5>🤥 Hallucination</h5>The model confidently makes up something false, because it <i>sounds</i> statistically plausible. Example: inventing a refund policy, a court case, or a Python function that doesn't exist.<br><b>Fix:</b> ground it with real data (RAG), ask it to say "I don't know" when unsure, and verify important outputs.</div>
+<div class="card c-warn"><h5>📅 Knowledge cut-off</h5>A model's knowledge is frozen at the time its training data was collected. Ask about last week's news or today's prices and it simply doesn't know (or worse, guesses).<br><b>Fix:</b> provide fresh information at question time via RAG, tools or web search.</div>
+<div class="card c-vio"><h5>⚖️ Bias</h5>The hardest one. Models learn from huge amounts of human writing, and human writing contains biases (about gender, region, caste, language…).<br><b>Manage it:</b> filter training data, add guardrails in prompts, test with diverse examples, and collect human feedback.</div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Hallucination is like that uncle who never says "I don't know" when you ask for directions: "Haan haan, go straight, then second left!" 😅 Confident, and wrong. RAG is handing him Google Maps before he answers.</div>
+
+<!-- ============ 1.13 ============ -->
+<h3 class="sec" id="c1-sum"><span class="num">1.13</span> Summary: LLMs are not magic</h3>
+<p>LLMs are <b>probabilistic engines with hard limits</b>. Every design decision you make trades off three things:</p>
+<div class="fig"><div class="ft">The quality–cost–latency triangle: you can usually pick two</div>
+<svg viewBox="0 0 640 380" width="100%" style="max-width:660px;display:block;margin:auto" font-family="Inter,Segoe UI,Arial">
+ <polygon points="320,46 74,326 566,326" fill="#eef2ff" stroke="#6366f1" stroke-width="3"/>
+ <circle cx="320" cy="46" r="36" fill="#7c3aed"/><text x="320" y="51" fill="#fff" text-anchor="middle" font-weight="700" font-size="14">Quality</text>
+ <circle cx="74" cy="326" r="36" fill="#dc2626"/><text x="74" y="331" fill="#fff" text-anchor="middle" font-weight="700" font-size="14">Low cost</text>
+ <circle cx="566" cy="326" r="36" fill="#2563eb"/><text x="566" y="331" fill="#fff" text-anchor="middle" font-weight="700" font-size="12">Low latency</text>
+ <text font-size="12" fill="#1e293b"><tspan x="440" y="150">Quality + speed</tspan><tspan x="440" dy="16">→ pay for big GPUs and</tspan><tspan x="440" dy="16">spare capacity</tspan></text>
+ <text font-size="12" fill="#1e293b"><tspan x="90" y="150">Quality + low cost</tspan><tspan x="90" dy="16">→ accept waiting: run in</tspan><tspan x="90" dy="16">background queues</tspan></text>
+ <text x="320" y="368" font-size="12" text-anchor="middle" fill="#1e293b">Low cost + speed → accept less depth: smaller models, aggressive summarising</text>
+</svg></div>
+<div class="tbl"><table><tr><th>Dimension</th><th>Mainly decided by</th></tr>
+<tr><td>💸 Cost</td><td>How many input tokens you send + how big the model is</td></tr>
+<tr><td>⏱ Latency</td><td>How many output tokens you ask for + time spent retrieving data</td></tr>
+<tr><td>🎯 Quality</td><td>What you put in the context window + how strong the model's reasoning is</td></tr></table></div>
+<p>The real skill of AI engineering is not writing magic prompts; it is <b>managing these constraints</b>. The rest of this series is about patterns for exactly that: RAG to work around limited context, caching for speed, routing for cost, and much more. Now that you know the atoms, let's start building molecules. 🧱</p>
+<div class="box takeaways"><span class="t">✅ Key takeaways</span><ul>
+<li>LLMs are probabilistic; we build systems around them to make them dependable.</li>
+<li>Tokens drive speed, cost and limits. Output tokens are slow and expensive; keep answers short.</li>
+<li>Embeddings turn meaning into numbers so we can search by meaning.</li>
+<li>Facts → RAG. Style and behaviour → fine-tuning.</li>
+<li>Good prompts have persona, context, instruction and format, plus guardrails and examples.</li>
+<li>ASTs give code structure; knowledge graphs give relationships; vectors give similarity.</li>
+<li>Context engineering = choosing what goes into the limited context window.</li>
+<li>Agents loop through plan → act → observe → reason, and need limits and approvals.</li>
+<li>Measure both quality (golden sets, judges) and speed (TTFT, TPS, total latency).</li></ul></div>
+
+<h4>📝 Quick quiz (click to reveal the answer)</h4>
+<details><summary>Q1. Why is generating output tokens slower than reading input tokens?</summary>Input tokens are processed together in parallel. Output tokens are generated one at a time, because each new token depends on all the previous ones. So to reduce latency, limit the output length.</details>
+<details><summary>Q2. What's the difference between the sliding-window and summarization strategies?</summary>Sliding window simply drops the oldest messages (free, but the model forgets them). Summarization compresses old messages into a short summary (keeps the gist, but costs one extra LLM call).</details>
+<details><summary>Q3. Two sentences share no words at all. Can their embeddings still be close?</summary>Yes. Embeddings capture meaning, not exact words. "How do I get my money back?" and "refund process" will be close together.</details>
+<details><summary>Q4. Your bot doesn't know this month's prices. Fine-tune or RAG?</summary>RAG. Prices change often; fetch them at question time. Fine-tuning is better for teaching style, tone and format.</details>
+<details><summary>Q5. Why might a retry at temperature 0 be pointless?</summary>At temperature 0 the model gives (nearly) the same output for the same input. If the first output was broken JSON, the retry will likely be broken in the same way. A slightly higher temperature gives a chance of a different, correct output.</details>
+<details><summary>Q6. Name two reasons basic RAG can fail.</summary>(1) Similar is not always relevant: many near-duplicate chunks crowd the context. (2) Poor chunking: the question matches a document's title, but the real answer is buried deep in a section that wasn't retrieved.</details>
+<details><summary>Q7. When would you use GraphRAG instead of plain vector search?</summary>When the question is about relationships across several steps ("who fixed the bug mentioned in this guide?", root-cause questions), especially with structured, connected data.</details>
+<details><summary>Q8. What are the three data-cleaning steps before embedding?</summary>De-noising (remove HTML and boilerplate), PII scrubbing (remove phone numbers, emails, IDs, keys before data goes to an external API), and normalisation (consistent dates, currency and characters).</details>
+<details><summary>Q9. TTFT is 0.4 s, the answer is 240 tokens, and TPS is 80. Roughly how long is the total latency?</summary>0.4 + 240 ÷ 80 = 0.4 + 3 = 3.4 seconds.</details>
+<details><summary>Q10. Why do agents need a maximum step count?</summary>Without it, an agent can loop forever, burning tokens and money, or keep calling tools wrongly. A step limit (and token budget) is a safety stop.</details>
+
+<h4 id="c1-gloss">📖 Glossary</h4>
+<div class="tbl"><table><tr><th>Term</th><th>Meaning in one line</th></tr>
+<tr><td>LLM</td><td>Large Language Model: an AI trained on huge text to read and write language.</td></tr>
+<tr><td>Prompt</td><td>The text you send to the model.</td></tr>
+<tr><td>Token</td><td>A small piece of text (≈ 4 characters) that the model reads and writes.</td></tr>
+<tr><td>Context window</td><td>The most tokens a model can handle in one request (input + output).</td></tr>
+<tr><td>Embedding / vector</td><td>A list of numbers that represents meaning.</td></tr>
+<tr><td>Vector database</td><td>A database that stores vectors and finds the closest ones fast.</td></tr>
+<tr><td>Cosine similarity</td><td>A score from −1 to 1 of how closely two vectors point in the same direction.</td></tr>
+<tr><td>ANN / HNSW</td><td>Fast "approximately nearest" search methods for vectors.</td></tr>
+<tr><td>Pre-training / fine-tuning</td><td>General learning from huge data / extra focused learning on small data.</td></tr>
+<tr><td>RAG</td><td>Retrieve facts, add them to the prompt, then generate the answer.</td></tr>
+<tr><td>Re-ranking</td><td>A second, careful scoring step that keeps only the best retrieved chunks.</td></tr>
+<tr><td>AST</td><td>Abstract Syntax Tree: the nested structure of code.</td></tr>
+<tr><td>Knowledge graph</td><td>Data stored as things (nodes) and relationships (edges).</td></tr>
+<tr><td>Temperature</td><td>A setting that controls how random the model's word choices are.</td></tr>
+<tr><td>Hallucination</td><td>A confident but false answer.</td></tr>
+<tr><td>Agent / ReAct</td><td>A model that loops through reasoning and tool actions to reach a goal.</td></tr>
+<tr><td>TTFT / TPS</td><td>Time to first token / tokens per second.</td></tr>
+<tr><td>PII</td><td>Personally identifiable information: phone, email, ID numbers, etc.</td></tr></table></div>
+
+<div class="footer"><b>LLM System Design · Chapter 1</b> · Written by <b>Shivank Agarwal</b> · Future with Shivank<br>Next up: Chapter 2 — Core Architecture Patterns for LLM Systems 🚀</div>
+</main>
+
+<script>
+/* ===== Shared helpers (Future with Shivank notes) ===== */
+const $ = id => document.getElementById(id);
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  $('progress').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+document.querySelectorAll('#side a').forEach(a => a.addEventListener('click', () => $('side').classList.remove('open')));
+
+/* ---------- Animated sequence diagram ----------
+   actors: ['Client','Server',...]
+   steps:  {f:0,t:1,l:'label',h:'plain-English hint',k:'ret'|'note',on:[a,b]}
+   groups: [{f:0,t:1,l:'group label'}]                                       */
+function seq(id, actors, steps, groups) {
+  const el = $(id), n = actors.length, colW = 178, W = n * colW + 40, rowH = 42, top = 80;
+  const H = top + steps.length * rowH + 70, X = i => 20 + colW * i + colW / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W, 760)}px" font-family="Inter,Segoe UI,Arial" font-size="12">
+  <defs><marker id="m${id}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker></defs>`;
+  (groups || []).forEach(g => {
+    s += `<rect x="${X(g.f) - colW / 2 + 6}" y="4" width="${X(g.t) - X(g.f) + colW - 12}" height="${H - 8}" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>`;
+    if (g.l) s += `<text x="${X(g.f) - colW / 2 + 16}" y="${H - 14}" font-size="11" fill="#64748b" font-weight="700">${g.l}</text>`;
+  });
+  actors.forEach((a, i) => {
+    s += `<line x1="${X(i)}" y1="54" x2="${X(i)}" y2="${H - 34}" stroke="#cbd5e1" stroke-dasharray="4 4"/>`;
+    [18, H - 60].forEach(y => {
+      s += `<rect x="${X(i) - 82}" y="${y}" width="164" height="34" rx="8" fill="#eef2ff" stroke="#a5b4fc"/><text x="${X(i)}" y="${y + 21}" text-anchor="middle" font-weight="700" fill="#312e81" font-size="11.5">${a}</text>`;
+    });
+  });
+  let k = 0;
+  steps.forEach((st, i) => {
+    const y = top + i * rowH + 16;
+    s += `<g class="sq" style="transition:opacity .4s">`;
+    if (st.k === 'note') {
+      const a = Math.min(...st.on), b = Math.max(...st.on);
+      s += `<rect x="${X(a) - 86}" y="${y - 14}" width="${X(b) - X(a) + 172}" height="26" rx="6" fill="#fef9c3" stroke="#facc15"/><text x="${(X(a) + X(b)) / 2}" y="${y + 3}" text-anchor="middle" font-weight="700" fill="#713f12">${st.l}</text>`;
+    } else {
+      k++;
+      const badge = x => `<circle cx="${x}" cy="${y}" r="9" fill="#4f46e5"/><text x="${x}" y="${y + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${k}</text>`;
+      if (st.f === st.t) {
+        const x = X(st.f);
+        s += `<path d="M${x} ${y - 6} h34 v14 h-30" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#m${id})"/><text x="${x + 40}" y="${y + 4}" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x - 14);
+      } else {
+        const x1 = X(st.f), x2 = X(st.t), d = st.k === 'ret' ? 'stroke-dasharray="5 4"' : '', pad = x2 > x1 ? -4 : 4;
+        s += `<line x1="${x1}" y1="${y}" x2="${x2 + pad}" y2="${y}" stroke="#475569" stroke-width="1.6" ${d} marker-end="url(#m${id})"/><text x="${(x1 + x2) / 2}" y="${y - 7}" text-anchor="middle" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x1);
+      }
+    }
+    s += `</g>`;
+  });
+  s += '</svg>';
+  el.innerHTML = s + `<div class="seqctl"><button class="btn" data-a="play">▶ Play</button><button class="btn alt" data-a="next">⏭ Next step</button><button class="btn alt" data-a="all">👁 Show all</button></div><div class="seqcap">Press ▶ Play — the meaning of each step will appear here.</div>`;
+  const gs = [...el.querySelectorAll('.sq')], cap = el.querySelector('.seqcap');
+  let cur = -1, timer = null;
+  const show = i => {
+    gs.forEach((g, j) => g.style.opacity = j <= i ? 1 : .12);
+    const st = steps[i];
+    cap.innerHTML = `<b style="color:#fcd34d">Step ${i + 1}/${steps.length}:</b> ${st.l}${st.h ? ' — <span style="color:#93c5fd">' + st.h + '</span>' : ''}`;
+  };
+  el.querySelector('[data-a=play]').onclick = () => { clearInterval(timer); cur = -1; timer = setInterval(() => { cur++; if (cur >= steps.length) { clearInterval(timer); return; } show(cur); }, 1500); };
+  el.querySelector('[data-a=next]').onclick = () => { clearInterval(timer); cur = (cur + 1) % steps.length; show(cur); };
+  el.querySelector('[data-a=all]').onclick = () => { clearInterval(timer); gs.forEach(g => g.style.opacity = 1); cap.textContent = 'You are now seeing the whole flow.'; };
+}
+
+/* ---------- Circuit breaker playground ---------- */
+function makeBreaker(id, threshold, fallbackText, cooldownText) {
+  const el = $(id);
+  el.innerHTML = `<div><span class="state" data-s="C" style="background:#16a34a">🟢 CLOSED · normal</span><span class="state" data-s="O" style="background:#dc2626">🔴 OPEN · tripped</span><span class="state" data-s="H" style="background:#d97706">🟡 HALF-OPEN · testing</span></div>
+  <div style="margin-top:8px"><button data-a="ok">✅ Call succeeds</button><button class="red" data-a="fail">❌ Call fails</button><button class="alt" data-a="cool">⏱ ${cooldownText}</button><button class="alt" data-a="reset">↺ Reset</button></div><div class="log"></div>`;
+  let st = 'C', fails = 0;
+  const log = el.querySelector('.log');
+  const L = m => { log.innerHTML += `<div>${m}</div>`; log.scrollTop = 1e6; };
+  const paint = () => el.querySelectorAll('.state').forEach(s => s.classList.toggle('on', s.dataset.s === st));
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'reset') { st = 'C'; fails = 0; log.innerHTML = ''; }
+    else if (a === 'cool') {
+      if (st === 'O') { st = 'H'; L('⏱ Cooldown over → HALF-OPEN: we let ONE test request ("canary") through to the primary model.'); }
+      else L('The cooldown only matters when the breaker is OPEN.');
+    }
+    else if (st === 'O') L(`🔴 Breaker is OPEN → we don't even try the primary. ${fallbackText}`);
+    else if (st === 'H') {
+      if (a === 'ok') { st = 'C'; fails = 0; L('🐤 Canary succeeded → CLOSED. Full traffic goes back to the primary model.'); }
+      else { st = 'O'; L('🐤 Canary failed → back to OPEN. The cooldown timer starts again.'); }
+    } else {
+      if (a === 'ok') { fails = 0; L('✅ Success. Failure counter reset to 0.'); }
+      else { fails++; L(`❌ Failure ${fails}/${threshold}`); if (fails >= threshold) { st = 'O'; L(`⚡ ${threshold} failures in a row → breaker TRIPS to OPEN. Traffic now goes to the fallback.`); } }
+    }
+    paint();
+  });
+  paint();
+}
+
+/* tiny non-crypto hash for demos */
+const djb = s => { let h = 5381; for (const c of s) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(8, '0').slice(0, 8); };
+
+/* ===== Chapter 1 demos ===== */
+
+/* --- Tokenizer (simplified, for learning) --- */
+const TOK_COLORS = ['#fde68a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#ddd6fe', '#fed7aa', '#a5f3fc'];
+function tokenize() {
+  const text = $('tokIn').value;
+  const raw = text.match(/ ?[A-Za-z]+| ?\d{1,3}| ?[^\sA-Za-z\d]|\s+/g) || [];
+  const toks = [];
+  raw.forEach(t => {
+    const core = t.trim();
+    if (/^[A-Za-z]+$/.test(core) && core.length > 7) {
+      // long word → split into sub-word pieces (like real BPE would)
+      const lead = t.startsWith(' ') ? ' ' : '';
+      let w = core, first = true;
+      while (w.length) { const n = w.length > 9 ? 4 : w.length > 5 ? Math.ceil(w.length / 2) : w.length; toks.push((first ? lead : '') + w.slice(0, n)); w = w.slice(n); first = false; }
+    } else toks.push(t);
+  });
+  $('tokOut').innerHTML = toks.map((t, i) =>
+    `<span class="chip" style="background:${TOK_COLORS[i % TOK_COLORS.length]}" title="token id ${parseInt(djb(t), 16) % 100000}">${t.replace(/ /g, '␣')}</span>`).join('');
+  const ids = toks.slice(0, 8).map(t => parseInt(djb(t), 16) % 100000);
+  $('tokStat').innerHTML = `${text.length} characters → <b>${toks.length} tokens</b> (≈ ${(text.length / Math.max(toks.length, 1)).toFixed(1)} characters per token)<br>First token IDs the model would "see": [${ids.join(', ')}${toks.length > 8 ? ', …' : ''}]<br><span style="color:#94a3b8">␣ = a space that is part of the token</span>`;
+}
+$('tokIn').addEventListener('input', tokenize);
+tokenize();
+
+/* --- Context window strategies --- */
+const CW_MSGS = ['"Planning a Manali trip"', '"We are 4 people"', '"Budget is ₹60,000"', '"Want a hotel near Mall Road"', '"Dates: 18–21 Dec"', '"Any vegetarian cafés?"', '"Can we do a day trip to Solang?"'];
+let cwN = 0;
+function cwRender() {
+  const all = CW_MSGS.slice(0, cwN).map((m, i) => `M${i + 1}: ${m}`);
+  if (!cwN) { $('cwA').innerHTML = $('cwB').innerHTML = '<span style="color:#64748b">(empty)</span>'; $('cwAn').textContent = $('cwBn').textContent = ''; return; }
+  const a = all.slice(-2);
+  $('cwA').innerHTML = a.map(x => `<div>📨 ${x}</div>`).join('');
+  $('cwAn').textContent = cwN > 2 ? `❌ Forgotten: ${all.slice(0, cwN - 2).map(x => x.split(':')[0]).join(', ')}. Ask "what's our budget?" and the bot has no idea.` : '';
+  if (cwN <= 2) { $('cwB').innerHTML = all.map(x => `<div>📨 ${x}</div>`).join(''); $('cwBn').textContent = ''; }
+  else {
+    const facts = ['Manali trip', '4 people', '₹60K budget', 'near Mall Road', '18–21 Dec', 'veg cafés'].slice(0, cwN - 1).join(', ');
+    $('cwB').innerHTML = `<div>🗜 Summary of M1–M${cwN - 1}: <i>${facts}</i></div><div>📨 ${all[cwN - 1]}</div>`;
+    $('cwBn').textContent = `✅ Gist kept (one cheap extra LLM call wrote the summary).`;
+  }
+}
+function cwNext() { if (cwN < CW_MSGS.length) cwN++; cwRender(); }
+function cwReset() { cwN = 0; cwRender(); }
+cwRender();
+
+/* --- Temperature --- */
+const T_WORDS = [['hot', 3.0], ['perfect', 2.6], ['too sweet', 2.0], ['cold', 1.2], ['magical', 0.7], ['purple', -1.0]];
+function tProbs(T) { const e = T_WORDS.map(([, z]) => Math.exp(z / T)); const s = e.reduce((a, b) => a + b, 0); return e.map(x => x / s); }
+function tempUpdate() {
+  const T = +$('tSlide').value; $('tVal').textContent = T.toFixed(2);
+  const p = tProbs(T);
+  $('tBars').innerHTML = T_WORDS.map(([w], i) => `<div style="display:flex;align-items:center;gap:10px;font-size:.88rem"><span style="width:90px">"${w}"</span><div style="flex:1;background:#1e293b;border-radius:6px"><div class="bar" style="width:${(p[i] * 100).toFixed(1)}%"></div></div><span class="mono" style="width:56px;text-align:right">${(p[i] * 100).toFixed(1)}%</span></div>`).join('');
+}
+function tempSample() {
+  const p = tProbs(+$('tSlide').value); let r = Math.random(), i = 0;
+  while (r > p[i] && i < p.length - 1) { r -= p[i]; i++; }
+  $('tPick').innerHTML = `→ "The chai was <b style="color:#fcd34d">${T_WORDS[i][0]}</b>."`;
+}
+$('tSlide').addEventListener('input', tempUpdate);
+tempUpdate();
+
+/* --- GraphRAG walk --- */
+let grT = [];
+function traverse() {
+  grT.forEach(clearTimeout); grT = [];
+  ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'].forEach(id => $(id).classList.remove('lit'));
+  ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'].forEach((id, i) => grT.push(setTimeout(() => {
+    if (i) $(['g1', 'g2', 'g3', 'g4', 'g5', 'g6'][i - 1]).classList.remove('lit');
+    $(id).classList.add('lit');
+  }, i * 900)));
+}
+
+/* --- Agent loop walkthrough --- */
+const AGENT = [
+  ['r1', '🗺 <b>Plan:</b> (1) get tomorrow\'s running status for the train, (2) compare with the scheduled time, (3) if the delay is over 60 minutes, message the family group.'],
+  ['r2', '🛠 <b>Act:</b> call tool <code>get_train_status(route="Chennai–Bengaluru", date="tomorrow")</code>'],
+  ['r3', '👀 <b>Observe:</b> tool returns <code>{"expected_delay_min": 95, "reason": "track maintenance"}</code> → added to the context.'],
+  ['r4', '🤔 <b>Reason:</b> 95 minutes is more than 60, so the goal says I must notify the family. Not done yet.'],
+  ['r2', '🛠 <b>Act:</b> call tool <code>send_whatsapp(group="Family", text="Tomorrow\'s train is running about 1.5 hours late due to track maintenance.")</code>'],
+  ['r3', '👀 <b>Observe:</b> tool returns <code>{"status": "sent"}</code>'],
+  ['r4', '🤔 <b>Reason:</b> status checked ✅, family informed ✅ → goal complete. <b>Stop the loop</b> and reply to the user.']
+];
+let agI = -1;
+function agentStep() {
+  agI = (agI + 1) % AGENT.length;
+  ['r1', 'r2', 'r3', 'r4'].forEach(id => $(id).classList.remove('lit'));
+  $(AGENT[agI][0]).classList.add('lit');
+  $('agentCap').innerHTML = `<b style="color:#fcd34d">Step ${agI + 1}/${AGENT.length}</b> — ${AGENT[agI][1]}`;
+}
+function agentReset() { agI = -1; ['r1', 'r2', 'r3', 'r4'].forEach(id => $(id).classList.remove('lit')); $('agentCap').textContent = 'Goal: "Is my Chennai → Bengaluru train tomorrow running on time? If it\'s late by more than an hour, tell my family on WhatsApp."'; }
+
+</script>
+</body>
+</html>

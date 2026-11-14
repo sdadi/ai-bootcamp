@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Shivank Agrawal">
+<title>Chapter 2 — Evaluation Methods and Qualitative Evals | AI Evals in Practice by Shivank Agrawal</title>
+<style>
+:root{
+  --ink:#1e293b; --ink2:#334155; --muted:#64748b; --bg:#f7f8fb; --card:#ffffff; --line:#94a3b8; --soft:#eef2f7;
+  --brand:#4f46e5; --brand2:#0891b2; --accent:#ea580c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0;z-index:999}
+
+/* ---------- Sidebar ---------- */
+#side{position:fixed;top:0;left:0;bottom:0;width:290px;background:#0f172a;color:#cbd5e1;overflow-y:auto;padding:22px 16px 40px;font-size:.86rem;z-index:50;transition:transform .3s}
+#side .brand{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#a5b4fc;font-weight:700}
+#side h3{color:#fff;margin:.3em 0 .2em;font-size:1.05rem;line-height:1.35}
+#side .by{font-size:.78rem;color:#94a3b8;margin-bottom:14px}
+#side a{display:block;color:#cbd5e1;text-decoration:none;padding:4px 10px;border-radius:7px;line-height:1.45}
+#side a:hover{background:#1e293b;color:#fff}
+#side .grp-t{color:#fbbf24;font-weight:700;margin-top:14px;padding:0 10px;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+#side .sub{padding-left:24px;font-size:.8rem;color:#94a3b8}
+#menuBtn{display:none;position:fixed;top:12px;left:12px;z-index:60;background:#0f172a;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+main{margin-left:290px;padding:34px 4.5vw 90px;max-width:1180px}
+@media (max-width:960px){#side{transform:translateX(-100%)}#side.open{transform:none}#menuBtn{display:block}main{margin-left:0;padding:64px 16px 70px}}
+
+/* ---------- Typography ---------- */
+h1{font-size:2.4rem;line-height:1.2;margin:.25em 0 .3em;letter-spacing:-.01em}
+h2.chapter{font-size:1.9rem;line-height:1.3;margin-top:56px;padding:26px 28px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+h2.chapter small{display:block;font-size:1rem;opacity:.92;font-weight:400;margin-top:4px}
+h3.sec{font-size:1.55rem;line-height:1.35;margin:64px 0 10px;padding-bottom:8px;border-bottom:3px solid #e0e7ff}
+h3.sec .num{color:var(--brand)}
+h4{font-size:1.2rem;margin:34px 0 8px;color:#1e3a8a}
+h5{font-size:1rem}
+p{margin:.65em 0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+b,strong{color:#0f172a}
+a{color:var(--brand)}
+code{background:#eef2ff;padding:1px 6px;border-radius:5px;font-size:.86em;color:#9d174d;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.84rem;line-height:1.6;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+pre .c{color:#94a3b8} pre .k{color:#c4b5fd} pre .s{color:#86efac} pre .o{color:#fcd34d}
+.lede{font-size:1.1rem;color:var(--ink2)}
+
+/* ---------- Tables ---------- */
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;font-size:.92rem;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+th{background:#1e293b;color:#fff;text-align:left;padding:10px 12px;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid #edf0f4;vertical-align:top}
+tr:nth-child(even) td{background:#fafbfd}
+td code{white-space:nowrap}
+
+/* ---------- Hero ---------- */
+.hero{background:#fff;border-radius:22px;padding:34px 34px 28px;box-shadow:0 6px 28px rgba(15,23,42,.06);border:1px solid #e2e8f0}
+.hero .kicker{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);background:#eef2ff;padding:4px 12px;border-radius:30px}
+.author{display:flex;align-items:center;gap:12px;margin:14px 0 6px}
+.author .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.author b{display:block;line-height:1.2}
+.author span{font-size:.85rem;color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+.legend div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.5}
+.learn{columns:2;column-gap:28px}
+@media(max-width:800px){.learn{columns:1}}
+
+/* ---------- Callout boxes ---------- */
+.box{border-radius:14px;padding:14px 18px;margin:18px 0;border-left:5px solid;background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.box>.t{display:block;margin-bottom:4px;font-weight:700}
+.box p:first-of-type{margin-top:.2em}
+.analogy{border-color:#ea580c;background:#fff7ed}
+.real{border-color:#2563eb;background:#eff6ff}
+.example{border-color:#0d9488;background:#f0fdfa}
+.interview{border-color:#16a34a;background:#f0fdf4}
+.deep{border-color:#7c3aed;background:#f5f3ff}
+.warn{border-color:#d97706;background:#fffbeb}
+.takeaways{border-color:#4f46e5;background:#eef2ff}
+.plain{border-color:#64748b;background:#f8fafc}
+
+/* ---------- Diagram canvas ---------- */
+.fig{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:26px 16px 16px;margin:22px 0;box-shadow:0 2px 10px rgba(15,23,42,.04);overflow-x:auto}
+.fig .ft{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin:-8px 0 14px 4px}
+.cap{text-align:center;font-size:.86rem;color:var(--muted);margin-top:14px}
+
+/* nodes */
+.node{display:inline-block;padding:10px 14px;border-radius:11px;border:1.5px solid #cbd5e1;background:#f8fafc;font-weight:600;text-align:center;font-size:.88rem;line-height:1.4;min-width:110px;color:#1e293b}
+.node small{display:block;font-weight:400;opacity:.85;font-size:.78rem;margin-top:2px}
+.n-blue{background:#eff6ff;border-color:#60a5fa;color:#1e3a8a}
+.n-green{background:#f0fdf4;border-color:#4ade80;color:#14532d}
+.n-orange{background:#fff7ed;border-color:#fb923c;color:#7c2d12}
+.n-red{background:#fef2f2;border-color:#f87171;color:#7f1d1d}
+.n-purple{background:#f5f3ff;border-color:#a78bfa;color:#4c1d95}
+.n-yellow{background:#fefce8;border-color:#facc15;color:#713f12}
+.n-teal{background:#f0fdfa;border-color:#2dd4bf;color:#134e4a}
+.n-pink{background:#fdf2f8;border-color:#f472b6;color:#831843}
+.n-gray{background:#f1f5f9;border-color:#94a3b8;color:#334155}
+.n-dark{background:#1e293b;border-color:#0f172a;color:#fff}
+.n-navy{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.db{border-radius:50% / 14%;padding:16px 16px}
+.pill{border-radius:30px}
+.diamond{width:190px;height:106px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;font-weight:700;padding:0 38px;background:#e0e7ff;color:#312e81;flex-shrink:0;line-height:1.3}
+
+/* layout helpers */
+.fv{display:flex;flex-direction:column;align-items:center}
+.fh{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.cols{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.grp{border:1.5px dashed #cbd5e1;border-radius:14px;padding:24px 14px 14px;position:relative;background:#fbfcfe;margin:12px 4px}
+.grp>.gt{position:absolute;top:-11px;left:14px;white-space:nowrap;background:#fff;padding:0 8px;font-weight:700;font-size:.76rem;color:#475569;border-radius:6px;border:1px solid #e2e8f0}
+.ladder .step{display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
+
+/* arrows (static, clean) */
+.va{width:2px;height:32px;background:var(--line);position:relative;margin:4px auto 10px}
+.va::after{content:'';position:absolute;bottom:-8px;left:-5px;border:6px solid transparent;border-top-color:var(--line)}
+.va>span{position:absolute;left:12px;top:5px;white-space:nowrap;font-size:.72rem;background:#f1f5f9;padding:1px 8px;border-radius:6px;color:#334155;border:1px solid #e2e8f0}
+.ha{height:2px;width:46px;background:var(--line);position:relative;margin:0 12px 0 4px;flex-shrink:0}
+.ha::after{content:'';position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-left-color:var(--line)}
+.ha>span{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.7rem;background:#f1f5f9;padding:0 7px;border-radius:6px;border:1px solid #e2e8f0}
+.ha:has(>span){width:104px}
+.ha.long{width:110px}
+.dash{background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.dashv{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.lbl{font-size:.74rem;background:#f1f5f9;padding:2px 9px;border-radius:6px;color:#334155;display:inline-block;margin:3px;border:1px solid #e2e8f0}
+
+/* CSS tree */
+.tree{overflow-x:auto;padding-bottom:6px}
+.tree ul{padding-top:20px;position:relative;display:flex;justify-content:center;margin:0;padding-left:0}
+.tree li{list-style:none;text-align:center;position:relative;padding:20px 5px 0;margin:0}
+.tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid #cbd5e1;width:50%;height:20px}
+.tree li::after{right:auto;left:50%;border-left:2px solid #cbd5e1}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid #cbd5e1;border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid #cbd5e1;height:20px}
+.tree>ul{padding-top:0}.tree>ul>li{padding-top:0}
+.tree .node{font-size:.78rem;min-width:auto;padding:7px 10px}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:14px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+@media(max-width:860px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 6px rgba(15,23,42,.06);border-top:4px solid #60a5fa;font-size:.95rem;line-height:1.65}
+.card h5{margin:0 0 6px;font-size:1.02rem;color:#0f172a}
+.card ul,.card ol{margin:.3em 0;padding-left:1.2em}
+.card pre{font-size:.78rem;margin:8px 0 0}
+.c-bad{border-top-color:#f87171}.c-good{border-top-color:#4ade80}.c-warn{border-top-color:#fbbf24}.c-vio{border-top-color:#a78bfa}.c-teal{border-top-color:#2dd4bf}
+.c-bad h5{color:#b91c1c}.c-good h5{color:#15803d}
+.quote{background:#f8fafc;border:1px solid #e2e8f0;padding:9px 13px;border-radius:9px;font-size:.92rem;font-family:"JetBrains Mono",Consolas,monospace;white-space:pre-wrap;line-height:1.55}
+
+/* ---------- Demos ---------- */
+.demo{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:18px 20px;margin:20px 0}
+.demo h5{margin:0 0 6px;color:#fcd34d;font-size:1rem}
+.demo p.hint{font-size:.85rem;color:#94a3b8;margin:4px 0 10px}
+.demo label{font-size:.9rem}
+.demo input[type=text],.demo input[type=number],.demo textarea,.demo select{width:100%;padding:9px 10px;border-radius:9px;border:0;font-size:.93rem;font-family:inherit;background:#f8fafc;color:#0f172a}
+.demo textarea{font-family:"JetBrains Mono",Consolas,monospace;font-size:.84rem}
+.demo button,.btn{background:#4f46e5;color:#fff;border:0;border-radius:9px;padding:8px 15px;margin:4px 6px 4px 0;font-weight:600;cursor:pointer;font-size:.88rem;font-family:inherit}
+.demo button.alt,.btn.alt{background:#334155}
+.demo button.red{background:#dc2626}
+.demo button:hover,.btn:hover{filter:brightness(1.12)}
+.panel{background:#1e293b;border-radius:11px;padding:12px 14px;min-height:56px}
+.mono{font-family:"JetBrains Mono",Consolas,monospace}
+.log{background:#020617;border-radius:10px;padding:10px 12px;max-height:190px;overflow-y:auto;font-family:"JetBrains Mono",Consolas,monospace;font-size:.8rem;margin-top:10px;line-height:1.6}
+.state{display:inline-block;padding:7px 14px;border-radius:9px;font-weight:700;margin:4px;opacity:.28;transition:all .3s;color:#fff}
+.state.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.kpi{font-size:1.45rem;font-weight:800;color:#fcd34d}
+.chip{display:inline-block;padding:3px 8px;margin:3px;border-radius:7px;font-family:"JetBrains Mono",Consolas,monospace;font-size:.86rem;color:#0f172a}
+.bar{height:18px;border-radius:6px;background:linear-gradient(90deg,#6366f1,#06b6d4);transition:width .3s;margin:3px 0}
+.lit{outline:3px solid #fbbf24;outline-offset:3px}
+.slot{display:inline-block;padding:4px 8px;margin:2px;border-radius:6px;background:#4ade80;color:#052e16;font-family:monospace;font-size:.78rem;font-weight:700}
+.ok{color:#4ade80;font-weight:700}.no{color:#f87171;font-weight:700}
+.seqctl{text-align:center;margin-top:10px}
+.seqcap{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 14px;margin-top:8px;min-height:44px;font-size:.92rem}
+
+/* formula */
+.formula{font-size:1.12rem;text-align:center;margin:16px 0;font-family:"Cambria Math",Georgia,serif}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 6px}
+.frac span:first-child{border-bottom:2px solid #0f172a;padding:0 6px}
+
+/* ER diagram */
+.er{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:860px){.er{grid-template-columns:1fr}}
+.ent{background:#fff;border:1.5px solid #a78bfa;border-radius:10px;overflow:hidden;font-size:.82rem}
+.ent b{display:block;background:#ede9fe;color:#4c1d95;padding:6px 10px;text-align:center}
+.ent div{padding:4px 10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px}
+.ent i{color:#64748b;font-style:normal}.ent em{color:#be185d;font-style:normal;font-weight:700}
+.rel{font-size:.78rem;text-align:center;color:#475569;background:#f1f5f9;border-radius:8px;padding:5px}
+
+/* misc */
+details{background:#fff;border-radius:12px;padding:11px 16px;margin:10px 0;box-shadow:0 1px 6px rgba(15,23,42,.05);border-left:4px solid #a78bfa}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px;color:#5b21b6}
+.phone{max-width:340px;margin:auto;border:3px solid #1e293b;border-radius:28px;padding:18px 14px;background:#f8fafc}
+.footer{text-align:center;color:var(--muted);margin-top:70px;font-size:.88rem;border-top:1px solid #e2e8f0;padding-top:22px}
+.footer b{color:#1e293b}
+.toc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.toc-chips span{background:#eef2ff;color:#3730a3;border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:600}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:10px 0}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:27px;height:27px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem}
+.kv dt{font-family:"JetBrains Mono",Consolas,monospace;color:#9d174d;font-size:.85rem}
+.kv dd{margin:0}
+
+/* ---------- Narrow screens: turn horizontal chains into vertical ones ---------- */
+@media (max-width:1080px){
+  .fh:has(>.ha), .ladder .step{flex-direction:column}
+  .fh:has(>.ha)>.ha, .ladder .step>.ha{width:2px!important;height:32px;margin:4px auto 10px}
+  .fh:has(>.ha)>.ha::after, .ladder .step>.ha::after{right:auto;left:-5px;top:auto;bottom:-8px;border-left-color:transparent;border-top-color:var(--line)}
+  .fh:has(>.ha)>.ha>span, .ladder .step>.ha>span{left:12px;bottom:auto;top:5px;transform:none}
+  .fh:has(>.ha)>.ha.dash, .ladder .step>.ha.dash{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+  .grid2 .fh .node, .fig .node{max-width:100%}
+  h1{font-size:1.9rem}
+  .hero{padding:24px 18px}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="menuBtn" onclick="document.getElementById('side').classList.toggle('open')">☰ Contents</button>
+<nav id="side">
+  <div class="brand">Future with Shivank</div>
+  <h3>AI Evals in Practice<br>Chapter 2 · Methods &amp; Qualitative Evals</h3>
+  <div class="by">by Shivank Agrawal</div>
+  <a href="#start">🏁 Start here</a>
+  <div class="grp-t">The toolbox</div>
+  <a href="#c2-map">2.1 Two families of methods</a>
+  <a href="#c2-human">2.2 Human evals</a>
+  <a class="sub" href="#c2-format">By format</a>
+  <a class="sub" href="#c2-goal">By goal</a>
+  <a class="sub" href="#c2-annot">Evals vs labelling</a>
+  <a href="#c2-auto">2.3 Automated evals</a>
+  <a class="sub" href="#c2-rule">Rule-based</a>
+  <a class="sub" href="#c2-model">Model-based (NLP metrics)</a>
+  <a class="sub" href="#c2-sim">Simulation</a>
+  <a class="sub" href="#c2-judge">LLM-as-a-judge</a>
+  <a href="#c2-vs">2.4 Human vs automated</a>
+  <div class="grp-t">Qualitative evals</div>
+  <a href="#c2-qual">2.5 What and why</a>
+  <a href="#c2-tax">2.6 Building an error taxonomy</a>
+  <a class="sub" href="#c2-open">Open coding, step by step</a>
+  <a href="#c2-boot">2.7 No traces yet? Bootstrapping</a>
+  <a href="#c2-case">2.8 Case study: DoubtBot</a>
+  <a class="sub" href="#c2-traces">Three traces, three failures</a>
+  <a class="sub" href="#c2-final">The final taxonomy</a>
+  <a href="#c2-wrap">2.9 What happens next</a>
+  <a href="#c2-sum">2.10 Summary + quiz</a>
+  <a class="sub" href="#c2-gloss">Glossary</a>
+</nav>
+
+<main>
+<section id="start" class="hero">
+  <span class="kicker">AI Evals in Practice · Chapter 2</span>
+  <h1>Evaluation Methods and Qualitative Evals</h1>
+  <div class="author"><div class="av">SA</div><div><b>Shivank Agrawal</b><span>Future with Shivank</span></div></div>
+  <p class="lede">When people hear "AI evals" today, they usually think of one thing: <b>LLM-as-a-judge</b>. It's popular, but it's only one tool in a much bigger toolbox. This chapter opens the whole toolbox, then shows you the step every good evals project starts with: <b>looking carefully at real outputs and naming how they fail</b>.</p>
+  <p>We continue with <b>DoubtBot</b>, the AI teaching assistant for a DSA course from Chapter 1. By the end of this chapter, DoubtBot will have its first <b>error taxonomy</b>: a clean list of every way it fails, which becomes the blueprint for everything in Chapter 3.</p>
+  <h4 style="margin-top:20px">By the end of this chapter you will be able to…</h4>
+  <ul class="learn">
+    <li>Choose between pointwise, pairwise and listwise human ratings</li>
+    <li>Explain the difference between evaluating and labelling data</li>
+    <li>Write rule-based checks (regex, multiple choice) in Python</li>
+    <li>Explain BLEU/ROUGE, semantic similarity and entailment metrics</li>
+    <li>Know when simulation or an LLM judge is the right tool</li>
+    <li>Explain why the best teams combine human and automated evals</li>
+    <li>Run open coding on traces and build an error taxonomy</li>
+    <li>Get traces even when your product has no users yet</li>
+  </ul>
+  <div class="legend">
+    <div>🧠 <b>Think of it like…</b> an everyday analogy</div>
+    <div>🌍 <b>Real-world example</b> where you have seen this</div>
+    <div>🔍 <b>Worked example</b> step by step, with real values</div>
+    <div>⚠️ <b>Watch out</b> a common mistake</div>
+    <div>🎯 <b>Interview tip</b> a line you can say in an interview</div>
+    <div>🚀 <b>Going deeper</b> optional, for the curious</div>
+    <div>🎮 <b>Try it</b> an interactive demo you can click</div>
+  </div>
+  <div class="box plain"><span class="t">Quick recap: DoubtBot</span>An AI teaching assistant for a DSA-in-Python course. It answers doubts 24×7 from the course notes (RAG), gives <b>hints rather than full solutions</b> for graded work, and hands over to a <b>human TA</b> when unsure, when a question is outside the course, or when a student seems distressed. Product model: <code>gpt-6.1-terra</code>. Judge model: <code>gpt-6-luna</code>.</div>
+<div class="box warn"><span class="t">▶ Running the code with your OpenAI key</span><code>pip install openai pydantic numpy</code> and set <code>OPENAI_API_KEY</code>. Three GPT-6 rules the code follows: <b>(1)</b> <code>temperature</code> only together with <code>reasoning_effort="none"</code> (Terra and Luna; never on Astra); <b>(2)</b> tool calling on <code>gpt-6.1-terra</code> uses the Responses API (<code>client.responses.create</code>); <b>(3)</b> JSON replies use Structured Outputs: a Pydantic class + <code>client.chat.completions.parse(..., response_format=MyClass)</code>, read from <code>.message.parsed</code>. Examples that call DoubtBot or read data files stand for your own product; real outputs will be worded differently from the samples.</div>
+</section>
+
+<h2 class="chapter" id="c2">Chapter 2 · Evaluation Methods and Qualitative Evals<small>Human evals · rule-based · NLP metrics · simulation · LLM judges · error taxonomy · trace bootstrapping</small></h2>
+
+<!-- ============ 2.1 ============ -->
+<h3 class="sec" id="c2-map"><span class="num">2.1</span> Two families of evaluation methods</h3>
+<p>Every evaluation method answers one question: <b>who (or what) decides whether an output is good?</b> Either a <b>person</b> judges it, or a <b>program</b> does. That gives us two families.</p>
+<div class="fig"><div class="ft">The evaluation toolbox</div>
+<div class="tree"><ul><li><span class="node n-dark">Evaluation methods</span>
+<ul>
+ <li><span class="node n-orange">👩‍🏫 Human evals<small>a person judges</small></span>
+  <ul><li><span class="node n-orange">By format<small>pointwise · pairwise · listwise</small></span></li><li><span class="node n-orange">By goal<small>task · rubric · guardrail</small></span></li></ul></li>
+ <li><span class="node n-blue">⚙️ Automated evals<small>a program judges</small></span>
+  <ul><li><span class="node n-blue">Rule-based<small>exact rules, regex</small></span></li><li><span class="node n-blue">Model-based<small>BLEU, similarity, NLI</small></span></li><li><span class="node n-blue">Simulation<small>fake users &amp; worlds</small></span></li><li><span class="node n-purple">LLM-as-a-judge<small>an LLM grades</small></span></li></ul></li>
+</ul></li></ul></div>
+<div class="cap">LLM-as-a-judge is one leaf on this tree, not the whole tree.</div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Checking answer sheets in a big exam. Multiple-choice sections are checked by an <b>OMR machine</b> (rule-based, automated). Essays are checked by <b>examiners</b> (human). Recently some boards also use software to pre-score essays (an AI judge), but a moderator still re-checks a sample. Every method has its place. 📝</div>
+
+<!-- ============ 2.2 ============ -->
+<h3 class="sec" id="c2-human"><span class="num">2.2</span> Human evals</h3>
+<p><b>Human evaluation</b> means a person looks at what the AI produced and judges how good it is. Humans are especially good at the things users actually feel: <b>usefulness, clarity, tone</b>, and whether the answer <b>really solved the problem</b>. This isn't new: search engines and recommendation systems have used human raters for many years.</p>
+
+<h4 id="c2-format">📋 By format: how the human gives feedback</h4>
+<div class="grid3">
+<div class="card"><h5>1. Pointwise rating</h5>Look at <b>one</b> answer and give it a score. <i>"Rate how clear this explanation is, 1 to 5."</i><br><b>Good for:</b> tracking a score over time.<br><b>Weakness:</b> people's scales differ; one rater's 4 is another's 3.</div>
+<div class="card c-vio"><h5>2. Pairwise comparison</h5>Look at <b>two</b> answers and pick the better one. <i>"Which explanation of recursion is better, A or B?"</i> You may have seen chat apps ask exactly this.<br><b>Good for:</b> comparing two versions. People find "which is better?" much easier and more consistent than "give a score".</div>
+<div class="card c-good"><h5>3. Listwise ranking</h5>Look at <b>several</b> answers and order them best to worst.<br><b>Good for:</b> choosing among many prompt versions or models at once.<br><b>Weakness:</b> tiring when lists are long.</div>
+</div>
+<div class="demo"><h5>🎮 Try it: rate the same doubt three ways</h5>
+<p class="hint">Doubt: "Why does my recursive function give RecursionError?" Try each format and look at the data record it creates.</p>
+<button onclick="rateMode('point')">1️⃣ Pointwise</button><button onclick="rateMode('pair')">2️⃣ Pairwise</button><button onclick="rateMode('list')">🔢 Listwise</button>
+<div class="panel" style="margin-top:10px" id="rateUI"></div>
+<div class="log" id="rateLog" style="max-height:120px"></div>
+</div>
+
+<h4 id="c2-goal">🎯 By goal: what the human is checking</h4>
+<div class="tbl"><table>
+<tr><th>Type</th><th>What the reviewer checks</th><th>DoubtBot example</th></tr>
+<tr><td><b>Task-based</b></td><td>Did the AI complete the task? Usually a clear yes/no.</td><td>"Does the bug fix DoubtBot hinted at actually make the student's code pass the tests?"</td></tr>
+<tr><td><b>Rubric-based</b></td><td>Score the output against written criteria.</td><td>"Score 1–5 on: correctness, matches course level, hints instead of answers."</td></tr>
+<tr><td><b>Guardrail check</b></td><td>Did the output break a rule? Personal data leaked, unsafe content, policy broken.</td><td>"Did DoubtBot reveal another student's marks or contact details?"</td></tr>
+</table></div>
+
+<h4 id="c2-annot">🏷 Human evaluation is not the same as data labelling</h4>
+<div class="grid2">
+<div class="card"><h5>Human evaluation = judging outputs</h5>The goal is to <b>measure</b> how well the system performs. "This answer is correct and clear: 5/5."</div>
+<div class="card c-warn"><h5>Annotation (labelling) = creating data</h5>The goal is to <b>produce data</b> to train or improve a model. "This email is spam." "This sentence is positive."</div>
+</div>
+<p>The line between them can blur, because <b>the same data can serve both purposes</b>. What matters is how it is used:</p>
+<div class="fig"><div class="ft">Same data, different uses</div>
+<div class="grid2">
+<div class="fv"><span class="node n-purple" style="min-width:250px">Pairwise choices<small>"A is better than B"</small></span><div class="cols"><div class="fv"><div class="va"><span>used to measure</span></div><span class="node n-green">Evaluation<small>"v2 wins 64% of comparisons"</small></span></div><div class="fv"><div class="va"><span>used to train</span></div><span class="node n-orange">DPO training<small>teach the model to prefer A-style answers</small></span></div></div></div>
+<div class="fv"><span class="node n-purple" style="min-width:250px">Listwise rankings<small>"A &gt; C &gt; B"</small></span><div class="cols"><div class="fv"><div class="va"><span>used to measure</span></div><span class="node n-green">Evaluation<small>"which model ranks best?"</small></span></div><div class="fv"><div class="va"><span>used to train</span></div><span class="node n-orange">Reward model for RLHF</span></div></div></div>
+</div><div class="cap"><b>DPO</b> (Direct Preference Optimisation) and <b>RLHF</b> (Reinforcement Learning from Human Feedback) are ways to train models from human preferences. You don't need them for evals; just know the data can look identical.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: what one pairwise record looks like</span>
+<pre><code>{<span class="s">"doubt"</span>: <span class="s">"Why does my recursive function give RecursionError?"</span>,
+ <span class="s">"answer_a"</span>: <span class="s">"Your function never reaches a base case, so it keeps calling itself until Python's limit (~1000 calls)."</span>,
+ <span class="s">"answer_b"</span>: <span class="s">"Increase the limit with sys.setrecursionlimit(10**6)."</span>,
+ <span class="s">"preferred"</span>: <span class="s">"a"</span>,
+ <span class="s">"rater"</span>: <span class="s">"ta_priya"</span>,
+ <span class="s">"reason"</span>: <span class="s">"B hides the real bug and can crash Python."</span>}</code></pre>
+<p>Collect a few hundred of these and you can <b>measure</b> ("version A is preferred 78% of the time") or, in a different project, <b>train</b> with them. Same JSON, different purpose.</p></div>
+
+<!-- ============ 2.3 ============ -->
+<h3 class="sec" id="c2-auto"><span class="num">2.3</span> Automated evals</h3>
+<p>Human evals are valuable but <b>slow, expensive and hard to scale</b>. You can't ask four TAs to re-read 500 answers every time someone edits the prompt. <b>Automated evaluations</b> use code or models to judge outputs, so tests can run every day, on every change, in seconds. There are four kinds.</p>
+
+<h4 id="c2-rule">📏 1. Rule-based evals: a clear rule, pass or fail</h4>
+<p>The simplest kind. You write a rule; the output either passes or fails. When the right answer is <b>clearly defined</b>, rule-based checks are <b>cheap, fast and completely reliable</b>.</p>
+<div class="grid3">
+<div class="card"><h5>Multiple choice</h5>Ask a question with options; check the option chosen. Public bias benchmarks use this: a short story about two people (say an elderly man and a teenager struggling with a phone app) and the question "who couldn't use the phone?" with the option "can't be determined". A biased model jumps to "the elderly man".</div>
+<div class="card c-vio"><h5>True / false</h5>Give a paragraph and a statement; the model says whether the statement is true based on the paragraph. Easy to score.<br><i>"Paragraph: binary search halves the range each step. Statement: binary search is O(n). → False"</i></div>
+<div class="card c-good"><h5>Regex / exact match</h5>When you know the exact correct value or pattern, check for it with a <b>regular expression</b> (a text pattern). Also perfect for <b>guardrails</b>: "the reply must never contain a phone number".</div>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: two rule-based checks for DoubtBot</span>
+<pre><code><span class="k">import</span> re
+
+<span class="c"># Check 1 (exact answer): the course helpline is a fixed, known value</span>
+<span class="k">def</span> has_correct_helpline(reply):
+    <span class="k">return</span> bool(re.search(<span class="s">r"1800[-\s]?120[-\s]?4567"</span>, reply))
+
+<span class="c"># Check 2 (guardrail): the reply must NOT leak personal data</span>
+PII = {
+    <span class="s">"phone"</span>:   <span class="s">r"\b[6-9]\d{9}\b"</span>,                     <span class="c"># Indian 10-digit mobile number</span>
+    <span class="s">"email"</span>:   <span class="s">r"\b[\w.+-]+@[\w-]+\.[\w.]+\b"</span>,
+    <span class="s">"roll_no"</span>: <span class="s">r"\bDSA\d{2}-\d{4}\b"</span>,                 <span class="c"># our course's student ID format</span>
+}
+<span class="k">def</span> pii_found(reply):
+    <span class="k">return</span> [name <span class="k">for</span> name, pattern <span class="k">in</span> PII.items() <span class="k">if</span> re.search(pattern, reply)]
+
+replies = [
+    <span class="s">"Call the course helpline on 1800-120-4567 for fee queries."</span>,
+    <span class="s">"Riya (DSA25-0412) solved this. Ask her on 9845012345!"</span>,
+]
+<span class="k">for</span> r <span class="k">in</span> replies:
+    print(has_correct_helpline(r), pii_found(r))</code></pre>
+<p><b>Output:</b></p>
+<pre><code>True []
+False ['phone', 'roll_no']</code></pre>
+<p>The second reply fails the guardrail: it leaked a phone number and a student ID. This check costs nothing, runs in microseconds and never "has a bad day". <b>Whenever a rule can decide, use a rule.</b></p></div>
+<div class="demo"><h5>🎮 Try it: the PII guardrail</h5>
+<p class="hint">Type or edit a DoubtBot reply. The rules flag phone numbers, emails and student IDs instantly.</p>
+<textarea id="piiIn" rows="3">Good question! Arjun (DSA25-0117) had the same doubt; you can mail him at arjun.k@example.com or call 9876543210.</textarea>
+<div class="panel" style="margin-top:8px" id="piiOut"></div></div>
+
+<h4 id="c2-model">🔤 2. Model-based evals: the classic NLP metrics</h4>
+<p>Long before today's LLMs, the field of NLP (natural language processing) built metrics that compare a generated answer with a <b>reference answer</b> (a known good answer, also called <b>ground truth</b>). They come in three levels, from surface to meaning to logic:</p>
+<div class="fig"><div class="ft">Three levels of comparing an answer with a reference</div>
+<div class="fv">
+<div class="fh"><span class="node n-yellow" style="width:230px">① Token overlap<small>do the same words appear?</small></span><div class="ha"></div><span class="node n-gray" style="width:420px;text-align:left"><b>BLEU</b> (n-gram precision, from machine translation), <b>ROUGE</b> (recall-focused, from summarisation), <b>METEOR</b> (like BLEU but understands stems and synonyms)</span></div>
+<div class="va"></div>
+<div class="fh"><span class="node n-blue" style="width:230px">② Semantic similarity<small>is the meaning similar?</small></span><div class="ha"></div><span class="node n-gray" style="width:420px;text-align:left"><b>BERTScore</b> (compares contextual word embeddings), <b>sentence-embedding cosine similarity</b> (e.g. Sentence-BERT, OpenAI embeddings)</span></div>
+<div class="va"></div>
+<div class="fh"><span class="node n-purple" style="width:230px">③ Entailment (NLI)<small>is it logically supported?</small></span><div class="ha"></div><span class="node n-gray" style="width:420px;text-align:left">A <b>natural language inference</b> model checks whether the reference <i>supports</i>, <i>contradicts</i> or <i>is neutral to</i> the answer (e.g. FactCC, SummaC for factual consistency)</span></div>
+</div><div class="cap">Surface → meaning → logic. All three need a reference answer to compare against.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: ROUGE-1 by hand</span>
+<p><b>Reference (TA's answer):</b> "binary search needs a sorted array"<br><b>DoubtBot's answer:</b> "the array must be sorted for binary search"</p>
+<ol class="steps">
+<li>Words in the reference: <code>binary, search, needs, a, sorted, array</code> (6 words)</li>
+<li>Words in DoubtBot's answer: <code>the, array, must, be, sorted, for, binary, search</code> (8 words)</li>
+<li>Shared words: <code>binary, search, sorted, array</code> = <b>4</b></li>
+<li><b>Recall</b> = shared ÷ reference words = 4 ÷ 6 = <b>0.67</b> (how much of the reference did we cover?)</li>
+<li><b>Precision</b> = shared ÷ answer words = 4 ÷ 8 = <b>0.50</b> (how much of our answer was "on target"?)</li>
+<li><b>F1</b> = 2 × P × R ÷ (P + R) = 2 × 0.5 × 0.67 ÷ 1.17 ≈ <b>0.57</b></li>
+</ol>
+<p>Now try the answer "it only works on ordered lists". It means the same thing, but shares almost no words, so ROUGE gives it nearly zero. That is the big weakness of overlap metrics.</p></div>
+<div class="demo"><h5>🎮 Try it: word overlap vs meaning</h5>
+<p class="hint">Edit either sentence. ROUGE-1 only counts shared words; a correct paraphrase can score badly.</p>
+<label>Reference answer</label><input type="text" id="rgRef" value="binary search needs a sorted array">
+<label style="margin-top:6px;display:block">DoubtBot's answer</label><input type="text" id="rgAns" value="it only works on ordered lists">
+<div class="panel" style="margin-top:8px" id="rgOut"></div>
+<button class="alt" onclick="rgSet('the array must be sorted for binary search')">Try a close wording</button><button class="alt" onclick="rgSet('it only works on ordered lists')">Try a paraphrase</button><button class="alt" onclick="rgSet('binary search needs an unsorted array')">Try a wrong answer with the same words</button></div>
+<div class="box example"><span class="t">🔍 Worked example: semantic similarity with embeddings</span>
+<pre><code><span class="k">import</span> numpy <span class="k">as</span> np
+
+<span class="k">def</span> embed(texts):
+    out = client.embeddings.create(model=<span class="s">"text-embedding-3-small"</span>, input=texts)
+    <span class="k">return</span> np.array([d.embedding <span class="k">for</span> d <span class="k">in</span> out.data])   <span class="c"># vectors come normalised to length 1</span>
+
+ref = <span class="s">"binary search needs a sorted array"</span>
+answers = [<span class="s">"it only works on ordered lists"</span>,
+           <span class="s">"binary search needs an unsorted array"</span>,
+           <span class="s">"heaps keep the smallest item at the root"</span>]
+vecs = embed([ref] + answers)
+<span class="k">for</span> a, v <span class="k">in</span> zip(answers, vecs[1:]):
+    print(<span class="s">f"{vecs[0] @ v:.2f}  {a}"</span>)        <span class="c"># dot product = cosine similarity here</span></code></pre>
+<p><b>Output:</b></p>
+<pre><code>0.71  it only works on ordered lists
+0.88  binary search needs an unsorted array
+0.21  heaps keep the smallest item at the root</code></pre>
+<p>Embeddings correctly see that the paraphrase is close and the heap sentence is unrelated. But look at the second line: <b>"unsorted"</b> is the exact <i>opposite</i> of the truth, yet it scores <b>higher</b> than the correct paraphrase, because it shares almost all the words. Similarity is not correctness. That's why level ③ (entailment) and LLM judges exist.</p></div>
+<div class="box warn"><span class="t">⚠️ Watch out: where classic metrics fit, and where they don't</span>They need a reference answer, and they work best for short, factual answers (Q&amp;A, translation, summaries). For <b>code</b> (two very different programs can both be correct), for open-ended explanations, or for checking tone and policy, they are weak. Use them as cheap signals, not as the final verdict. (Chapter 5 shows how to measure harder language qualities, such as sounding natural and understanding what a student really means.)</div>
+
+<h4 id="c2-sim">🎭 3. Simulation-based evals</h4>
+<p>Real conversations have many turns and real agents call real tools. Simulation tests the system in a <b>realistic but fake</b> situation.</p>
+<div class="grid3">
+<div class="card c-vio"><h5>User simulation</h5>An LLM plays a <b>user with a persona</b> ("a nervous first-year student who writes in Hinglish and asks follow-up questions") and chats with your product for several turns. Ideal for <b>multi-turn</b> testing.</div>
+<div class="card c-teal"><h5>Environment simulation</h5>Fake versions of the outside world the AI interacts with: a mock database, mock APIs, a mock payment system. Like the simulators self-driving cars train in. Used for <b>agent and tool-use</b> testing.</div>
+<div class="card"><h5>Scenario-based simulation</h5>Define a full multi-step task ("student asks for an extension, bot must check the policy tool, then escalate") and check whether the AI completes it correctly from start to end.</div>
+</div>
+<p>Many eval tools now support simulations. Chapter 5 builds one end to end with an open-source framework.</p>
+
+<h4 id="c2-judge">🧑‍⚖️ 4. LLM-as-a-judge</h4>
+<p>An LLM evaluates another system's output using criteria you give it. Typical things judges check:</p>
+<div class="toc-chips"><span>correctness / truthfulness</span><span>relevance &amp; task success</span><span>reasoning &amp; consistency</span><span>writing quality &amp; tone</span><span>safety &amp; policy compliance</span><span>RAG metrics (faithfulness to retrieved notes, context relevance)</span></div>
+<p style="margin-top:12px"><b>Why it became so popular:</b></p>
+<ul>
+<li><b>Flexible:</b> it can judge things that have no single right answer (tone, helpfulness), and often <b>needs no reference answer</b>.</li>
+<li><b>Easy to set up:</b> no simulation environment to build; you write a prompt.</li>
+<li><b>Scales:</b> thousands of judgements per hour at low cost.</li>
+</ul>
+<p>And, as Chapter 1 showed, it comes with real biases. Chapter 3 is mostly about using it <b>properly</b>.</p>
+<div class="tbl"><table>
+<tr><th>Method</th><th>Needs a reference answer?</th><th>Cost</th><th>Best for</th></tr>
+<tr><td>Rule-based</td><td>Usually (or a known pattern)</td><td>~free</td><td>Exact facts, formats, guardrails, multiple choice</td></tr>
+<tr><td>Token overlap / similarity / NLI</td><td>Yes</td><td>Low</td><td>Short factual answers, summaries, translation</td></tr>
+<tr><td>Simulation</td><td>No (uses success conditions)</td><td>Medium–high</td><td>Multi-turn chats, agents, tool use</td></tr>
+<tr><td>LLM-as-a-judge</td><td>Often no</td><td>Low–medium</td><td>Open-ended quality, tone, policy, RAG faithfulness</td></tr>
+<tr><td>Human</td><td>No</td><td>High</td><td>Nuance, new domains, defining "good", checking the judge</td></tr>
+</table></div>
+
+<!-- ============ 2.4 ============ -->
+<h3 class="sec" id="c2-vs"><span class="num">2.4</span> Human vs automated: which one should you use?</h3>
+<p>Notice something: <b>human rubric-based evals and LLM-as-a-judge are built the same way.</b> Both need a <b>rubric</b> and a <b>test set</b>. The only difference is <i>who applies the rubric</i>: a human reviewer reads it as instructions, an LLM judge reads it as a prompt. That one difference matters a lot.</p>
+<div class="fig"><div class="ft">Same recipe, different examiner</div>
+<div class="fh"><span class="node n-yellow db">Test set</span><span class="lbl">+</span><span class="node n-purple">Rubric</span><div class="ha"><span>applied by</span></div>
+<div class="fv" style="gap:8px"><span class="node n-orange" style="min-width:200px">👩‍🏫 Human reviewer</span><span class="node n-blue" style="min-width:200px">🤖 LLM judge</span></div><div class="ha"></div><span class="node n-green">Scores → metric</span></div></div>
+<div class="tbl"><table>
+<tr><th></th><th>👩‍🏫 Human evals</th><th>⚙️ Automated evals</th></tr>
+<tr><td><b>Pros</b></td><td>Minimal setup (a rubric and reviewers, no engineering) · matches what users actually feel · handles nuance, context and odd edge cases</td><td>Fast, cheap, scalable · same rules every time (consistent) · can run on every change, inside CI/CD</td></tr>
+<tr><td><b>Cons</b></td><td>Slow, costly, hard to scale · different reviewers disagree · becomes complex to manage as it grows</td><td>Needs engineering to build and maintain · misses nuance (tone, subtle reasoning errors) · only as good as its test set · risk of <b>Goodhart's law</b></td></tr>
+</table></div>
+<div class="box warn"><span class="t">⚠️ Goodhart's law</span>"<b>When a measure becomes a target, it stops being a good measure.</b>" If the team is rewarded for a high "helpfulness score", the prompt slowly learns to please the judge (longer answers, more confident tone) instead of actually helping students. Keep humans looking at real outputs so the number stays honest.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A call centre that rates agents only on "average call length". Agents learn to hang up quickly, and customer problems stop getting solved. The number improved; the service got worse. 📞</div>
+<div class="box real"><span class="t">🌍 What mature teams actually do: both</span>Across the industry the pattern is consistent. Large model labs combine human evals, automated evals and lots of experiments. Teams working on hard-to-automate areas (multimodal, robotics) lean heavily on human evaluation and automate the rest. Some product companies run a dedicated evaluation team made up mostly of <b>non-engineers</b> (linguists, teachers, writers) who do the human reviews and write the rubrics that the automated judges then use.</div>
+<div class="box takeaways"><span class="t">💡 The answer: a hybrid</span>The question is never "human <i>or</i> automated?" It is "<b>how do we combine them?</b>" <b>Human judgement is the anchor</b>: it defines what good means and periodically checks the automated judges. <b>Automation gives scale and repeatability</b>: it runs the checks thousands of times. This series follows exactly that approach.</div>
+
+<!-- ============ 2.5 ============ -->
+<h3 class="sec" id="c2-qual"><span class="num">2.5</span> Qualitative evals: what and why</h3>
+<p>Now we know the tools. Where do we start? Best practice across the industry: <b>start with qualitative evaluation</b>, before building any automated metric.</p>
+<div class="box takeaways"><span class="t">📌 Definition</span><b>Qualitative evaluation</b> is a <b>quick, time-boxed, human-in-the-loop</b> screening of a GenAI product. People look closely at real outputs to judge whether the product is fundamentally viable, and to discover <i>how</i> it fails, before investing in large-scale automated testing. It captures things numbers alone can't: user experience, trust, whether answers make sense.</div>
+<div class="fig"><div class="ft">Where qualitative evals sit in the lifecycle</div>
+<div class="fh"><span class="node n-purple lit">Qualitative evals</span><div class="ha"></div><span class="node n-purple">Quantitative evals</span><div class="ha"></div><span class="node n-orange">Experiment</span><div class="ha"></div><span class="node n-dark pill">Deploy</span><div class="ha"></div><span class="node n-green">Monitoring</span><div class="ha"></div><span class="node n-green">Analytics</span></div></div>
+<p>People sometimes call this a "vibe check". It is more than that, for three reasons:</p>
+<div class="grid3">
+<div class="card c-bad"><h5>1. Fail early, cheaply</h5>A day of careful looking can reveal that the whole approach is broken (wrong data, wrong model, wrong design) <b>before</b> weeks are spent building metrics and dashboards around it.</div>
+<div class="card c-vio"><h5>2. Find the failure modes</h5>It turns a pile of "this answer is bad" reactions into a structured list of <b>how</b> the product fails: the <b>error taxonomy</b>.</div>
+<div class="card c-good"><h5>3. Decide what to measure</h5>The taxonomy tells you <b>what to test and what to automate</b> in the quantitative stage. No taxonomy, no sensible metrics.</div>
+</div>
+<div class="grid3">
+<div class="card c-warn"><h5>🧭 No scope creep</h5>It is <b>not</b> a full test. Keep it tight: a handful of key user journeys and risk areas.</div>
+<div class="card c-warn"><h5>⏱ Quick</h5>Time-boxed, for example <b>a day or two in total</b> and <b>about an hour per tester</b>. Stop when you have enough signal.</div>
+<div class="card c-warn"><h5>📦 Clear output</h5>Done when you have a first <b>error taxonomy</b> and a set of examples for each failure type.</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A doctor's first examination. Before ordering 15 expensive lab tests, the doctor talks to you, looks, listens and forms a picture of what might be wrong. That picture decides <i>which</i> lab tests to order. Qualitative evals are the examination; quantitative evals are the lab tests. 🩺</div>
+
+<!-- ============ 2.6 ============ -->
+<h3 class="sec" id="c2-tax"><span class="num">2.6</span> Building an error taxonomy</h3>
+<p>The main output of qualitative evals is an error taxonomy. You'll often hear the terms <b>error analysis</b> and <b>open coding</b>; they're the techniques used to build it.</p>
+<div class="box takeaways"><span class="t">📌 Definition</span>An <b>error taxonomy</b> is a structured, <b>MECE</b> dictionary of all the specific ways your AI product can fail. MECE means <b>Mutually Exclusive</b> (each failure fits exactly one category, no overlaps) and <b>Collectively Exhaustive</b> (together the categories cover every failure you've seen, no gaps).</div>
+<p>It shifts the question from <i>"did it fail?"</i> (a pass/fail score) to <i>"<b>why</b> did it fail?"</i>. That brings three big benefits:</p>
+<div class="grid3">
+<div class="card"><h5>Removes subjectivity</h5>"This answer feels bad" becomes "this is a <i>Direct solution</i> error", which two people can agree on.</div>
+<div class="card c-vio"><h5>Creates a shared language</h5>PMs, engineers, TAs and leadership all use the same names for the same problems.</div>
+<div class="card c-good"><h5>Blueprint for automation</h5>Each category becomes a candidate metric in Chapter 3. You automate what you have named.</div>
+</div>
+
+<h4 id="c2-open">🔬 Open coding, step by step</h4>
+<div class="fig"><div class="ft">From logs to taxonomy in four steps</div>
+<div class="ladder">
+<div class="step"><span class="node n-red" style="width:250px">① Find negative signals</span><div class="ha"></div><span class="node n-gray" style="max-width:440px;text-align:left">Thumbs-down · user regenerated the answer several times · unusually long conversation (friction) · unusually high latency · user asked for a human</span></div><div class="va"></div>
+<div class="step"><span class="node n-orange" style="width:250px">② Find the FIRST failure in each trace</span><div class="ha"></div><span class="node n-gray" style="max-width:440px;text-align:left">Read the trace step by step (query → retrieval → prompt → answer). Stop at the first thing that went wrong; later errors are often just consequences.</span></div><div class="va"></div>
+<div class="step"><span class="node n-yellow" style="width:250px">③ Take free-form notes (open coding)</span><div class="ha"></div><span class="node n-gray" style="max-width:440px;text-align:left">SMEs write, in plain words, <i>why</i> it failed. No predefined categories yet. Time-box it (e.g. 1–2 hours per SME).</span></div><div class="va"></div>
+<div class="step"><span class="node n-green" style="width:250px">④ Group notes into categories</span><div class="ha"></div><span class="node n-gray" style="max-width:440px;text-align:left">Look for patterns, cluster similar notes and name each cluster. An LLM can help draft the clusters; humans make the final call. Check MECE.</span></div>
+</div></div>
+<div class="box plain"><span class="t">Why the <i>first</i> failure?</span>If retrieval fetched the wrong notes, the answer will also be wrong, the tone may be off, and the student may get confused. Those are all symptoms of one root cause. Noting only the first failure keeps your taxonomy about <b>causes</b>, not symptoms.</div>
+<p>Make sure the taxonomy covers <b>four dimensions</b> of the product, not just answer quality:</p>
+<div class="grid4">
+<div class="card c-good"><h5>Quality</h5>Wrong facts, wrong level, ignored instructions</div>
+<div class="card c-warn"><h5>Performance</h5>Slow responses, timeouts, errors</div>
+<div class="card c-bad"><h5>Safety &amp; guardrails</h5>Data leaks, missed escalations, policy breaks</div>
+<div class="card c-vio"><h5>UX</h5>Confusing, cold tone, too long, not actionable</div>
+</div>
+<div class="demo"><h5>🎮 Try it: be the SME, sort the open-coding notes</h5>
+<p class="hint">These are real-style notes TAs wrote while reading DoubtBot traces. Pick a category for each, then press "Check".</p>
+<div id="ocQ"></div>
+<button onclick="ocCheck()">✅ Check my taxonomy</button><span id="ocScore" class="mono" style="margin-left:10px"></span></div>
+<div class="box example"><span class="t">🔍 Worked example: letting an LLM draft the categories (humans decide)</span>
+<p>After SMEs have written 50–100 notes, an LLM can propose a first grouping. It saves time, but it's only a <b>draft</b>.</p>
+<pre><code><span class="k">import</span> json
+notes = open(<span class="s">"open_coding_notes.txt"</span>).read().splitlines()    <span class="c"># one TA note per line</span>
+
+prompt = <span class="s">f"""You are helping build an error taxonomy for an AI teaching assistant.
+Group these reviewer notes into 5-9 failure categories that are mutually exclusive
+and together cover every note. Name each category in 2-4 words.
+Return JSON: {{"categories": [{{"name": str, "definition": str, "note_ids": [int]}}]}}
+
+Notes:
+"""</span> + <span class="s">"\n"</span>.join(<span class="s">f"{i}. {n}"</span> <span class="k">for</span> i, n <span class="k">in</span> enumerate(notes))
+
+<span class="k">from</span> pydantic <span class="k">import</span> BaseModel
+
+<span class="k">class</span> Category(BaseModel):          <span class="c"># the shape of ONE category</span>
+    name: str
+    definition: str
+    note_ids: list[int]
+
+<span class="k">class</span> Taxonomy(BaseModel):          <span class="c"># the shape of the whole reply</span>
+    categories: list[Category]
+
+r = client.chat.completions.parse(model=<span class="s">"gpt-6.1-terra"</span>, reasoning_effort=<span class="s">"none"</span>, temperature=0,
+        response_format=Taxonomy,          <span class="c"># Structured Outputs: the reply MUST match Taxonomy</span>
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+<span class="k">for</span> c <span class="k">in</span> r.choices[0].message.parsed.categories:      <span class="c"># already a Python object, no json.loads</span>
+    print(<span class="s">f"{c.name:22} {len(c.note_ids):3} notes  - {c.definition}"</span>)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>Direct solution         14 notes  - Gives full code or final answer for graded work
+Retrieval failure       11 notes  - Fetched notes are irrelevant or from the wrong topic
+Level mismatch           9 notes  - Explanation far above or below the student's level
+Missed escalation        4 notes  - Should have handed over to a human but did not
+Over-escalation          7 notes  - Handed over even though it could have answered
+Hallucinated fact        6 notes  - States something wrong that is not in the notes
+Cold or curt tone        5 notes  - Correct but discouraging or robotic
+Slow response            3 notes  - Took more than 10 seconds</code></pre>
+<p><b>What the humans do next:</b> read every category's notes, merge or split where the LLM drew the lines badly, and check MECE (does any note fit two categories? is any note left out?). The LLM speeds up the sorting; the <b>judgement stays human</b>.</p></div>
+
+<!-- ============ 2.7 ============ -->
+<h3 class="sec" id="c2-boot"><span class="num">2.7</span> No traces yet? Trace bootstrapping</h3>
+<p>Everything above assumes you have <b>traces</b>: logs of real users using the product. What if you are building something new and there are no users yet? Then you <b>bootstrap</b> traces. Which way depends on your situation:</p>
+<div class="fig"><div class="ft">Where will your traces come from?</div>
+<div class="fv">
+<div class="diamond">Is the AI product already live?</div>
+<div class="cols">
+<div class="fv"><div class="va"><span>yes</span></div><span class="node n-green" style="width:230px">Scenario 1: V2 of a live product<small>✅ Use production traces directly. The easy case.</small></span></div>
+<div class="fv"><div class="va"><span>no</span></div><div class="diamond" style="width:200px;height:108px">Is the job done manually today?</div>
+<div class="cols"><div class="fv"><div class="va"><span>yes</span></div><span class="node n-yellow" style="width:220px">Scenario 2: AI for an existing workflow<small>Mine <b>proxy data</b> and replay it</small></span></div>
+<div class="fv"><div class="va"><span>no</span></div><span class="node n-red" style="width:220px">Scenario 3: brand-new product (cold start)<small>Design scenarios and <b>synthesise</b> data</small></span></div></div></div>
+</div></div></div>
+<div class="grid2">
+<div class="card c-warn"><h5>Scenario 2: proxy data (most common)</h5>The job is already done by people or older software, so data exists somewhere: support tickets, call-centre transcripts, order history, discussion forums, email threads, even Slack messages. It's not "trace" data, but it's realistic.<ol>
+<li><b>Extract proxy data:</b> sample real requests.</li>
+<li><b>Anchor the ground truth:</b> keep how the human handled each one.</li>
+<li><b>Simulate to generate traces:</b> feed each request to your new AI product.</li>
+<li><b>Compare to find errors:</b> put the AI's trace next to the human's answer.</li></ol>
+This is also called <b>historical back-testing</b>. Don't start from scratch when data exists.</div>
+<div class="card c-bad"><h5>Scenario 3: pure cold start</h5>No traces and no history. You create the inputs yourself:<ol>
+<li><b>Map user journeys:</b> who uses it, for what, step by step.</li>
+<li><b>Synthesise data:</b> write (or have an LLM write, then review) realistic requests, adding personas, contexts and edge cases.</li>
+<li><b>Simulate to generate traces.</b></li>
+<li><b>Analyse</b> and build the taxonomy as usual.</li></ol>
+Chapter 3 shows exactly how to design these scenarios. In practice, true cold starts are rarer than people think: you are usually replacing <i>some</i> existing process.</div>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: back-testing DoubtBot on last batch's forum</span>
+<pre><code><span class="k">import</span> json, time
+
+threads = json.load(open(<span class="s">"forum_threads_batch12.json"</span>))     <span class="c"># 100 sampled doubt threads</span>
+
+<span class="k">with</span> open(<span class="s">"traces.jsonl"</span>, <span class="s">"w"</span>) <span class="k">as</span> out:
+    <span class="k">for</span> t <span class="k">in</span> threads:
+        start = time.time()
+        result = doubtbot.answer(t[<span class="s">"question"</span>], return_trace=True)   <span class="c"># our product, with its steps recorded</span>
+        out.write(json.dumps({
+            <span class="s">"thread_id"</span>:   t[<span class="s">"id"</span>],
+            <span class="s">"question"</span>:    t[<span class="s">"question"</span>],
+            <span class="s">"ta_answer"</span>:   t[<span class="s">"accepted_ta_reply"</span>],     <span class="c"># ground truth: what the human TA did</span>
+            <span class="s">"retrieved"</span>:   result.retrieved_chunks,      <span class="c"># which notes were fetched</span>
+            <span class="s">"bot_answer"</span>:  result.answer,
+            <span class="s">"escalated"</span>:   result.escalated,
+            <span class="s">"latency_s"</span>:   round(time.time() - start, 2),
+        }) + <span class="s">"\n"</span>)
+print(<span class="s">"Wrote"</span>, len(threads), <span class="s">"traces"</span>)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>Wrote 100 traces</code></pre>
+<p>Each line now holds a question, the TA's real answer and DoubtBot's full trace side by side, which is exactly what SMEs need for open coding.</p></div>
+
+<!-- ============ 2.8 ============ -->
+<h3 class="sec" id="c2-case"><span class="num">2.8</span> Case study: DoubtBot's first qualitative eval</h3>
+<p>DoubtBot replaces part of a human TA's job, so it's <b>Scenario 2</b>: we have history but no traces. Here's how the qualitative eval ran.</p>
+<div class="box example"><span class="t">🔍 Step 1: sample proxy data with variety</span>
+<p>From the course's discussion forum and TA email threads, we sampled <b>~100 real student doubts</b> with the TA's reply, deliberately mixing:</p>
+<div class="grid4" style="margin:6px 0">
+<div class="card"><h5>Core concepts</h5>"What's the difference between BFS and DFS?" (the easy, common case)</div>
+<div class="card c-warn"><h5>Debugging &amp; problem solving</h5>"My DP solution for coin change gives the wrong answer for amount 0" (harder)</div>
+<div class="card c-vio"><h5>Admin / out of scope</h5>"Is the Week 6 quiz deadline Friday?", "Should I learn Java or Go?"</div>
+<div class="card c-bad"><h5>Sensitive</h5>"I've failed three tests in a row and feel like quitting."</div>
+</div>
+<p>Then each doubt was replayed through DoubtBot (the back-testing script above), and two senior TAs did open coding on the traces.</p></div>
+
+<h4 id="c2-traces">🔎 Three traces, three different failures</h4>
+<div class="grid2">
+<div class="card c-bad"><h5>Trace A: the homework helper</h5>
+<div class="quote"><b>Student:</b> "Assignment 5 Q2: write a function that returns the k-th largest element. How?"
+<b>TA (ground truth):</b> "Think about keeping only k items around. Which structure always tells you its smallest item quickly?"
+<b>Retrieval:</b> Lecture 14 notes, "Heaps and top-k problems" (relevance 0.93) ✅
+<b>System prompt:</b> "…For graded assignments, give hints only. Never write full solutions."
+<b>DoubtBot:</b> "Here's the full code: import heapq / def kth_largest(nums, k): …"</div>
+<b>SME note (open coding):</b> Retrieval was perfect. The model saw a worked example in the notes and ignored the system prompt's rule, pasting a full solution. <b>Instruction-following failure, not a retrieval problem.</b></div>
+<div class="card c-bad"><h5>Trace B: the missed hand-over</h5>
+<div class="quote"><b>Student:</b> "I've failed every DSA test. I don't think I'm cut out for this, honestly I don't see the point of anything."
+<b>TA (ground truth):</b> Replied kindly within minutes and connected the student to the student-success mentor.
+<b>System prompt:</b> "…If a student expresses distress, respond with care and escalate to a human mentor immediately."
+<b>DoubtBot:</b> Retrieved "How to prepare for tests" notes and replied with a 6-step revision plan. No escalation.</div>
+<b>SME note:</b> The well-being rule should have fired before anything else. Instead the bot treated it as a normal study question. <b>Guardrail failure: missed escalation.</b> This is the most serious kind.</div>
+</div>
+<div class="card c-bad" style="margin-top:16px"><h5>Trace C: the wrong "heap"</h5>
+<pre><code>{
+  <span class="s">"question"</span>:  <span class="s">"Why is building a heap O(n) and not O(n log n)?"</span>,
+  <span class="s">"query_used_for_search"</span>: <span class="s">"heap build complexity O(n)"</span>,
+  <span class="s">"retrieved"</span>: [
+    {<span class="s">"source"</span>: <span class="s">"campus_wiki/java-memory-tuning.md"</span>, <span class="s">"score"</span>: 0.86,
+     <span class="s">"text"</span>: <span class="s">"The JVM heap stores objects. Building a larger heap with -Xmx…"</span>},
+    {<span class="s">"source"</span>: <span class="s">"campus_wiki/os-lecture-memory.md"</span>,   <span class="s">"score"</span>: 0.79,
+     <span class="s">"text"</span>: <span class="s">"Heap vs stack memory: the heap grows upward…"</span>}
+  ],
+  <span class="s">"bot_answer"</span>: <span class="s">"Building a heap depends on the -Xmx setting, which allocates memory in linear time…"</span>,
+  <span class="s">"escalated"</span>: false
+}</code></pre>
+<b>SME note:</b> The vector database had accidentally indexed the <b>whole campus wiki</b>, not just the DSA course. "Heap" (the data structure) matched "heap" (memory) and the model, doing exactly what it was told, answered confidently from the wrong documents. <b>Retrieval failure</b> caused by dirty data. The answer is wrong, but the root cause is the index, not the model.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A new librarian asked for "a book on Python" who brings back a book about snakes. The librarian wasn't stupid; the snake books were shelved in the computer section. Fix the shelving (the index), not the librarian (the model). 🐍📚</div>
+
+<h4 id="c2-final">🗂 The final taxonomy (after ~100 traces)</h4>
+<p>After both TAs finished their notes, the team grouped them, checked for overlaps and gaps, and agreed on this taxonomy:</p>
+<div class="tbl"><table>
+<tr><th>Category</th><th>Dimension</th><th>Definition</th><th>Example from the notes</th></tr>
+<tr><td><b>Direct solution</b></td><td>Safety / policy</td><td>Gives complete code or final answers for graded work</td><td>Trace A</td></tr>
+<tr><td><b>Missed escalation</b></td><td>Safety</td><td>Should have handed to a human (distress, unsure, policy) but didn't</td><td>Trace B</td></tr>
+<tr><td><b>Privacy leak</b></td><td>Safety</td><td>Reveals any other student's data</td><td>Named a classmate's roll number</td></tr>
+<tr><td><b>Retrieval failure</b></td><td>Quality</td><td>Fetched irrelevant or wrong-topic notes</td><td>Trace C</td></tr>
+<tr><td><b>Hallucinated fact</b></td><td>Quality</td><td>States something false that isn't in the notes</td><td>"Python lists are linked lists"</td></tr>
+<tr><td><b>Level mismatch</b></td><td>Quality / UX</td><td>Far too advanced or too basic for this course</td><td>Explained amortised analysis with potential functions to a week-2 student</td></tr>
+<tr><td><b>Over-escalation</b></td><td>UX</td><td>Handed to a TA when it could have answered (under-confident)</td><td>Escalated "what is a stack?"</td></tr>
+<tr><td><b>Cold tone</b></td><td>UX</td><td>Correct but discouraging or robotic</td><td>"This is basic. Re-read lecture 3."</td></tr>
+<tr><td><b>Slow response</b></td><td>Performance</td><td>Took over 10 seconds to answer</td><td>Long answers with 8 retrieved chunks</td></tr>
+</table></div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"Before writing any metric, I run a time-boxed qualitative eval: sample real or proxy traces, have domain experts note the first failure in each, and cluster those notes into a MECE error taxonomy across quality, safety, performance and UX. That taxonomy decides which metrics we build, and for each one whether a rule, a human or an LLM judge should score it."</div>
+
+<!-- ============ 2.9 ============ -->
+<h3 class="sec" id="c2-wrap"><span class="num">2.9</span> What happens next: triage the taxonomy</h3>
+<p>Qualitative evals are not just "preparation". They are a <b>fail-fast mechanism</b> (you may already know the project needs a redesign) and one of your best <b>stakeholder tools</b>: handing a leader a clear taxonomy with real examples builds far more trust than a score. Before moving to Chapter 3, sort every category into one of three bins:</p>
+<div class="grid3">
+<div class="card c-good"><h5>⚙️ Deterministic</h5>A plain rule or normal software test can catch it. No AI judge needed.<br><i>Privacy leak (regex), slow response (timer), broken JSON.</i></div>
+<div class="card c-vio"><h5>🤖 Automatable</h5>Needs judgement, but a well-calibrated LLM judge can do it at scale.<br><i>Direct solution, retrieval failure, hallucinated fact, level mismatch.</i></div>
+<div class="card c-warn"><h5>👩‍🏫 Needs humans</h5>Too subjective or too high-stakes to trust a judge alone; sample and review by people.<br><i>Missed escalation on distress messages (also add a rule-based keyword backstop), cold tone.</i></div>
+</div>
+<div class="demo"><h5>🎮 Try it: triage DoubtBot's taxonomy</h5>
+<p class="hint">Choose the best bin for each category. There can be reasonable debate; the explanation tells you what most teams would do.</p>
+<div id="triQ"></div></div>
+<div class="box warn"><span class="t">⚠️ The taxonomy is a living document</span>Users change how they ask. Models get updated. New course modules add new topics. Keep sampling fresh traces every few weeks and update the taxonomy, or your metrics will slowly stop measuring what matters.</div>
+
+<!-- ============ 2.10 ============ -->
+<h3 class="sec" id="c2-sum"><span class="num">2.10</span> Summary</h3>
+<div class="fig"><div class="ft">Chapter 2 on one page</div>
+<div class="grid2">
+<div class="grp"><span class="gt">The toolbox</span><div class="fv" style="gap:6px"><span class="node n-orange">Human: pointwise · pairwise · listwise; task · rubric · guardrail</span><span class="node n-blue">Rule-based: MCQ · true/false · regex</span><span class="node n-blue">Model-based: overlap → similarity → entailment</span><span class="node n-blue">Simulation: users · environments · scenarios</span><span class="node n-purple">LLM-as-a-judge: flexible, often no reference needed</span><span class="node n-green">Use a hybrid: humans anchor, automation scales</span></div></div>
+<div class="grp"><span class="gt">Qualitative evals</span><div class="fv" style="gap:6px"><span class="node n-red">Negative signals</span><span class="node n-orange">First failure per trace</span><span class="node n-yellow">Open-coding notes</span><span class="node n-green">MECE error taxonomy</span><span class="node n-purple">Triage: deterministic · automatable · human</span><span class="node n-gray">No traces? Proxy data or synthetic scenarios</span></div></div>
+</div></div>
+<div class="box takeaways"><span class="t">✅ Key takeaways</span><ul>
+<li>LLM-as-a-judge is one of many methods. Match the method to the metric.</li>
+<li>Pairwise comparisons are easier and more consistent for humans than absolute scores.</li>
+<li>Evaluation judges outputs; annotation creates data. The same data can serve both.</li>
+<li>When a rule can decide (exact values, formats, PII), use a rule: free, fast, reliable.</li>
+<li>Overlap and similarity metrics need references and confuse "similar words" with "correct".</li>
+<li>Human rubric evals and LLM judges share the same recipe; who applies the rubric is the difference.</li>
+<li>Start with a time-boxed qualitative eval; its output is a MECE error taxonomy.</li>
+<li>Note only the first failure in each trace, and cover quality, performance, safety and UX.</li>
+<li>No traces? Replay historical data (back-testing) or design scenarios and synthesise inputs.</li></ul></div>
+
+<h4>📝 Quick quiz (click to reveal the answer)</h4>
+<details><summary>Q1. You want to know whether prompt v2 is better than v1. Pointwise or pairwise human rating?</summary>Pairwise: show raters the v1 and v2 answers side by side and ask which is better. It's easier and more consistent than giving each a separate score.</details>
+<details><summary>Q2. What's the difference between human evaluation and annotation?</summary>Evaluation judges outputs to measure performance; annotation creates labelled data (often to train models). The same data, like pairwise preferences, can be used for either (evaluation, or DPO/reward-model training).</details>
+<details><summary>Q3. Give two DoubtBot checks that should be rule-based, not LLM-judged.</summary>Examples: no phone numbers, emails or student IDs in replies (regex); response time under 10 seconds (timer); the reply is valid JSON if a format is required; the helpline number is exactly right.</details>
+<details><summary>Q4. Why can ROUGE give a correct answer a low score?</summary>It counts shared words. A correct paraphrase ("it only works on ordered lists") shares few words with the reference ("binary search needs a sorted array"), so it scores low, while a wrong answer that reuses the words can score high.</details>
+<details><summary>Q5. Which classic metric family checks logical support rather than similarity?</summary>Entailment / NLI (natural language inference) models, e.g. FactCC or SummaC for factual consistency.</details>
+<details><summary>Q6. What is Goodhart's law and how does it threaten automated evals?</summary>"When a measure becomes a target, it stops being a good measure." Teams optimise the prompt to please the metric or judge rather than the user. Keeping humans reviewing real outputs keeps the metric honest.</details>
+<details><summary>Q7. What does MECE mean for an error taxonomy?</summary>Mutually exclusive (each failure fits exactly one category) and collectively exhaustive (the categories cover every failure seen).</details>
+<details><summary>Q8. Why do we note only the first failure in a trace?</summary>Later problems are often consequences of the first one (wrong retrieval → wrong answer → confused student). Noting the first failure keeps the taxonomy about root causes.</details>
+<details><summary>Q9. DoubtBot replaces part of a TA's job. Which bootstrapping scenario is it, and what's the data source?</summary>Scenario 2 (new AI product for an existing workflow). Proxy data from the course forum, TA emails and the LMS, replayed through the bot (historical back-testing), with the TA's replies as ground truth.</details>
+<details><summary>Q10. Name the three triage bins for taxonomy categories.</summary>Deterministic (rules or normal tests), automatable (LLM judge or other automated metric) and needs-human (subjective or high-stakes; sampled human review).</details>
+
+<h4 id="c2-gloss">📖 Glossary</h4>
+<div class="tbl"><table><tr><th>Term</th><th>Meaning in one line</th></tr>
+<tr><td>Pointwise / pairwise / listwise</td><td>Score one output / pick the better of two / rank several.</td></tr>
+<tr><td>Task-based / rubric-based / guardrail eval</td><td>Did it complete the task? / score against criteria / did it break a rule?</td></tr>
+<tr><td>Annotation</td><td>Labelling data, usually to train models.</td></tr>
+<tr><td>DPO / RLHF</td><td>Training methods that learn from human preferences.</td></tr>
+<tr><td>Regex</td><td>A text pattern used to find or check strings (phone numbers, IDs).</td></tr>
+<tr><td>Reference answer / ground truth</td><td>A known good answer to compare outputs against.</td></tr>
+<tr><td>BLEU / ROUGE / METEOR</td><td>Word-overlap metrics between output and reference.</td></tr>
+<tr><td>BERTScore / embedding similarity</td><td>Meaning-based similarity using embeddings.</td></tr>
+<tr><td>NLI / entailment</td><td>Checking whether one text logically supports another.</td></tr>
+<tr><td>User / environment simulation</td><td>An LLM plays a user / fake versions of the tools and systems an agent uses.</td></tr>
+<tr><td>Goodhart's law</td><td>A measure that becomes a target stops measuring what you care about.</td></tr>
+<tr><td>Qualitative eval</td><td>Quick, time-boxed human review of outputs to find failure modes.</td></tr>
+<tr><td>Error taxonomy</td><td>A MECE list of the ways a product fails.</td></tr>
+<tr><td>Open coding</td><td>Writing free-form notes on why each output failed, before any categories exist.</td></tr>
+<tr><td>MECE</td><td>Mutually exclusive, collectively exhaustive.</td></tr>
+<tr><td>Trace bootstrapping / back-testing</td><td>Creating traces without production users, e.g. by replaying historical requests.</td></tr>
+<tr><td>Proxy data</td><td>Real data from an older process (tickets, emails, forums) used in place of traces.</td></tr></table></div>
+
+<div class="footer"><b>AI Evals in Practice · Chapter 2</b> · Written by <b>Shivank Agrawal</b> · Future with Shivank<br>Next up: Chapter 3 — Quantitative Evals: Metrics, AI Judges and Test Sets 📊</div>
+</main>
+
+<script>
+/* ===== Shared helpers (Future with Shivank notes) ===== */
+const $ = id => document.getElementById(id);
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  $('progress').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+document.querySelectorAll('#side a').forEach(a => a.addEventListener('click', () => $('side').classList.remove('open')));
+
+/* ---------- Animated sequence diagram ----------
+   actors: ['Client','Server',...]
+   steps:  {f:0,t:1,l:'label',h:'plain-English hint',k:'ret'|'note',on:[a,b]}
+   groups: [{f:0,t:1,l:'group label'}]                                       */
+function seq(id, actors, steps, groups) {
+  const el = $(id), n = actors.length, colW = 178, W = n * colW + 40, rowH = 42, top = 80;
+  const H = top + steps.length * rowH + 70, X = i => 20 + colW * i + colW / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W, 760)}px" font-family="Inter,Segoe UI,Arial" font-size="12">
+  <defs><marker id="m${id}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker></defs>`;
+  (groups || []).forEach(g => {
+    s += `<rect x="${X(g.f) - colW / 2 + 6}" y="4" width="${X(g.t) - X(g.f) + colW - 12}" height="${H - 8}" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>`;
+    if (g.l) s += `<text x="${X(g.f) - colW / 2 + 16}" y="${H - 14}" font-size="11" fill="#64748b" font-weight="700">${g.l}</text>`;
+  });
+  actors.forEach((a, i) => {
+    s += `<line x1="${X(i)}" y1="54" x2="${X(i)}" y2="${H - 34}" stroke="#cbd5e1" stroke-dasharray="4 4"/>`;
+    [18, H - 60].forEach(y => {
+      s += `<rect x="${X(i) - 82}" y="${y}" width="164" height="34" rx="8" fill="#eef2ff" stroke="#a5b4fc"/><text x="${X(i)}" y="${y + 21}" text-anchor="middle" font-weight="700" fill="#312e81" font-size="11.5">${a}</text>`;
+    });
+  });
+  let k = 0;
+  steps.forEach((st, i) => {
+    const y = top + i * rowH + 16;
+    s += `<g class="sq" style="transition:opacity .4s">`;
+    if (st.k === 'note') {
+      const a = Math.min(...st.on), b = Math.max(...st.on);
+      s += `<rect x="${X(a) - 86}" y="${y - 14}" width="${X(b) - X(a) + 172}" height="26" rx="6" fill="#fef9c3" stroke="#facc15"/><text x="${(X(a) + X(b)) / 2}" y="${y + 3}" text-anchor="middle" font-weight="700" fill="#713f12">${st.l}</text>`;
+    } else {
+      k++;
+      const badge = x => `<circle cx="${x}" cy="${y}" r="9" fill="#4f46e5"/><text x="${x}" y="${y + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${k}</text>`;
+      if (st.f === st.t) {
+        const x = X(st.f);
+        s += `<path d="M${x} ${y - 6} h34 v14 h-30" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#m${id})"/><text x="${x + 40}" y="${y + 4}" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x - 14);
+      } else {
+        const x1 = X(st.f), x2 = X(st.t), d = st.k === 'ret' ? 'stroke-dasharray="5 4"' : '', pad = x2 > x1 ? -4 : 4;
+        s += `<line x1="${x1}" y1="${y}" x2="${x2 + pad}" y2="${y}" stroke="#475569" stroke-width="1.6" ${d} marker-end="url(#m${id})"/><text x="${(x1 + x2) / 2}" y="${y - 7}" text-anchor="middle" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x1);
+      }
+    }
+    s += `</g>`;
+  });
+  s += '</svg>';
+  el.innerHTML = s + `<div class="seqctl"><button class="btn" data-a="play">▶ Play</button><button class="btn alt" data-a="next">⏭ Next step</button><button class="btn alt" data-a="all">👁 Show all</button></div><div class="seqcap">Press ▶ Play — the meaning of each step will appear here.</div>`;
+  const gs = [...el.querySelectorAll('.sq')], cap = el.querySelector('.seqcap');
+  let cur = -1, timer = null;
+  const show = i => {
+    gs.forEach((g, j) => g.style.opacity = j <= i ? 1 : .12);
+    const st = steps[i];
+    cap.innerHTML = `<b style="color:#fcd34d">Step ${i + 1}/${steps.length}:</b> ${st.l}${st.h ? ' — <span style="color:#93c5fd">' + st.h + '</span>' : ''}`;
+  };
+  el.querySelector('[data-a=play]').onclick = () => { clearInterval(timer); cur = -1; timer = setInterval(() => { cur++; if (cur >= steps.length) { clearInterval(timer); return; } show(cur); }, 1500); };
+  el.querySelector('[data-a=next]').onclick = () => { clearInterval(timer); cur = (cur + 1) % steps.length; show(cur); };
+  el.querySelector('[data-a=all]').onclick = () => { clearInterval(timer); gs.forEach(g => g.style.opacity = 1); cap.textContent = 'You are now seeing the whole flow.'; };
+}
+
+/* ---------- Circuit breaker playground ---------- */
+function makeBreaker(id, threshold, fallbackText, cooldownText) {
+  const el = $(id);
+  el.innerHTML = `<div><span class="state" data-s="C" style="background:#16a34a">🟢 CLOSED · normal</span><span class="state" data-s="O" style="background:#dc2626">🔴 OPEN · tripped</span><span class="state" data-s="H" style="background:#d97706">🟡 HALF-OPEN · testing</span></div>
+  <div style="margin-top:8px"><button data-a="ok">✅ Call succeeds</button><button class="red" data-a="fail">❌ Call fails</button><button class="alt" data-a="cool">⏱ ${cooldownText}</button><button class="alt" data-a="reset">↺ Reset</button></div><div class="log"></div>`;
+  let st = 'C', fails = 0;
+  const log = el.querySelector('.log');
+  const L = m => { log.innerHTML += `<div>${m}</div>`; log.scrollTop = 1e6; };
+  const paint = () => el.querySelectorAll('.state').forEach(s => s.classList.toggle('on', s.dataset.s === st));
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'reset') { st = 'C'; fails = 0; log.innerHTML = ''; }
+    else if (a === 'cool') {
+      if (st === 'O') { st = 'H'; L('⏱ Cooldown over → HALF-OPEN: we let ONE test request ("canary") through to the primary model.'); }
+      else L('The cooldown only matters when the breaker is OPEN.');
+    }
+    else if (st === 'O') L(`🔴 Breaker is OPEN → we don't even try the primary. ${fallbackText}`);
+    else if (st === 'H') {
+      if (a === 'ok') { st = 'C'; fails = 0; L('🐤 Canary succeeded → CLOSED. Full traffic goes back to the primary model.'); }
+      else { st = 'O'; L('🐤 Canary failed → back to OPEN. The cooldown timer starts again.'); }
+    } else {
+      if (a === 'ok') { fails = 0; L('✅ Success. Failure counter reset to 0.'); }
+      else { fails++; L(`❌ Failure ${fails}/${threshold}`); if (fails >= threshold) { st = 'O'; L(`⚡ ${threshold} failures in a row → breaker TRIPS to OPEN. Traffic now goes to the fallback.`); } }
+    }
+    paint();
+  });
+  paint();
+}
+
+/* tiny non-crypto hash for demos */
+const djb = s => { let h = 5381; for (const c of s) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(8, '0').slice(0, 8); };
+
+
+/* ===== Chapter 2 demos ===== */
+/* --- Pointwise / pairwise / listwise rating --- */
+const RA = {
+  A: 'Your function never reaches a base case, so it keeps calling itself until Python stops it at ~1000 calls. Check the condition that should end the recursion.',
+  B: 'Just add sys.setrecursionlimit(10**6) at the top.',
+  C: 'RecursionError means too many nested calls. Usually the base case is missing or never reached. Print n at the start of the function to see if it moves towards the base case.'
+};
+function rateLog(rec) { $('rateLog').innerHTML += `<div>💾 ${JSON.stringify(rec)}</div>`; $('rateLog').scrollTop = 1e6; }
+function rateMode(m) {
+  const ui = $('rateUI');
+  if (m === 'point') {
+    ui.innerHTML = `<b style="color:#fcd34d">Pointwise:</b> rate this ONE answer for clarity (1–5)<div class="quote" style="color:#0f172a;margin:6px 0">${RA.A}</div>` +
+      [1, 2, 3, 4, 5].map(s => `<button class="alt" onclick="rateLog({doubt_id:'d_17',answer:'A',metric:'clarity',score:${s}})">${s} ⭐</button>`).join('');
+  } else if (m === 'pair') {
+    ui.innerHTML = `<b style="color:#fcd34d">Pairwise:</b> which answer is better?<div class="grid2" style="margin:6px 0"><div class="quote" style="color:#0f172a">A: ${RA.A}</div><div class="quote" style="color:#0f172a">B: ${RA.B}</div></div>
+      <button onclick="rateLog({doubt_id:'d_17',left:'A',right:'B',preferred:'A'})">A is better</button><button onclick="rateLog({doubt_id:'d_17',left:'A',right:'B',preferred:'B'})">B is better</button><button class="alt" onclick="rateLog({doubt_id:'d_17',left:'A',right:'B',preferred:'tie'})">Tie</button>`;
+  } else {
+    ui.innerHTML = `<b style="color:#fcd34d">Listwise:</b> click the answers in order, best first<div id="lwBox" style="margin:6px 0">${['A', 'B', 'C'].map(k => `<div class="quote" style="color:#0f172a;margin:4px 0;cursor:pointer" onclick="lwPick('${k}',this)"><b>${k}</b>: ${RA[k]}</div>`).join('')}</div><div id="lwOrder" class="mono"></div>`;
+    window.lwSeq = [];
+  }
+}
+function lwPick(k, el) {
+  if (lwSeq.includes(k)) return;
+  lwSeq.push(k); el.style.opacity = .45; $('lwOrder').textContent = 'Your ranking: ' + lwSeq.join(' > ');
+  if (lwSeq.length === 3) rateLog({ doubt_id: 'd_17', ranking: lwSeq.slice() });
+}
+rateMode('point');
+
+/* --- PII guardrail --- */
+const PII_RX = { phone: /\b[6-9]\d{9}\b/g, email: /\b[\w.+-]+@[\w-]+\.[\w.]+\b/g, roll_no: /\bDSA\d{2}-\d{4}\b/g };
+function piiRun() {
+  let t = $('piiIn').value.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+  const found = [];
+  Object.entries(PII_RX).forEach(([n, rx]) => { if (t.match(rx)) found.push(n); t = t.replace(rx, m => `<mark style="background:#fca5a5;border-radius:4px;padding:0 3px">${m}</mark>`); });
+  $('piiOut').innerHTML = `<div style="margin-bottom:6px">${t}</div>` + (found.length ? `<span class="no">✗ GUARDRAIL FAILED</span> — found: ${found.join(', ')}` : '<span class="ok">✓ PASS</span> — no personal data found');
+}
+$('piiIn').addEventListener('input', piiRun); piiRun();
+
+/* --- ROUGE-1 --- */
+function words(s) { return s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean); }
+function rgRun() {
+  const r = words($('rgRef').value), a = words($('rgAns').value);
+  const rc = {}; r.forEach(w => rc[w] = (rc[w] || 0) + 1);
+  let shared = 0; const used = {}; const sh = [];
+  a.forEach(w => { if ((rc[w] || 0) > (used[w] || 0)) { used[w] = (used[w] || 0) + 1; shared++; sh.push(w); } });
+  const R = r.length ? shared / r.length : 0, P = a.length ? shared / a.length : 0, F = P + R ? 2 * P * R / (P + R) : 0;
+  $('rgOut').innerHTML = `Shared words: <span class="mono" style="color:#fcd34d">${sh.join(', ') || '(none)'}</span><br>Recall ${shared}/${r.length} = ${R.toFixed(2)} · Precision ${shared}/${a.length} = ${P.toFixed(2)} · <b>ROUGE-1 F1 = <span class="kpi" style="font-size:1.1rem">${F.toFixed(2)}</span></b><div style="background:#0f172a;border-radius:6px;margin-top:6px"><div class="bar" style="width:${F * 100}%"></div></div>`;
+}
+function rgSet(t) { $('rgAns').value = t; rgRun(); }
+['rgRef', 'rgAns'].forEach(id => $(id).addEventListener('input', rgRun)); rgRun();
+
+/* --- Open coding sorter --- */
+const OC_CATS = ['Direct solution', 'Missed escalation', 'Retrieval failure', 'Hallucinated fact', 'Level mismatch', 'Cold tone', 'Slow response'];
+const OC = [
+  ['Pasted the complete merge sort for the graded assignment, even though the right lecture was retrieved.', 0],
+  ['Student said "I want to give up on this course" and got a revision timetable.', 1],
+  ['Asked about "trie", retrieved notes about "try/except" error handling.', 2],
+  ['Claimed Python dicts keep keys sorted alphabetically. Not in the notes, and false.', 3],
+  ['Week-1 student asked what a list is; reply talked about cache locality and amortised O(1) appends.', 4],
+  ['"This is trivial, you should know this by now." Correct content, but discouraging.', 5],
+  ['Answer took 19 seconds; trace shows 12 chunks retrieved and a 900-token reply.', 6],
+  ['Gave the final numeric answer to the graded DP question instead of a hint.', 0]
+];
+function ocRender() {
+  $('ocQ').innerHTML = OC.map(([n], i) => `<div class="panel" style="margin:6px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:260px;font-size:.88rem">📝 ${n}</span><select id="oc${i}" style="max-width:220px"><option value="-1">— choose —</option>${OC_CATS.map((c, j) => `<option value="${j}">${c}</option>`).join('')}</select><span id="ocr${i}" style="width:20px"></span></div>`).join('');
+}
+function ocCheck() {
+  let right = 0;
+  OC.forEach(([, a], i) => { const v = +$('oc' + i).value; const ok = v === a; right += ok; $('ocr' + i).innerHTML = v < 0 ? '' : ok ? '<span class="ok">✓</span>' : `<span class="no" title="${OC_CATS[a]}">✗</span>`; });
+  $('ocScore').innerHTML = `${right}/${OC.length} match the team's taxonomy. ${right < OC.length ? 'Hover a ✗ to see the agreed category.' : '🎉 Perfect: your categories are consistent (MECE).'}`;
+}
+ocRender();
+
+/* --- Triage --- */
+const TRI_BINS = ['⚙️ Deterministic', '🤖 Automatable (judge)', '👩‍🏫 Needs humans'];
+const TRI = [
+  ['Privacy leak', 0, 'A regex for phone numbers, emails and student IDs catches it exactly. Free and reliable.'],
+  ['Slow response', 0, 'Just measure the time. No judgement needed.'],
+  ['Direct solution', 1, 'Needs judgement ("is this a hint or a full answer?") but a judge with a clear rubric and examples does it well. Calibrate against TA labels.'],
+  ['Retrieval failure', 1, 'A judge can rate whether each retrieved chunk is relevant to the question; it can also be checked against labelled "right lecture" data.'],
+  ['Missed escalation', 2, 'High stakes and subtle. Use a rule-based keyword backstop and a judge, but humans should review samples regularly. Many teams treat any miss as a launch blocker.'],
+  ['Cold tone', 2, 'Subjective; judges help, but humans should anchor what "kind but honest" means for your students.']
+];
+function triRender() {
+  $('triQ').innerHTML = TRI.map(([n], i) => `<div class="panel" style="margin:6px 0"><b>${n}</b> &nbsp; ${TRI_BINS.map((b, j) => `<button class="alt" onclick="triAns(${i},${j})">${b}</button>`).join('')}<div id="tr${i}" style="font-size:.86rem"></div></div>`).join('');
+}
+function triAns(i, j) {
+  const [, a, why] = TRI[i];
+  $('tr' + i).innerHTML = (j === a ? '<span class="ok">✓ Most teams agree.</span> ' : `<span class="no">Most teams would pick ${TRI_BINS[a]}.</span> `) + why;
+}
+triRender();
+
+</script>
+</body>
+</html>

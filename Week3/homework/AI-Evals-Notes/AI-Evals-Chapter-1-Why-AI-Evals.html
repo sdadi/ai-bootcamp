@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Shivank Agrawal">
+<title>Chapter 1 — Why AI Evals | AI Evals in Practice by Shivank Agrawal</title>
+<style>
+:root{
+  --ink:#1e293b; --ink2:#334155; --muted:#64748b; --bg:#f7f8fb; --card:#ffffff; --line:#94a3b8; --soft:#eef2f7;
+  --brand:#4f46e5; --brand2:#0891b2; --accent:#ea580c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0;z-index:999}
+
+/* ---------- Sidebar ---------- */
+#side{position:fixed;top:0;left:0;bottom:0;width:290px;background:#0f172a;color:#cbd5e1;overflow-y:auto;padding:22px 16px 40px;font-size:.86rem;z-index:50;transition:transform .3s}
+#side .brand{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#a5b4fc;font-weight:700}
+#side h3{color:#fff;margin:.3em 0 .2em;font-size:1.05rem;line-height:1.35}
+#side .by{font-size:.78rem;color:#94a3b8;margin-bottom:14px}
+#side a{display:block;color:#cbd5e1;text-decoration:none;padding:4px 10px;border-radius:7px;line-height:1.45}
+#side a:hover{background:#1e293b;color:#fff}
+#side .grp-t{color:#fbbf24;font-weight:700;margin-top:14px;padding:0 10px;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+#side .sub{padding-left:24px;font-size:.8rem;color:#94a3b8}
+#menuBtn{display:none;position:fixed;top:12px;left:12px;z-index:60;background:#0f172a;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+main{margin-left:290px;padding:34px 4.5vw 90px;max-width:1180px}
+@media (max-width:960px){#side{transform:translateX(-100%)}#side.open{transform:none}#menuBtn{display:block}main{margin-left:0;padding:64px 16px 70px}}
+
+/* ---------- Typography ---------- */
+h1{font-size:2.4rem;line-height:1.2;margin:.25em 0 .3em;letter-spacing:-.01em}
+h2.chapter{font-size:1.9rem;line-height:1.3;margin-top:56px;padding:26px 28px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+h2.chapter small{display:block;font-size:1rem;opacity:.92;font-weight:400;margin-top:4px}
+h3.sec{font-size:1.55rem;line-height:1.35;margin:64px 0 10px;padding-bottom:8px;border-bottom:3px solid #e0e7ff}
+h3.sec .num{color:var(--brand)}
+h4{font-size:1.2rem;margin:34px 0 8px;color:#1e3a8a}
+h5{font-size:1rem}
+p{margin:.65em 0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+b,strong{color:#0f172a}
+a{color:var(--brand)}
+code{background:#eef2ff;padding:1px 6px;border-radius:5px;font-size:.86em;color:#9d174d;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.84rem;line-height:1.6;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+pre .c{color:#94a3b8} pre .k{color:#c4b5fd} pre .s{color:#86efac} pre .o{color:#fcd34d}
+.lede{font-size:1.1rem;color:var(--ink2)}
+
+/* ---------- Tables ---------- */
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;font-size:.92rem;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+th{background:#1e293b;color:#fff;text-align:left;padding:10px 12px;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid #edf0f4;vertical-align:top}
+tr:nth-child(even) td{background:#fafbfd}
+td code{white-space:nowrap}
+
+/* ---------- Hero ---------- */
+.hero{background:#fff;border-radius:22px;padding:34px 34px 28px;box-shadow:0 6px 28px rgba(15,23,42,.06);border:1px solid #e2e8f0}
+.hero .kicker{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);background:#eef2ff;padding:4px 12px;border-radius:30px}
+.author{display:flex;align-items:center;gap:12px;margin:14px 0 6px}
+.author .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.author b{display:block;line-height:1.2}
+.author span{font-size:.85rem;color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+.legend div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.5}
+.learn{columns:2;column-gap:28px}
+@media(max-width:800px){.learn{columns:1}}
+
+/* ---------- Callout boxes ---------- */
+.box{border-radius:14px;padding:14px 18px;margin:18px 0;border-left:5px solid;background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.box>.t{display:block;margin-bottom:4px;font-weight:700}
+.box p:first-of-type{margin-top:.2em}
+.analogy{border-color:#ea580c;background:#fff7ed}
+.real{border-color:#2563eb;background:#eff6ff}
+.example{border-color:#0d9488;background:#f0fdfa}
+.interview{border-color:#16a34a;background:#f0fdf4}
+.deep{border-color:#7c3aed;background:#f5f3ff}
+.warn{border-color:#d97706;background:#fffbeb}
+.takeaways{border-color:#4f46e5;background:#eef2ff}
+.plain{border-color:#64748b;background:#f8fafc}
+
+/* ---------- Diagram canvas ---------- */
+.fig{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:26px 16px 16px;margin:22px 0;box-shadow:0 2px 10px rgba(15,23,42,.04);overflow-x:auto}
+.fig .ft{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin:-8px 0 14px 4px}
+.cap{text-align:center;font-size:.86rem;color:var(--muted);margin-top:14px}
+
+/* nodes */
+.node{display:inline-block;padding:10px 14px;border-radius:11px;border:1.5px solid #cbd5e1;background:#f8fafc;font-weight:600;text-align:center;font-size:.88rem;line-height:1.4;min-width:110px;color:#1e293b}
+.node small{display:block;font-weight:400;opacity:.85;font-size:.78rem;margin-top:2px}
+.n-blue{background:#eff6ff;border-color:#60a5fa;color:#1e3a8a}
+.n-green{background:#f0fdf4;border-color:#4ade80;color:#14532d}
+.n-orange{background:#fff7ed;border-color:#fb923c;color:#7c2d12}
+.n-red{background:#fef2f2;border-color:#f87171;color:#7f1d1d}
+.n-purple{background:#f5f3ff;border-color:#a78bfa;color:#4c1d95}
+.n-yellow{background:#fefce8;border-color:#facc15;color:#713f12}
+.n-teal{background:#f0fdfa;border-color:#2dd4bf;color:#134e4a}
+.n-pink{background:#fdf2f8;border-color:#f472b6;color:#831843}
+.n-gray{background:#f1f5f9;border-color:#94a3b8;color:#334155}
+.n-dark{background:#1e293b;border-color:#0f172a;color:#fff}
+.n-navy{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.db{border-radius:50% / 14%;padding:16px 16px}
+.pill{border-radius:30px}
+.diamond{width:190px;height:106px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;font-weight:700;padding:0 38px;background:#e0e7ff;color:#312e81;flex-shrink:0;line-height:1.3}
+
+/* layout helpers */
+.fv{display:flex;flex-direction:column;align-items:center}
+.fh{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.cols{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.grp{border:1.5px dashed #cbd5e1;border-radius:14px;padding:24px 14px 14px;position:relative;background:#fbfcfe;margin:12px 4px}
+.grp>.gt{position:absolute;top:-11px;left:14px;white-space:nowrap;background:#fff;padding:0 8px;font-weight:700;font-size:.76rem;color:#475569;border-radius:6px;border:1px solid #e2e8f0}
+.ladder .step{display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
+
+/* arrows (static, clean) */
+.va{width:2px;height:32px;background:var(--line);position:relative;margin:4px auto 10px}
+.va::after{content:'';position:absolute;bottom:-8px;left:-5px;border:6px solid transparent;border-top-color:var(--line)}
+.va>span{position:absolute;left:12px;top:5px;white-space:nowrap;font-size:.72rem;background:#f1f5f9;padding:1px 8px;border-radius:6px;color:#334155;border:1px solid #e2e8f0}
+.ha{height:2px;width:46px;background:var(--line);position:relative;margin:0 12px 0 4px;flex-shrink:0}
+.ha::after{content:'';position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-left-color:var(--line)}
+.ha>span{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.7rem;background:#f1f5f9;padding:0 7px;border-radius:6px;border:1px solid #e2e8f0}
+.ha:has(>span){width:104px}
+.ha.long{width:110px}
+.dash{background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.dashv{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.lbl{font-size:.74rem;background:#f1f5f9;padding:2px 9px;border-radius:6px;color:#334155;display:inline-block;margin:3px;border:1px solid #e2e8f0}
+
+/* CSS tree */
+.tree{overflow-x:auto;padding-bottom:6px}
+.tree ul{padding-top:20px;position:relative;display:flex;justify-content:center;margin:0;padding-left:0}
+.tree li{list-style:none;text-align:center;position:relative;padding:20px 5px 0;margin:0}
+.tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid #cbd5e1;width:50%;height:20px}
+.tree li::after{right:auto;left:50%;border-left:2px solid #cbd5e1}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid #cbd5e1;border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid #cbd5e1;height:20px}
+.tree>ul{padding-top:0}.tree>ul>li{padding-top:0}
+.tree .node{font-size:.78rem;min-width:auto;padding:7px 10px}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:14px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+@media(max-width:860px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 6px rgba(15,23,42,.06);border-top:4px solid #60a5fa;font-size:.95rem;line-height:1.65}
+.card h5{margin:0 0 6px;font-size:1.02rem;color:#0f172a}
+.card ul,.card ol{margin:.3em 0;padding-left:1.2em}
+.card pre{font-size:.78rem;margin:8px 0 0}
+.c-bad{border-top-color:#f87171}.c-good{border-top-color:#4ade80}.c-warn{border-top-color:#fbbf24}.c-vio{border-top-color:#a78bfa}.c-teal{border-top-color:#2dd4bf}
+.c-bad h5{color:#b91c1c}.c-good h5{color:#15803d}
+.quote{background:#f8fafc;border:1px solid #e2e8f0;padding:9px 13px;border-radius:9px;font-size:.92rem;font-family:"JetBrains Mono",Consolas,monospace;white-space:pre-wrap;line-height:1.55}
+
+/* ---------- Demos ---------- */
+.demo{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:18px 20px;margin:20px 0}
+.demo h5{margin:0 0 6px;color:#fcd34d;font-size:1rem}
+.demo p.hint{font-size:.85rem;color:#94a3b8;margin:4px 0 10px}
+.demo label{font-size:.9rem}
+.demo input[type=text],.demo input[type=number],.demo textarea,.demo select{width:100%;padding:9px 10px;border-radius:9px;border:0;font-size:.93rem;font-family:inherit;background:#f8fafc;color:#0f172a}
+.demo textarea{font-family:"JetBrains Mono",Consolas,monospace;font-size:.84rem}
+.demo button,.btn{background:#4f46e5;color:#fff;border:0;border-radius:9px;padding:8px 15px;margin:4px 6px 4px 0;font-weight:600;cursor:pointer;font-size:.88rem;font-family:inherit}
+.demo button.alt,.btn.alt{background:#334155}
+.demo button.red{background:#dc2626}
+.demo button:hover,.btn:hover{filter:brightness(1.12)}
+.panel{background:#1e293b;border-radius:11px;padding:12px 14px;min-height:56px}
+.mono{font-family:"JetBrains Mono",Consolas,monospace}
+.log{background:#020617;border-radius:10px;padding:10px 12px;max-height:190px;overflow-y:auto;font-family:"JetBrains Mono",Consolas,monospace;font-size:.8rem;margin-top:10px;line-height:1.6}
+.state{display:inline-block;padding:7px 14px;border-radius:9px;font-weight:700;margin:4px;opacity:.28;transition:all .3s;color:#fff}
+.state.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.kpi{font-size:1.45rem;font-weight:800;color:#fcd34d}
+.chip{display:inline-block;padding:3px 8px;margin:3px;border-radius:7px;font-family:"JetBrains Mono",Consolas,monospace;font-size:.86rem;color:#0f172a}
+.bar{height:18px;border-radius:6px;background:linear-gradient(90deg,#6366f1,#06b6d4);transition:width .3s;margin:3px 0}
+.lit{outline:3px solid #fbbf24;outline-offset:3px}
+.slot{display:inline-block;padding:4px 8px;margin:2px;border-radius:6px;background:#4ade80;color:#052e16;font-family:monospace;font-size:.78rem;font-weight:700}
+.ok{color:#4ade80;font-weight:700}.no{color:#f87171;font-weight:700}
+.seqctl{text-align:center;margin-top:10px}
+.seqcap{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 14px;margin-top:8px;min-height:44px;font-size:.92rem}
+
+/* formula */
+.formula{font-size:1.12rem;text-align:center;margin:16px 0;font-family:"Cambria Math",Georgia,serif}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 6px}
+.frac span:first-child{border-bottom:2px solid #0f172a;padding:0 6px}
+
+/* ER diagram */
+.er{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:860px){.er{grid-template-columns:1fr}}
+.ent{background:#fff;border:1.5px solid #a78bfa;border-radius:10px;overflow:hidden;font-size:.82rem}
+.ent b{display:block;background:#ede9fe;color:#4c1d95;padding:6px 10px;text-align:center}
+.ent div{padding:4px 10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px}
+.ent i{color:#64748b;font-style:normal}.ent em{color:#be185d;font-style:normal;font-weight:700}
+.rel{font-size:.78rem;text-align:center;color:#475569;background:#f1f5f9;border-radius:8px;padding:5px}
+
+/* misc */
+details{background:#fff;border-radius:12px;padding:11px 16px;margin:10px 0;box-shadow:0 1px 6px rgba(15,23,42,.05);border-left:4px solid #a78bfa}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px;color:#5b21b6}
+.phone{max-width:340px;margin:auto;border:3px solid #1e293b;border-radius:28px;padding:18px 14px;background:#f8fafc}
+.footer{text-align:center;color:var(--muted);margin-top:70px;font-size:.88rem;border-top:1px solid #e2e8f0;padding-top:22px}
+.footer b{color:#1e293b}
+.toc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.toc-chips span{background:#eef2ff;color:#3730a3;border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:600}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:10px 0}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:27px;height:27px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem}
+.kv dt{font-family:"JetBrains Mono",Consolas,monospace;color:#9d174d;font-size:.85rem}
+.kv dd{margin:0}
+
+/* ---------- Narrow screens: turn horizontal chains into vertical ones ---------- */
+@media (max-width:1080px){
+  .fh:has(>.ha), .ladder .step{flex-direction:column}
+  .fh:has(>.ha)>.ha, .ladder .step>.ha{width:2px!important;height:32px;margin:4px auto 10px}
+  .fh:has(>.ha)>.ha::after, .ladder .step>.ha::after{right:auto;left:-5px;top:auto;bottom:-8px;border-left-color:transparent;border-top-color:var(--line)}
+  .fh:has(>.ha)>.ha>span, .ladder .step>.ha>span{left:12px;bottom:auto;top:5px;transform:none}
+  .fh:has(>.ha)>.ha.dash, .ladder .step>.ha.dash{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+  .grid2 .fh .node, .fig .node{max-width:100%}
+  h1{font-size:1.9rem}
+  .hero{padding:24px 18px}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="menuBtn" onclick="document.getElementById('side').classList.toggle('open')">☰ Contents</button>
+<nav id="side">
+  <div class="brand">Future with Shivank</div>
+  <h3>AI Evals in Practice<br>Chapter 1 · Why Evals</h3>
+  <div class="by">by Shivank Agrawal</div>
+  <a href="#start">🏁 Start here</a>
+  <a href="#kit">🎒 Starter kit (12 words)</a>
+  <a href="#bot">🤖 Meet DoubtBot</a>
+  <div class="grp-t">What and why</div>
+  <a href="#c1-what">1.1 What is an AI eval?</a>
+  <a class="sub" href="#c1-first">Your first eval in code</a>
+  <a href="#c1-lb">1.2 Why leaderboards are not enough</a>
+  <a class="sub" href="#c1-contam">Leaked question papers</a>
+  <a href="#c1-prod">1.3 AI product ≠ AI model</a>
+  <a class="sub" href="#c1-ladder">The complexity ladder</a>
+  <a class="sub" href="#c1-agents">Agent maths</a>
+  <a href="#c1-law">1.4 Rules, laws and proof</a>
+  <a href="#c1-vendor">1.5 "Just buy an eval tool?"</a>
+  <a class="sub" href="#c1-bias">Judges have biases</a>
+  <a class="sub" href="#c1-trust">The trust gap</a>
+  <div class="grp-t">How we will work</div>
+  <a href="#c1-frame">1.6 The evals lifecycle</a>
+  <a href="#c1-play">1.7 The one-page evals plan</a>
+  <a href="#c1-scope">1.8 Scoping an evals project</a>
+  <a class="sub" href="#c1-cc">Capabilities + constraints</a>
+  <a href="#c1-team">1.9 Who does what</a>
+  <a class="sub" href="#c1-sme">Bring experts in early</a>
+  <a href="#c1-sum">1.10 Summary + quiz</a>
+  <a class="sub" href="#c1-gloss">Glossary</a>
+</nav>
+
+<main>
+<section id="start" class="hero">
+  <span class="kicker">AI Evals in Practice · Chapter 1</span>
+  <h1>Why AI Evals? The Framework, the Scope and the Team</h1>
+  <div class="author"><div class="av">SA</div><div><b>Shivank Agrawal</b><span>Future with Shivank</span></div></div>
+  <p class="lede">Building an AI feature is the easy part. Knowing whether it is <b>good enough to put in front of real users</b>, and proving that to your manager, your client or a regulator, is the hard part. That proof is what <b>AI evaluations</b> (or simply <b>evals</b>) give you.</p>
+  <p>This chapter answers three questions: <b>what</b> an eval is, <b>why</b> you can't skip it (and why buying a tool or trusting a leaderboard isn't enough), and <b>how</b> a real team plans, scopes and staffs an evals project. You need no maths background. If you know a little Python and have called an LLM API once, you are ready.</p>
+  <h4 style="margin-top:20px">By the end of this chapter you will be able to…</h4>
+  <ul class="learn">
+    <li>Define an AI eval in one sentence</li>
+    <li>Explain why leaderboard scores don't predict your product's quality</li>
+    <li>Calculate how failure risk grows in multi-agent systems</li>
+    <li>Explain why evals are often a legal and sales requirement</li>
+    <li>Spot the hidden traps in "just buy an eval tool"</li>
+    <li>Draw the full evals lifecycle, before and after launch</li>
+    <li>Scope an evals project: problem, baseline, metric, pass/fail</li>
+    <li>Name the roles on an evals team and what each one owns</li>
+  </ul>
+  <div class="legend">
+    <div>🧠 <b>Think of it like…</b> an everyday analogy</div>
+    <div>🌍 <b>Real-world example</b> where this actually happened</div>
+    <div>🔍 <b>Worked example</b> step by step, with real values</div>
+    <div>⚠️ <b>Watch out</b> a common mistake beginners make</div>
+    <div>🎯 <b>Interview tip</b> a line you can say in an interview</div>
+    <div>🚀 <b>Going deeper</b> optional, for the curious</div>
+    <div>🎮 <b>Try it</b> an interactive demo you can click</div>
+  </div>
+  <div class="box plain"><span class="t">About the code in these notes</span>Code examples use the OpenAI Python SDK with real model names that are current at the time of writing (November 2026): <code>gpt-6.1-terra</code> (fast and balanced; we use it as the <b>product</b> being tested), <code>gpt-6-luna</code> (the cheapest and fastest; we use it as the <b>judge</b>), <code>gpt-6-astra</code> (the most capable, used sparingly) and <code>text-embedding-3-small</code> for embeddings. Every example shows the output you would see, so you can follow along just by reading. Model names change every few months; the <i>ideas</i> in this series do not.</div>
+<div class="box warn" id="runcode"><span class="t">▶ Running these examples with your OpenAI key</span>
+<p><b>Setup (once):</b> <code>pip install openai pydantic numpy</code>, then set your key: <code>export OPENAI_API_KEY="sk-..."</code> (Mac/Linux) or <code>setx OPENAI_API_KEY "sk-..."</code> (Windows). Nothing else is needed.</p>
+<p><b>Three GPT-6 rules every example in this series follows</b> (break them and the API returns an error):</p>
+<ol>
+<li><b>Temperature needs reasoning switched off.</b> GPT-6 models "think" before answering by default, and while they do, <code>temperature</code> is not allowed. So whenever we want repeatable answers we write <code>reasoning_effort="none", temperature=0</code>. This works on <code>gpt-6.1-terra</code> and <code>gpt-6-luna</code>. <code>gpt-6-astra</code> always reasons, so we never pass <code>temperature</code> to it.</li>
+<li><b>Tool calling on Terra uses the Responses API.</b> When the model must call a function (e.g. "escalate to a human"), we use <code>client.responses.create(..., tools=...)</code> instead of <code>client.chat.completions.create</code>. (Luna can call tools in Chat Completions only with <code>reasoning_effort="none"</code>.)</li>
+<li><b>JSON replies use Structured Outputs.</b> We describe the reply's shape as a small <b>Pydantic</b> class (e.g. <code>class Verdict(BaseModel): reason: str; verdict: Literal["PASS","FAIL"]</code>) and call <code>client.chat.completions.parse(..., response_format=Verdict)</code>. The answer comes back already parsed in <code>.choices[0].message.parsed</code>: no <code>json.loads</code>, no broken JSON.</li>
+</ol>
+<p><b>Which examples run as-is?</b> Any example whose data is written inside the snippet (questions, replies, scores) runs with just your key. Examples that call <code>doubtbot</code>, <code>bank_bot</code> or read files such as <code>golden_v3.jsonl</code> stand for <i>your own</i> product and data: read them to learn the pattern, or plug in your own. Real model outputs will be <b>worded differently</b> from the sample outputs shown; the meaning should match.</p></div>
+</section>
+
+<!-- ============ STARTER KIT ============ -->
+<h3 class="sec" id="kit">🎒 Starter kit: 12 words you will hear in every chapter</h3>
+<div class="grid3">
+<div class="card"><h5>1. LLM</h5>A Large Language Model (GPT, Claude, Gemini, Llama) that reads and writes text. It is <b>probabilistic</b>: the same question can get different answers.</div>
+<div class="card"><h5>2. AI product</h5>The full thing users touch: the LLM <b>plus</b> your prompt, your data, your tools and your code. Evals test the product, not just the LLM.</div>
+<div class="card c-good"><h5>3. Eval</h5>A repeatable test that measures how well your AI product does a job, against criteria you defined in advance.</div>
+<div class="card"><h5>4. Test case</h5>One input (a question, a conversation, a task) plus what a good output should look like.</div>
+<div class="card"><h5>5. Test set</h5>A collection of test cases. Like a question paper.</div>
+<div class="card c-vio"><h5>6. Rubric</h5>The marking scheme: rules that say what counts as a good, average or bad answer.</div>
+<div class="card c-vio"><h5>7. Metric</h5>A number that summarises results, e.g. "accuracy 87%" or "safety violations 0.4%".</div>
+<div class="card c-warn"><h5>8. LLM-as-a-judge</h5>Using one LLM to grade another LLM's answers with a rubric. Fast and cheap, but it has its own biases.</div>
+<div class="card"><h5>9. Trace</h5>A step-by-step record of everything the product did for one request: the prompt, the documents it fetched, the tools it called, the final answer.</div>
+<div class="card c-teal"><h5>10. SME</h5>Subject Matter Expert: a domain expert (a doctor, a lawyer, a senior teacher) who knows what "good" looks like.</div>
+<div class="card"><h5>11. PRD</h5>Product Requirements Document: the written plan of what a product must do. A good PRD is the starting point of every eval plan.</div>
+<div class="card c-bad"><h5>12. Guardrail</h5>A rule about what the product must <b>never</b> do (leak personal data, give unsafe advice, do a student's homework).</div>
+</div>
+
+<!-- ============ MEET THE EXAMPLE ============ -->
+<h3 class="sec" id="bot">🤖 Meet DoubtBot: our running example for the whole series</h3>
+<p>Ideas stick better with one concrete product. Throughout these notes we will evaluate the same AI product, chapter after chapter, from the first rough test to monitoring it after launch.</p>
+<div class="grid2">
+<div class="card c-vio"><h5>📘 The product</h5><b>DoubtBot</b> is an AI teaching assistant for a 12-week <b>Data Structures &amp; Algorithms (DSA) course in Python</b>. Students ask doubts any time of day. DoubtBot answers using the course notes and lecture transcripts (this is RAG: it fetches relevant notes and gives them to the LLM). It guides students <b>step by step with hints</b> instead of handing over full solutions, and it hands the conversation to a <b>human TA</b> when it is unsure, when a question is outside the course, or when a student seems to be in distress.</div>
+<div class="card"><h5>🧾 The facts we will use</h5><ul>
+<li><b>Users:</b> 1,000 students per batch</li>
+<li><b>Today (the baseline):</b> 4 human TAs, about 1 TA per 250 students; a doubt waits around 6 hours for a reply</li>
+<li><b>Built with:</b> <code>gpt-6.1-terra</code> + a vector database of course notes</li>
+<li><b>Business goal:</b> answer most doubts instantly and free TAs for the hard ones</li>
+<li><b>Key metric:</b> the share of doubts DoubtBot resolves <b>without</b> escalating to a TA</li></ul></div>
+</div>
+<div class="fig"><div class="ft">DoubtBot, end to end</div>
+ <div class="fv">
+  <span class="node n-yellow">Student: "Why is my binary search stuck in an infinite loop?"</span><div class="va"></div>
+  <div class="grp"><span class="gt">DoubtBot (the AI product)</span>
+   <div class="fh"><span class="node n-teal db">Course notes<small>vector database</small></span><div class="ha"><span>top 3 notes</span></div><span class="node n-purple">System prompt + notes + question</span><div class="ha"></div><span class="node n-blue">gpt-6.1-terra</span></div></div>
+  <div class="va"></div>
+  <div class="diamond">Confident, in scope and safe?</div>
+  <div class="cols"><div class="fv"><div class="va"><span>yes</span></div><span class="node n-green">Hint-style answer<small>"Check how you update <code>low</code> when <code>arr[mid] &lt; target</code>…"</small></span></div>
+  <div class="fv"><div class="va"><span>no</span></div><span class="node n-orange">Hand over to a human TA</span></div></div>
+ </div>
+ <div class="cap">Every part of this picture (the notes, the prompt, the model, the hand-over rule) can break, and evals must catch it.</div>
+</div>
+
+<h2 class="chapter" id="c1">Chapter 1 · Why AI Evals?<small>What evals are · why leaderboards and tools are not enough · the lifecycle · scope · the team</small></h2>
+
+<!-- ============ 1.1 ============ -->
+<h3 class="sec" id="c1-what"><span class="num">1.1</span> What is an AI eval?</h3>
+<p>Before asking "how do we test an AI?", ask a simpler question: <b>how do we test a human?</b> With exams. Think of your Class 12 board exams.</p>
+<ul>
+<li>There are several <b>subjects</b> (Physics, Chemistry, Maths).</li>
+<li>Each subject has a <b>question paper</b> with many questions.</li>
+<li>Each answer is marked using a <b>marking scheme</b>.</li>
+<li>Marks are <b>added up per subject</b>, so you get one score per subject, not one score for "being smart".</li>
+</ul>
+<p>AI evals work exactly the same way. Here is the mapping, using DoubtBot:</p>
+<div class="fig"><div class="ft">Board exams vs AI evals</div>
+<div class="tbl" style="margin:0"><table>
+<tr><th>Board exam</th><th>AI eval</th><th>DoubtBot example</th></tr>
+<tr><td>Subject</td><td>A capability or risk we care about</td><td>"Explains concepts correctly", "Never gives full homework solutions"</td></tr>
+<tr><td>Question paper</td><td><b>Test set</b></td><td>60 real student doubts about recursion</td></tr>
+<tr><td>One question</td><td><b>Test case</b></td><td>"Why does my recursive Fibonacci take forever for n = 50?"</td></tr>
+<tr><td>Marking scheme</td><td><b>Rubric</b> (the "defined criteria")</td><td>"Full marks if it names repeated sub-problems and suggests memoisation"</td></tr>
+<tr><td>Marks in one subject</td><td><b>Metric</b> (an aggregated score)</td><td>"Concept accuracy on recursion: 88%"</td></tr>
+<tr><td>Examiner</td><td>Evaluator: a human expert, a rule in code, or an LLM judge</td><td>A senior TA, a regex check, or <code>gpt-6-luna</code></td></tr>
+</table></div></div>
+
+<div class="box takeaways"><span class="t">📌 Definition (worth memorising)</span>An <b>AI eval</b> is a <b>systematic, repeatable test</b> that measures an AI system's <b>quality, safety, performance and reliability</b> against <b>criteria you defined in advance</b>, using a <b>test set</b> that represents real usage.</div>
+<p>Three words in that definition do the heavy lifting:</p>
+<div class="grid3">
+<div class="card"><h5>Systematic</h5>Not "I tried five questions and it looked fine". The same test set, the same rubric, run the same way every time, so you can compare version 1 with version 2.</div>
+<div class="card c-vio"><h5>Defined criteria</h5>You decide <i>before</i> testing what counts as success. Otherwise everyone grades by gut feeling, and gut feelings disagree.</div>
+<div class="card c-good"><h5>Represents real usage</h5>The test set must look like what real users actually ask, not what the engineer finds easy to type.</div>
+</div>
+
+<div class="fig"><div class="ft">Eval metrics you will meet in this series</div>
+<div class="toc-chips" style="justify-content:center">
+<span>accuracy</span><span>correctness</span><span>faithfulness</span><span>hallucination rate</span><span>relevance</span><span>helpfulness</span><span>consistency</span><span>robustness</span><span>safety violation rate</span><span>refusal rate</span><span>escalation accuracy</span><span>tone</span><span>latency (p95)</span><span>cost per request</span><span>task success</span><span>resolution rate</span>
+</div><div class="cap">There is no single "quality" number. You will pick a small handful that matter for <i>your</i> product (Chapter 3).</div></div>
+
+<h4>Why "it looked fine when I tried it" is not an eval</h4>
+<div class="grid2">
+<div class="card c-bad"><h5>❌ The vibe check</h5>An engineer types a few questions, reads the answers, says "looks good 👍". Different person, different questions, different verdict. Nothing is written down. When the prompt changes next week, nobody knows if things got better or worse.</div>
+<div class="card c-good"><h5>✅ An eval</h5>A fixed set of 200 real student doubts, a written rubric, the same evaluator every time, and a number per metric. Change the prompt, re-run, compare: "concept accuracy went from 84% to 91%, but hint-only behaviour dropped from 97% to 89%". Now you can make a decision.</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A vibe check is your mother tasting the dal and saying "salt is fine". An eval is a food-safety lab that tests 200 samples from every batch with the same instruments. Both are useful, but only one of them can be shown to an inspector. 🍲</div>
+
+<h4 id="c1-first">🔍 Your first eval in code</h4>
+<p>Let's make the exam idea real. Below, DoubtBot faces three tiny "subjects" (test sets). For each test case we check something simple and objective: does the answer mention the idea it must mention? Then we add up a score per subject.</p>
+<div class="box example"><span class="t">🔍 Worked example: a 25-line eval harness</span>
+<pre><code><span class="k">from</span> openai <span class="k">import</span> OpenAI
+client = OpenAI()   <span class="c"># reads OPENAI_API_KEY from the environment</span>
+
+SYSTEM = <span class="s">"You are DoubtBot, a DSA teaching assistant. Explain briefly. Give hints, not full solutions."</span>
+
+<span class="c"># Each test set = one "subject". Each test case = question + a word a correct answer must contain.</span>
+TEST_SETS = {
+    <span class="s">"recursion"</span>: [
+        {<span class="s">"q"</span>: <span class="s">"Why is recursive fibonacci(50) so slow?"</span>,       <span class="s">"must"</span>: <span class="s">"memo"</span>},
+        {<span class="s">"q"</span>: <span class="s">"What is a base case?"</span>,                          <span class="s">"must"</span>: <span class="s">"stop"</span>}],
+    <span class="s">"binary_search"</span>: [
+        {<span class="s">"q"</span>: <span class="s">"Binary search needs the array to be what?"</span>,     <span class="s">"must"</span>: <span class="s">"sorted"</span>},
+        {<span class="s">"q"</span>: <span class="s">"Time complexity of binary search?"</span>,             <span class="s">"must"</span>: <span class="s">"log"</span>}],
+    <span class="s">"heaps"</span>: [
+        {<span class="s">"q"</span>: <span class="s">"In a min-heap, where is the smallest element?"</span>, <span class="s">"must"</span>: <span class="s">"root"</span>},
+        {<span class="s">"q"</span>: <span class="s">"Cost of pushing into a heap of n items?"</span>,       <span class="s">"must"</span>: <span class="s">"log"</span>}],
+}
+
+<span class="k">def</span> ask_doubtbot(question):
+    r = client.chat.completions.create(
+        model=<span class="s">"gpt-6.1-terra"</span>, reasoning_effort=<span class="s">"none"</span>, temperature=0,
+        messages=[{<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: SYSTEM},
+                  {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: question}])
+    <span class="k">return</span> r.choices[0].message.content
+
+<span class="k">for</span> subject, cases <span class="k">in</span> TEST_SETS.items():
+    passed = 0
+    <span class="k">for</span> case <span class="k">in</span> cases:
+        answer = ask_doubtbot(case[<span class="s">"q"</span>])
+        ok = case[<span class="s">"must"</span>] <span class="k">in</span> answer.lower()          <span class="c"># the "marking scheme"</span>
+        passed += ok
+    print(<span class="s">f"{subject:14} {passed}/{len(cases)} = {passed/len(cases):.0%}"</span>)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>recursion      2/2 = 100%
+binary_search  2/2 = 100%
+heaps          1/2 = 50%</code></pre>
+<p><b>How this code works, line by line:</b></p>
+<ol class="steps">
+<li><code>TEST_SETS</code> is our question paper: three subjects, two questions each, and for each question one keyword a correct answer <i>must</i> contain.</li>
+<li><code>ask_doubtbot()</code> sends one question to the product (system prompt + question) and returns its answer. <code>reasoning_effort="none"</code> switches off the model's hidden "thinking" step (GPT-6 models only accept a <code>temperature</code> setting when it is off), and <code>temperature=0</code> then keeps answers as repeatable as possible.</li>
+<li>The loop goes subject by subject. For every question it gets DoubtBot's answer and checks if the keyword appears (<code>ok</code> is <code>True</code> or <code>False</code>; in Python, <code>True</code> counts as 1 when added).</li>
+<li>Finally it prints one score per subject, exactly like a marksheet.</li>
+</ol>
+<p><b>Reading the result:</b> recursion and binary search look fine; heaps need attention. When we looked at the failing answer, DoubtBot said "pushing into a heap takes O(n)", which is wrong (it is O(log n)). One number per subject told us <i>where</i> to look.</p></div>
+<div class="box warn"><span class="t">⚠️ Watch out: keyword checks are a starting point, not the finish line</span>"Does the answer contain the word <i>log</i>?" is cheap and objective, but crude: an answer could say "it is <i>not</i> log n" and still pass. In Chapter 2 you will meet better methods (rubrics, human review, LLM judges), and in Chapter 3 you will learn how to pick the right one for each metric. Two test cases per subject is also far too few to trust; Chapter 3 shows how to work out how many you need.</div>
+
+<div class="demo"><h5>🎮 Try it: run DoubtBot's "board exam"</h5>
+<p class="hint">Press the button to run each test case one by one. Watch how individual ✓ and ✗ results are rolled up into one score per subject (a metric).</p>
+<button onclick="examRun()">▶ Run the eval</button><button class="alt" onclick="examReset()">↺ Reset</button>
+<div class="grid3" style="margin-top:10px" id="examOut"></div>
+</div>
+
+<!-- ============ 1.2 ============ -->
+<h3 class="sec" id="c1-lb"><span class="num">1.2</span> Why leaderboards and benchmarks are not enough</h3>
+<p>The hardest step in any evals project is often the very first one: <b>convincing your stakeholders it is needed</b>. A manager will often say: <i>"Why spend time on evals? This model is number one on the leaderboard."</i> This section and the next three give you the arguments for that conversation. Let's start with leaderboards.</p>
+<p>A <b>benchmark</b> is a public, fixed test set (for example a set of coding problems or exam questions). A <b>leaderboard</b> ranks models by their benchmark scores. They are useful for a rough first shortlist. They are dangerous as proof that <i>your product</i> works, for three reasons:</p>
+<div class="grid3">
+<div class="card c-bad"><h5>1. Leaderboards disagree</h5>Different leaderboards, and even the same benchmark run by different people, can rank the same models in a different order. Model makers tend to publish the comparison where their newest model wins. Small choices (prompt wording, number of attempts allowed, which subset of questions) can flip the ranking.</div>
+<div class="card c-bad"><h5>2. The paper may have leaked</h5>Popular benchmarks are on the public internet, and LLMs are trained on the public internet. A model may have <b>memorised</b> the questions and answers. This is called <b>benchmark contamination</b>. A high score then measures memory, not ability.</div>
+<div class="card c-bad"><h5>3. It's not your exam</h5>A benchmark of competitive programming problems tells you little about whether DoubtBot explains <i>your</i> course's heap lecture correctly, in the right tone, without giving away homework answers.</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Hiring a cricket coach because he topped a quiz on cricket rules. The quiz is real, the score is real, but it tells you nothing about whether he can train <i>your</i> under-16 team on <i>your</i> ground. And if the quiz answers were circulating on WhatsApp the night before, the score doesn't even prove he knows the rules. 🏏</div>
+
+<h4 id="c1-contam">📄 Leaked question papers: how to spot contamination</h4>
+<p>Here is a simple, practical test. Take a benchmark question that <b>cannot be answered without some piece of information</b> (an image, a table, the answer options) and give the model the question <b>without</b> that piece. A human expert would say "I can't answer without the image." If the model still produces the exact correct answer, it has most likely seen that question during training.</p>
+<div class="fig"><div class="ft">The "remove the essential part" test</div>
+<div class="grid2">
+<div class="grp"><span class="gt">Test 1: full question</span><div class="fv"><span class="node n-blue">Text: "Which labelled part in the figure is the mitochondria?"<small>+ the image + options A–D</small></span><div class="va"></div><span class="node n-green">Model: "C" ✅<small>Expected. Fine.</small></span></div></div>
+<div class="grp"><span class="gt">Test 2: image removed</span><div class="fv"><span class="node n-blue">Text only, no image</span><div class="va"></div><span class="node n-red">Model: "C" ✅ 🤨<small>Impossible to know without the figure → it remembered the answer</small></span></div></div>
+</div><div class="cap">If a model "answers" a question it physically cannot see, the benchmark score is partly memory.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: a contamination probe in code</span>
+<p>Another easy probe: give the model only the <b>first half</b> of a well-known benchmark question and ask it to continue. If it completes the rest word for word, the question was in its training data.</p>
+<pre><code>half = <span class="s">"A farmer has 17 sheep. All but 9 run away. How many"</span>   <span class="c"># first half of a famous puzzle item</span>
+
+r = client.chat.completions.create(
+    model=<span class="s">"gpt-6.1-terra"</span>, reasoning_effort=<span class="s">"none"</span>, temperature=0,
+    messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>:
+        <span class="s">"Continue this text exactly as it appears in its original source:\n"</span> + half}])
+print(r.choices[0].message.content)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>sheep does the farmer have left? Answer: 9</code></pre>
+<p>The model reproduced the rest of the item <b>and its answer</b>. For your own product this is a reminder: never use a famous public test set as your only proof of quality. Your own test set, built from your own users' questions, has never been on the internet.</p></div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"I use public leaderboards only to shortlist models. To choose one, I run the shortlisted models on our <b>own</b> test set, built from real user requests, because public benchmarks can be contaminated and don't reflect our product's prompt, data or constraints."</div>
+
+<!-- ============ 1.3 ============ -->
+<h3 class="sec" id="c1-prod"><span class="num">1.3</span> An AI product is not the same as an AI model</h3>
+<p>Even a perfect, uncontaminated leaderboard ranks <b>models</b>. Your users never touch a bare model. They touch your <b>product</b>: the model wrapped in your system prompt, your data, your retrieval, your tools and your code. A great model inside a badly built product still gives bad answers.</p>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>The best atta in the market doesn't guarantee soft rotis. The water, the kneading, the resting time, the tawa and the cook all matter. The model is the atta; the product is the roti. Leaderboards grade the atta. Users eat the roti. 🫓</div>
+
+<h4 id="c1-ladder">🪜 The complexity ladder: every step adds new ways to fail</h4>
+<div class="fig"><div class="ft">From a prompt to a team of agents</div>
+<div class="ladder">
+ <div class="step"><span class="node n-green" style="min-width:230px">① Prompt-only product<small>a system prompt around a model</small></span><div class="ha"></div><span class="node n-gray" style="max-width:420px">Levers: the wording of the system prompt, temperature, the model chosen</span></div>
+ <div class="va"></div>
+ <div class="step"><span class="node n-yellow" style="min-width:230px">② RAG product<small>fetch documents, then answer</small></span><div class="ha"></div><span class="node n-gray" style="max-width:420px">New levers: how documents are split (chunking), which embedding model, how many results, whether a re-ranker is used</span></div>
+ <div class="va"></div>
+ <div class="step"><span class="node n-orange" style="min-width:230px">③ Agentic workflow / agents<small>models that plan and call tools</small></span><div class="ha"></div><span class="node n-gray" style="max-width:420px">New levers: which tools, in what order, how agents hand work to each other, when to stop. It quickly becomes "agent spaghetti".</span></div>
+</div><div class="cap">Each step up the ladder multiplies the number of things that can go wrong, and the number of things evals must check.</div></div>
+
+<p><b>Even step ① is fragile.</b> A small change in the system prompt can move several metrics at once. Here is what happened when we tried three versions of DoubtBot's system prompt on the same 200 test doubts (illustrative numbers):</p>
+<div class="tbl"><table>
+<tr><th>System prompt version</th><th>Concept accuracy</th><th>Gave a full solution (bad)</th><th>Refused a valid doubt (bad)</th><th>Avg. answer length</th></tr>
+<tr><td><b>A.</b> "You are a helpful DSA tutor."</td><td>91%</td><td class="no">23%</td><td>1%</td><td>310 tokens</td></tr>
+<tr><td><b>B.</b> A + "Never give full code solutions. Give hints only."</td><td>88%</td><td>4%</td><td class="no">11%</td><td>140 tokens</td></tr>
+<tr><td><b>C.</b> B + "If the doubt is a concept question, explain fully; hold back only for graded assignments."</td><td>90%</td><td>5%</td><td>2%</td><td>190 tokens</td></tr>
+</table></div>
+<p>Version A is the "smartest" but hands out homework answers. Version B fixes that but starts refusing honest concept questions. Version C balances both. <b>Without evals you would never see these trade-offs; you'd just see "it seems fine".</b></p>
+<div class="box example"><span class="t">🔍 Worked example: comparing prompt versions in code</span>
+<pre><code>PROMPTS = {
+    <span class="s">"A"</span>: <span class="s">"You are a helpful DSA tutor."</span>,
+    <span class="s">"B"</span>: <span class="s">"You are a helpful DSA tutor. Never give full code solutions. Give hints only."</span>,
+}
+doubts = load_test_doubts()          <span class="c"># 200 real student doubts, each tagged "concept" or "assignment"</span>
+
+<span class="k">for</span> name, system <span class="k">in</span> PROMPTS.items():
+    full_solutions = 0
+    <span class="k">for</span> d <span class="k">in</span> doubts:
+        answer = client.chat.completions.create(model=<span class="s">"gpt-6.1-terra"</span>, reasoning_effort=<span class="s">"none"</span>, temperature=0,
+                   messages=[{<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: system},
+                             {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: d[<span class="s">"text"</span>]}]).choices[0].message.content
+        <span class="k">if</span> d[<span class="s">"type"</span>] == <span class="s">"assignment"</span> <span class="k">and</span> <span class="s">"def "</span> <span class="k">in</span> answer:   <span class="c"># crude check: did it write a full function?</span>
+            full_solutions += 1
+    print(name, <span class="s">"full solutions given:"</span>, full_solutions)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>A full solutions given: 46
+B full solutions given: 8</code></pre>
+<p>One sentence in the prompt changed a safety-critical behaviour almost six-fold. A model leaderboard can't show you this, because it is a property of <i>your product</i>.</p></div>
+
+<h4 id="c1-agents">🧮 Agent maths: why multi-agent systems fail more often than you think</h4>
+<p>Say you build a pipeline of <b>10 agents</b>, and each one fails only <b>1%</b> of the time. Sounds safe. What is the chance that <b>at least one</b> of them fails on a given request?</p>
+<div class="box example"><span class="t">🔍 Worked example: the "at least one fails" calculation</span>
+<p>The trick: it is easier to calculate the chance that <b>nothing</b> fails, then subtract from 1.</p>
+<ol class="steps">
+<li>Chance one agent works: 1 − 0.01 = <b>0.99</b></li>
+<li>Chance all 10 work (assuming they are independent): 0.99 × 0.99 × … ten times = 0.99<sup>10</sup> ≈ <b>0.904</b></li>
+<li>Chance at least one fails: 1 − 0.904 = <b>0.096, almost 10%</b></li>
+</ol>
+<div class="formula">P(at least one fails) = 1 − (1 − p)<sup>n</sup></div>
+<p>Would you ship a product where 1 in 10 requests breaks? And this is the <i>optimistic</i> case. Real agents depend on each other: one agent's bad output becomes the next agent's input, so errors <b>snowball</b> and the true failure rate is usually higher.</p></div>
+<div class="demo"><h5>🎮 Try it: how risk grows with more agents</h5>
+<p class="hint">Move the sliders. Notice how even tiny per-agent failure rates add up.</p>
+<label>Number of agents in the pipeline: <b id="agN">10</b></label><input type="range" id="agNs" min="1" max="30" value="10" style="width:100%">
+<label>Failure rate of each agent: <b id="agP">1.0</b>%</label><input type="range" id="agPs" min="0.1" max="10" step="0.1" value="1" style="width:100%">
+<div class="panel" style="margin-top:10px">Chance that at least one agent fails on a request: <span class="kpi" id="agOut"></span><div style="background:#0f172a;border-radius:6px;margin-top:6px"><div class="bar" id="agBar"></div></div><div id="agMsg" style="font-size:.85rem;color:#94a3b8;margin-top:6px"></div></div>
+</div>
+<div class="box real"><span class="t">🌍 Real-world picture</span>Industry surveys through 2025 kept reporting the same pattern: most enterprise AI pilots never make it into reliable, everyday production, and many deliver no measurable business return. A big reason is that teams cannot <b>show</b> the system is good enough, so it never earns the trust needed to scale. Evals are how you earn that trust.</div>
+
+<!-- ============ 1.4 ============ -->
+<h3 class="sec" id="c1-law"><span class="num">1.4</span> Rules, laws and proof: evals are often not optional</h3>
+<p>So far the reasons were technical. There is a second, very practical reason: <b>regulators and customers increasingly ask for evidence</b>. New AI-specific laws are still catching up, but many existing laws already apply to AI products.</p>
+<div class="tbl"><table>
+<tr><th>Rule</th><th>Where / who</th><th>What it means for an AI product</th></tr>
+<tr><td><b>DPDP Act, 2023</b></td><td>India: any product handling personal data of people in India</td><td>Personal data must be collected with consent, used only for the stated purpose and protected. A bot that leaks one student's marks to another is a violation.</td></tr>
+<tr><td><b>GDPR</b></td><td>EU residents' data, wherever your company is</td><td>Similar duties on personal data, plus rights around automated decisions.</td></tr>
+<tr><td><b>EU AI Act</b></td><td>AI systems used in the EU</td><td>Risk-based rules. Systems used in education and hiring are treated as high-risk and need documented testing, accuracy and human oversight.</td></tr>
+<tr><td><b>HIPAA</b> / <b>FERPA</b></td><td>US health data / US student records</td><td>Health and education bots must not expose protected records.</td></tr>
+<tr><td>State AI laws</td><td>e.g. Colorado's AI Act, California's AI transparency rules</td><td>Duties around disclosure, discrimination and transparency for certain AI uses.</td></tr>
+</table></div>
+<div class="box real"><span class="t">🌍 Real-world example: the "robot lawyer"</span>A US startup marketed its chatbot as "the world's first robot lawyer". The US Federal Trade Commission (FTC) acted against it because the company could not back up the claim that the bot could replace a human lawyer's expertise. The company paid a penalty and, worse, lost users' trust overnight. The lesson: <b>a claim about AI quality without evidence is a liability</b>. Evals are that evidence.</div>
+<p><b>Even if you are not regulated, your customers will ask.</b> Enterprise buyers and government procurement teams now routinely ask vendors: <i>"How did you evaluate this? Show us the results."</i> If you sell AI to other businesses (as many Indian IT services firms now do), an evals report is becoming part of the sales process, just like a security audit.</p>
+<div class="grid2">
+<div class="card"><h5>Who needs evals, and why</h5><ul>
+<li><b>Startup:</b> "move fast" is fine until a big customer asks for proof</li>
+<li><b>Enterprise team:</b> to win internal buy-in and budget</li>
+<li><b>Buyer of an AI tool:</b> to test vendors' marketing claims before signing</li>
+<li><b>Your career:</b> evals skills are in high demand for AI engineer, FDE and PM roles</li></ul></div>
+<div class="card c-warn"><h5>⚠️ "Ship and pray" only works when the stakes are low</h5>A meme generator can afford to be wrong. A bot that advises students, patients, borrowers or employees cannot. The more regulated your industry, the less optional evals become.</div>
+</div>
+
+<!-- ============ 1.5 ============ -->
+<h3 class="sec" id="c1-vendor"><span class="num">1.5</span> "Can't we just buy an eval tool?"</h3>
+<p>Once your manager agrees evals are needed, the next question is usually: <i>"There are many eval tools on the market. Why not just buy one? Why reinvent the wheel?"</i> It is a fair question. Model providers and many startups now sell evaluation platforms, often with impressive customer stories ("we cut evaluation time by 40%"). Tools genuinely help. But <b>buying a tool does not do the thinking for you</b>. Here is why.</p>
+
+<h4 id="c1-bias">⚖️ Problem 1: AI judges have biases</h4>
+<p>Most eval tools are built around <b>LLM-as-a-judge</b>: one model grades another. That judge is itself an LLM, with LLM habits:</p>
+<div class="grid3">
+<div class="card c-bad"><h5>👨‍👩‍👧 Self-preference ("nepotism")</h5>Research has found that judges tend to prefer answers written by models from <b>their own family</b> (similar training, similar style). Ask an OpenAI judge to compare an OpenAI model with a Claude model, and the scores can lean towards OpenAI.</div>
+<div class="card c-bad"><h5>↔️ Position bias</h5>When comparing two answers side by side, many judges prefer whichever one is shown <b>first</b> (or second), regardless of quality.</div>
+<div class="card c-bad"><h5>📏 Length bias</h5>Judges often give higher scores to <b>longer</b> answers, even when the short answer is better.</div>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: catching position bias with a "swap test"</span>
+<p>Ask the judge to compare answer X and answer Y twice: once as (X, Y) and once as (Y, X). A fair judge should pick the same <i>answer</i> both times.</p>
+<pre><code>JUDGE = <span class="s">"""Which answer explains the student's doubt better?
+Doubt: {q}
+Answer 1: {a1}
+Answer 2: {a2}
+Reply with only "1" or "2"."""</span>
+
+<span class="k">def</span> judge(q, a1, a2):
+    r = client.chat.completions.create(model=<span class="s">"gpt-6-luna"</span>, reasoning_effort=<span class="s">"none"</span>, temperature=0,
+        messages=[{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: JUDGE.format(q=q, a1=a1, a2=a2)}])
+    <span class="k">return</span> r.choices[0].message.content.strip()
+
+flips = 0
+<span class="k">for</span> q, x, y <span class="k">in</span> comparison_pairs:            <span class="c"># 100 doubts, each with two candidate answers</span>
+    first  = judge(q, x, y)                 <span class="c"># "1" means it chose x</span>
+    second = judge(q, y, x)                 <span class="c"># "2" means it chose x</span>
+    chose_x_both_times = (first == <span class="s">"1"</span>) == (second == <span class="s">"2"</span>)
+    flips += <span class="k">not</span> chose_x_both_times
+print(<span class="s">f"Judge changed its mind on {flips}/100 pairs just because the order changed"</span>)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>Judge changed its mind on 17/100 pairs just because the order changed</code></pre>
+<p>17% of verdicts depended on <i>order</i>, not <i>quality</i>. A tool's dashboard would show you a confident number either way. Only a deliberate check like this reveals the problem. (Common fix: run both orders and count a win only when they agree.)</p></div>
+
+<h4>🤖 Problem 2: who judges the judge?</h4>
+<p>Some teams respond by training their own judge model. That just moves the question: <b>how do you know the new judge is right?</b> You still need humans. Human judgement is the <b>anchor</b> that defines what "good" means in the first place. If you remove humans from the loop entirely, the system slowly optimises for what the judge likes, which can drift away from what users need.</p>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A school that lets one teacher check all the board-exam copies with no moderation. If that teacher secretly prefers neat handwriting, students learn to write neatly, not to answer correctly. Moderation by a second examiner (a human check on the judge) is what keeps marking honest. 📝</div>
+
+<h4>📦 Problem 3: ready-made metrics don't know your product</h4>
+<p>Tools ship with generic metrics such as "hallucination score", "toxicity" and "helpfulness". They are convenient, but they don't decide whether <i>your</i> product succeeds. No generic metric knows that DoubtBot must <b>give hints, not homework answers</b>, or must <b>escalate a distressed student to a human</b>. Those are your product's rules, and you have to define and measure them yourself.</p>
+
+<h4 id="c1-trust">🤝 Problem 4: the trust gap</h4>
+<div class="fig"><div class="ft">A conversation that happens in many review meetings</div>
+<div class="fv" style="max-width:720px;margin:auto;align-items:stretch">
+<div class="fh" style="justify-content:flex-start"><span class="node n-blue">👩‍💻 Engineer</span><div class="ha"></div><span class="node n-gray" style="flex:1;text-align:left">"We ran 20 eval metrics. Everything is green. Hallucination 2%, helpfulness 4.6/5."</span></div>
+<div class="va"></div>
+<div class="fh" style="justify-content:flex-start"><span class="node n-orange">👔 Business head</span><div class="ha"></div><span class="node n-gray" style="flex:1;text-align:left">"Who decided 4.6 is good? Who graded it? An AI graded an AI and the AI says the AI is great? Why should I trust this?"</span></div>
+</div><div class="cap">Numbers without a clear, human-agreed definition of "good" don't win trust.</div></div>
+<div class="box takeaways"><span class="t">💡 The key insight of this section</span>Tools are good at <b>automating</b> evaluations. But <b>automation is not the hard part</b>. The hard part is deciding <i>what</i> to measure, <i>what good looks like</i>, and <i>what cannot be automated</i> and needs human or expert judgement. No tool can decide that for you. That thinking is what this series teaches. (Chapter 5 reviews eval tools honestly and shows when buying one makes sense.)</div>
+
+<!-- ============ 1.6 ============ -->
+<h3 class="sec" id="c1-frame"><span class="num">1.6</span> The evals lifecycle: before and after launch</h3>
+<p>Teams that do evals well follow a surprisingly similar workflow. It has two halves: <b>pre-release</b> (offline, before real users see it) and <b>post-release</b> (online, with real users).</p>
+<div class="fig"><div class="ft">The AI evals and analytics lifecycle</div>
+<div class="cols" style="align-items:stretch">
+ <div class="grp" style="background:#f5f3ff"><span class="gt">Pre-release · offline evals</span>
+  <div class="fv">
+   <span class="node n-purple" id="lf1" style="width:260px">① Qualitative evals<small>a quick, hands-on look at outputs; find how it fails (Chapter 2)</small></span><div class="va"></div>
+   <span class="node n-purple" id="lf2" style="width:260px">② Quantitative evals<small>automated metrics on test sets; run again and again (Chapter 3)</small></span><div class="va"><span>only if it meets the bar</span></div>
+   <span class="node n-orange" id="lf3" style="width:260px">③ Experiment / pilot<small>real users, small scale; does it drive business impact? (Chapter 4)</small></span>
+  </div></div>
+ <div class="fh" style="align-self:center"><div class="ha"></div><span class="node n-dark pill" id="lf4">🚀 Deploy</span><div class="ha"></div></div>
+ <div class="grp" style="background:#f0fdf4"><span class="gt">Post-release · online</span>
+  <div class="fv">
+   <span class="node n-green" id="lf5" style="width:260px">④ Monitoring<small>watch eval, product and business metrics continuously (Chapter 4)</small></span><div class="va"></div>
+   <span class="node n-green" id="lf6" style="width:260px">⑤ Analytics<small>find insights and new opportunities; feed them back into the next version</small></span>
+  </div></div>
+</div>
+<div style="text-align:center;margin-top:12px"><button class="btn" onclick="lifeStep()">⏭ Walk DoubtBot through the next stage</button><button class="btn alt" onclick="lifeReset()">↺ Reset</button></div>
+<div class="seqcap" id="lifeCap">Press the button to follow DoubtBot from its first rough test to its first month in production.</div>
+</div>
+<div class="grid2">
+<div class="card c-vio"><h5>Before launch: evals <i>drive development</i></h5>Each change (new prompt, new model, new chunking) is checked against the test sets before it ships, the same way test-driven development works in normal software. This is called <b>evaluation-driven development</b>. Evals also inform the final <b>release decision</b>.</div>
+<div class="card c-good"><h5>After launch: evals become <i>diagnostics</i></h5>The job isn't done at launch. You keep tracking eval metrics <b>alongside product metrics</b> (usage, escalations) <b>and business metrics</b> (TA hours saved, student satisfaction). Eval metrics now act as early-warning signals, so you catch problems before users complain.</div>
+</div>
+<div class="box warn"><span class="t">⚠️ Why experiments come last, and only after a bar is met</span>A pilot with real users is the most expensive and slowest step (real students, real TAs, weeks of data). So teams <b>gate</b> it: only when qualitative and quantitative evals look good enough do they spend on a pilot. And the pilot matters, because a system can score well on every offline metric and still not be used the way you expected.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Launching a new dish at a restaurant chain. ① The chef tastes it and spots obvious problems. ② A food lab tests 100 samples for salt, oil and consistency. ③ It's served in two branches for a month to see if customers order it again. 🚀 It goes on the menu everywhere. ④⑤ Head office watches sales, complaints and reviews every week, and uses that to improve the recipe. 🍛</div>
+
+<!-- ============ 1.7 ============ -->
+<h3 class="sec" id="c1-play"><span class="num">1.7</span> The one-page evals plan (go / no-go document)</h3>
+<p>A common failure pattern: teams rush to build and launch without ever writing down <b>what the product should do</b> and <b>what success looks like</b>. A short planning document fixes that. It acts as a <b>checkpoint</b>: before anyone says "ship it", these questions must have written answers. It has three parts that follow the lifecycle above.</p>
+<div class="fig"><div class="ft">The three parts of an evals plan</div>
+<div class="grid3">
+<div class="grp"><span class="gt">Part 1 · Scope &amp; owners</span><ul style="font-size:.9rem;margin:0">
+<li>Problem and business need</li><li>What's out of scope</li><li>Baseline: what we do today without AI, and its key number</li><li>Investment: budget, people, timeline</li><li>Pass/fail rule for launch</li><li>Team, experts and <b>veto holders</b></li></ul></div>
+<div class="grp"><span class="gt">Part 2 · Pre-release evals</span><ul style="font-size:.9rem;margin:0">
+<li>Quick hands-on check: top user journeys, show-stoppers, stop rules</li><li>Metrics table: primary metric, guardrail metrics, supporting metrics, each with an owner, test set and threshold</li><li>Experiment plan: control, method, sample size, hypothesis</li><li>Launch readiness checklist and the final <b>Go / Conditional Go / No-Go</b></li></ul></div>
+<div class="grp"><span class="gt">Part 3 · After launch</span><ul style="font-size:.9rem;margin:0">
+<li><b>Leading indicators</b> (early warnings) with targets, check frequency, owner and action</li><li><b>Lagging indicators</b> (real impact)</li><li>Who looks at what, how often, and what they do when a number goes red</li></ul></div>
+</div></div>
+<div class="box example"><span class="t">🔍 Worked example: the first page of DoubtBot's plan</span>
+<div class="tbl" style="margin:0"><table>
+<tr><th style="width:28%">Field</th><th>DoubtBot</th></tr>
+<tr><td>Decision</td><td>☐ Go ☐ Conditional Go ☐ No-Go · Owner: Product manager, Learning team · Decision date: before batch 14 starts</td></tr>
+<tr><td>Executive summary</td><td>Students wait ~6 hours for TA replies; many give up. DoubtBot answers course doubts instantly with hints and hands hard or sensitive cases to TAs. Expected: faster help for students, TAs focus on difficult doubts. Risk of doing nothing: lower course completion as batches grow.</td></tr>
+<tr><td>Out of scope</td><td>Grading assignments; career counselling; doubts from other courses</td></tr>
+<tr><td>Baseline</td><td>Human TAs only. Median first reply 6 h. TAs spend ~70% of time on repeat concept doubts.</td></tr>
+<tr><td>Primary metric &amp; pass rule</td><td>Ship only if DoubtBot resolves <b>≥ 60%</b> of doubts without escalation <b>and</b> all guardrails hold.</td></tr>
+<tr><td>Guardrails (any failure = No-Go)</td><td>Zero leaks of another student's data; full-solution rate on graded assignments ≤ 2%; 100% of distress messages escalated to a human</td></tr>
+<tr><td>Team</td><td>PM · ML engineer · Data/eval analyst · SMEs: 2 senior TAs + course instructor</td></tr>
+<tr><td>Veto holders</td><td>Course instructor (teaching quality), Legal/Privacy (student data), Student-success head (well-being)</td></tr>
+</table></div></div>
+<div class="grid2">
+<div class="card c-bad"><h5>Example default fail rules for the quick check</h5><ul>
+<li><b>Automatic fail</b> if any privacy or safety violation can be reproduced.</li>
+<li><b>Fail</b> if an error or slowness breaks a key user journey and there is no fallback.</li>
+<li><b>Fail</b> if a large share of samples (for example one in five) shows the <b>same</b> type of defect: that's a pattern, not bad luck.</li></ul></div>
+<div class="card c-good"><h5>Why write it down?</h5>It forces the hard conversations early ("Who decides 60% is enough?"), it gives veto holders a place to sign, and six months later it tells everyone <b>why</b> the product was launched. It is also exactly the document an enterprise client or auditor asks for.</div>
+</div>
+
+<!-- ============ 1.8 ============ -->
+<h3 class="sec" id="c1-scope"><span class="num">1.8</span> Scoping an evals project</h3>
+<p>Every evals project starts like any other project: <b>define the scope</b>. Start from the product, not from the metrics. Five questions:</p>
+<div class="fig"><div class="ft">Five scoping questions</div>
+<div class="fv">
+<div class="fh"><span class="node n-blue" style="min-width:250px">1. What problem are we solving?<small>the business need behind the AI product</small></span><div class="ha"></div><span class="node n-blue" style="min-width:250px">2. What is the baseline?<small>what we compare against (often humans)</small></span></div>
+<div class="va"></div>
+<div class="fh"><span class="node n-purple" style="min-width:250px">3. What does success look like?<small>the key metric + the pass/fail rule</small></span><div class="ha"></div><span class="node n-purple" style="min-width:250px">4. Who defines success?<small>owners, experts, veto holders</small></span></div>
+<div class="va"></div>
+<span class="node n-red" style="min-width:300px">5. What must never happen?<small>the constraints (often forgotten!)</small></span>
+</div></div>
+<h4>Start from the PRD</h4>
+<p>A useful team exercise: take the product requirements document (PRD) and <b>map it to the eval plan</b>. A good PRD should tell you the key user scenarios, the guardrails and the release criteria. In practice, PRDs often <b>miss</b> some of these. Finding those gaps together, before testing starts, is part of the evals work.</p>
+<div class="fig"><div class="ft">PRD → evals plan</div>
+<div class="fh"><span class="node n-gray db" style="min-width:150px">PRD</span><div class="ha"><span>tells you</span></div>
+<div class="fv" style="gap:6px"><span class="node n-blue" style="min-width:240px">Key scenarios / use cases</span><span class="node n-red" style="min-width:240px">Guardrails</span><span class="node n-green" style="min-width:240px">Release criteria</span><span class="node n-purple" style="min-width:240px">Who is on the evals team</span></div></div>
+<div class="cap">Missing any of these? Write it down as an open question and settle it with the team before you start testing.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: DoubtBot's mini-PRD, decoded</span>
+<div class="quote">"DoubtBot is a 24×7 AI teaching assistant for the DSA course. It answers students' doubts step by step using the course material, adapts to each student's level, and hands over to a human TA when it is unsure or when accuracy or safety limits are reached."</div>
+<div class="tbl"><table>
+<tr><th>Problem</th><th>Goals</th><th>Roles</th></tr>
+<tr><td>One TA for ~250 students, so replies are slow and uneven. Students need accurate, step-by-step help at the moment they are stuck (often at 11 pm before a deadline).</td>
+<td><b>Access:</b> available 24×7<br><b>Quality:</b> clear, step-by-step help that matches the course notes and the instructor's teaching style<br><b>Workload:</b> take routine doubts off TAs' plates</td>
+<td><b>PM</b> (owner)<br><b>SMEs:</b> instructor, senior TAs<br><b>Tech:</b> data/eval, UX, engineering<br><b>Veto holders:</b> instructor, privacy/legal, student-success head</td></tr></table></div>
+<p><b>Baseline:</b> human TAs. <b>Key metric:</b> resolution rate without escalation (how often DoubtBot fully answers a doubt without needing a TA).</p></div>
+
+<h4 id="c1-cc">🧱 Scope = capabilities + constraints</h4>
+<p>Here is the mistake almost everyone makes: they define what the product <b>should do</b> and forget to define what it <b>must not do</b>.</p>
+<div class="box real"><span class="t">🌍 Real-world pattern</span>A company launches a customer-support bot. It works perfectly for its job: users can cancel subscriptions, track orders, get refunds. Then curious users start asking it unrelated things: write a poem, give medical advice, answer questions that could put a vulnerable person at risk. The bot happily answers all of them, and screenshots go viral. Nothing was "broken"; nobody had written down the <b>constraints</b>, so nobody tested them. This has happened to well-known brands.</div>
+<div class="grid2">
+<div class="card c-good"><h5>✅ What DoubtBot SHOULD do (capabilities)</h5><ul>
+<li>Explain DSA concepts accurately, at the student's level</li>
+<li>Help debug code with hints, step by step</li>
+<li>Adapt to the student's progress</li>
+<li>Escalate to a TA when unsure</li></ul></div>
+<div class="card c-bad"><h5>⛔ What DoubtBot must NOT do (constraints)</h5><ul>
+<li><b>Knowledge boundary:</b> answer questions from outside the course</li>
+<li><b>Academic integrity:</b> write graded assignments for students</li>
+<li><b>Well-being:</b> handle a distressed student alone; it must hand over to a human</li>
+<li><b>Privacy:</b> reveal any student's marks, email or phone number</li></ul></div>
+</div>
+<div class="demo"><h5>🎮 Try it: capability or constraint?</h5>
+<p class="hint">For each student message, decide what DoubtBot should do. Click an option to check your answer.</p>
+<div id="scopeQ"></div>
+</div>
+<div class="box takeaways"><span class="t">✅ Scoping recap</span><div class="grid3" style="margin:6px 0 0">
+<div><b>What problem?</b><br>Business need · Baseline · What must not happen</div>
+<div><b>Who defines success?</b><br>Key players · SMEs · Veto holders</div>
+<div><b>How is success measured?</b><br>Key metric · Pass/fail gate · Timeline</div></div></div>
+
+<!-- ============ 1.9 ============ -->
+<h3 class="sec" id="c1-team"><span class="num">1.9</span> Who does what: evals is a team sport</h3>
+<p>Many companies assume evals are the PM's job: the PM designs the tests, runs them and uses the results. For a small, simple bot that can work. For anything serious, evals need <b>several roles working together</b>. The PM can coordinate, but no single role can own it all.</p>
+<div class="fig"><div class="ft">The evals core team</div>
+<div class="fv">
+<span class="node n-navy" style="min-width:320px">🧭 Product manager<small>defines success · champions evals · gets resources and roadmap time · assembles the team</small></span>
+<div class="va"></div>
+<div class="fh" style="gap:14px;align-items:stretch">
+<span class="node n-pink" style="width:210px">🎨 UX / user research<small>turns user interviews into "what to measure" · finds critical user journeys</small></span>
+<span class="node n-blue" style="width:210px">📊 Data / evals team<small>turns goals into metrics · builds test sets · makes evals repeatable and automated</small></span>
+<span class="node n-yellow" style="width:210px">🎓 Subject matter experts<small>say what "good" looks like · shape metrics and rubrics · review results</small></span>
+<span class="node n-gray" style="width:210px">🛠 Engineering<small>supports the evals · uses the results to fix and improve the system</small></span>
+</div></div>
+<div class="cap">Plus the veto holders, who are not on the team day to day but can stop the launch.</div></div>
+<div class="box real"><span class="t">🌍 How a big-tech product team typically splits it</span>Imagine a team launching an AI feature that turns documents into short audio podcasts, for listeners in two countries. The <b>PM</b> sets the vision ("we're launching for listeners in country A and country B"). The <b>UX researcher</b> talks to real listeners and learns that one group prefers a short, crisp style while the other enjoys a more energetic one. The <b>data scientist</b> turns that into something measurable: a rubric such as "is this podcast too excited / not excited enough?" on a numeric scale, graded by human raters and an AI judge, with raters from <b>both</b> countries so the scores aren't biased towards one audience. <b>PM = vision, UX = the humans, data = making it measurable.</b></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Making a film. The <b>director</b> (PM) decides what film we're making and keeps everyone moving towards it. <b>Audience research</b> (UX) tells you what viewers actually want. The <b>editor and camera team</b> (data) turn the vision into precise, repeatable shots. The <b>technical adviser</b> (SME), like a real police officer advising on a cop film, says "no cop would ever do that". The <b>crew</b> (engineering) builds the sets and fixes what breaks. And the <b>censor board</b> (veto holders) can stop the release. 🎬</div>
+
+<h4 id="c1-sme">🎓 Bring subject matter experts in early</h4>
+<p>For a simple e-commerce or SaaS support bot, one person can sometimes run the evals: anyone can tell if "where is my order?" was answered correctly. But in many fields, a non-expert <b>cannot tell</b> a good answer from a subtly wrong one:</p>
+<div class="grid4">
+<div class="card c-teal">🩺 <b>Healthcare</b><br>Is this dosage advice safe?</div>
+<div class="card c-teal">🎓 <b>Education</b><br>Does this hint teach, or give away the answer?</div>
+<div class="card c-teal">⚖️ <b>Legal &amp; finance</b><br>Is this clause interpretation or tax rule right?</div>
+<div class="card c-teal">🖼 <b>Multimodal</b><br>Is the X-ray or chart read correctly?</div>
+</div>
+<div class="box warn"><span class="t">⚠️ The expensive mistake: calling experts in at the end</span>Many teams build first and invite experts only when problems appear. By then you may discover your metrics measured the wrong things, your rubric missed what matters, and your "passing" system fails in real use. All that work has to be redone. <b>Involve SMEs from day one</b>: they help define what to measure, what good looks like and which risks to avoid.</div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"Evals are cross-functional. The PM owns the definition of success and the release decision, UX tells us what users actually care about, the data team turns that into reproducible metrics and test sets, SMEs define and validate what 'good' means for domain-heavy cases, and engineering uses the results to improve the system. I also list veto holders up front so the launch decision isn't blocked at the last minute."</div>
+
+<!-- ============ 1.10 ============ -->
+<h3 class="sec" id="c1-sum"><span class="num">1.10</span> Summary</h3>
+<div class="fig"><div class="ft">Chapter 1 on one page</div>
+<div class="grid3">
+<div class="grp"><span class="gt">What</span><div class="fv" style="gap:6px"><span class="node n-blue">Eval = exam for AI</span><span class="node n-blue">Test set · rubric · metric</span><span class="node n-blue">Systematic, defined criteria, real usage</span></div></div>
+<div class="grp"><span class="gt">Why</span><div class="fv" style="gap:6px"><span class="node n-red">Leaderboards disagree &amp; leak</span><span class="node n-red">Product ≠ model</span><span class="node n-red">Agents compound failures</span><span class="node n-red">Laws &amp; buyers ask for proof</span><span class="node n-red">Tools don't do the thinking</span></div></div>
+<div class="grp"><span class="gt">How</span><div class="fv" style="gap:6px"><span class="node n-green">Qual → quant → pilot → deploy → monitor → analyse</span><span class="node n-green">One-page evals plan</span><span class="node n-green">Scope = capabilities + constraints</span><span class="node n-green">Cross-functional team + SMEs early</span></div></div>
+</div></div>
+<div class="box takeaways"><span class="t">✅ Key takeaways</span><ul>
+<li>An eval is a systematic, repeatable test against criteria you defined in advance, using a test set that looks like real usage.</li>
+<li>Public leaderboards are for shortlisting models, not for proving your product works. They disagree and can be contaminated.</li>
+<li>Users experience the <b>product</b> (prompt + data + tools + model). Small changes to any part can move several metrics at once.</li>
+<li>Failure risk compounds: 10 agents at 1% each ≈ 10% of requests with at least one failure, and usually worse.</li>
+<li>Regulators and enterprise buyers increasingly ask for evidence. Evals are that evidence.</li>
+<li>Eval tools automate; they don't decide what to measure. LLM judges have biases and need a human anchor.</li>
+<li>Lifecycle: qualitative → quantitative → experiment (gated) → deploy → monitoring → analytics.</li>
+<li>Write a one-page evals plan with a go/no-go rule, guardrails and veto holders.</li>
+<li>Scope = capabilities + constraints. Bring SMEs in from day one.</li></ul></div>
+
+<h4>📝 Quick quiz (click to reveal the answer)</h4>
+<details><summary>Q1. Map these to AI-eval terms: question paper, one question, marking scheme, marks per subject.</summary>Question paper = test set. One question = test case. Marking scheme = rubric (the defined criteria). Marks per subject = a metric.</details>
+<details><summary>Q2. Give three reasons a leaderboard rank doesn't prove your product is good.</summary>(1) Leaderboards disagree with each other. (2) Benchmarks can be contaminated: the model may have memorised the questions. (3) They rank bare models on generic tasks, not your product with your prompt, data and constraints.</details>
+<details><summary>Q3. How would you check if a model has memorised a benchmark question?</summary>Remove something essential (the image, the options, the second half of the question) and see if the model still produces the exact answer, or ask it to continue the question text word for word.</details>
+<details><summary>Q4. A pipeline has 5 agents, each failing 2% of the time, independently. Chance at least one fails?</summary>1 − 0.98⁵ ≈ 1 − 0.904 = 0.096, about 9.6%. In real systems it's usually higher because agents depend on each other.</details>
+<details><summary>Q5. Name two biases of LLM judges and one way to detect one of them.</summary>Self-preference (favouring its own model family), position bias (favouring the first or second answer) and length bias (favouring longer answers). Detect position bias by running each comparison twice with the order swapped and counting how often the verdict flips.</details>
+<details><summary>Q6. Why do experiments/pilots come after quantitative evals?</summary>Pilots are the slowest and most expensive step (real users, weeks of data), so teams only run them once the product passes the qualitative and quantitative bar.</details>
+<details><summary>Q7. What does "scope = capabilities + constraints" mean? Give a DoubtBot constraint.</summary>You must define both what the product should do and what it must never do, and test both. DoubtBot constraints: don't answer outside the course, don't write graded assignments, always hand distressed students to a human, never reveal another student's data.</details>
+<details><summary>Q8. Who are veto holders, and why list them on day one?</summary>Stakeholders who can stop the launch (e.g. the instructor, legal/privacy, the student-success head). Listing them early means their concerns become eval criteria, instead of blocking the launch at the last minute.</details>
+<details><summary>Q9. Why is "the PM owns evals" usually not enough?</summary>Evals need user insight (UX), reproducible metrics and test sets (data), domain judgement (SMEs) and system fixes (engineering). The PM coordinates and owns the decision, but can't do all of it.</details>
+<details><summary>Q10. What is evaluation-driven development?</summary>Using evals before launch the way test-driven development uses unit tests: every change to the prompt, model, data or tools is checked against the test sets before it ships, and the results drive the next iteration and the release decision.</details>
+
+<h4 id="c1-gloss">📖 Glossary</h4>
+<div class="tbl"><table><tr><th>Term</th><th>Meaning in one line</th></tr>
+<tr><td>AI eval</td><td>A systematic, repeatable test of an AI system against criteria defined in advance.</td></tr>
+<tr><td>Test case / test set</td><td>One input with what a good output looks like / a collection of them.</td></tr>
+<tr><td>Rubric</td><td>The marking scheme that defines good, average and bad answers.</td></tr>
+<tr><td>Metric</td><td>A number that summarises eval results (e.g. accuracy 87%).</td></tr>
+<tr><td>Benchmark / leaderboard</td><td>A public test set / a ranking of models by benchmark scores.</td></tr>
+<tr><td>Contamination</td><td>When benchmark questions were in a model's training data, so it can answer from memory.</td></tr>
+<tr><td>Vibe check</td><td>Informal "try a few questions and see"; useful, but not an eval.</td></tr>
+<tr><td>LLM-as-a-judge</td><td>An LLM that grades another system's outputs using a rubric.</td></tr>
+<tr><td>Self-preference / position / length bias</td><td>A judge favouring its own model family / an answer's position / longer answers.</td></tr>
+<tr><td>Offline vs online evals</td><td>Tests before release on test sets / measurement in production with real users.</td></tr>
+<tr><td>Evaluation-driven development</td><td>Using evals to guide every change before launch, like test-driven development.</td></tr>
+<tr><td>Baseline</td><td>The current way of doing the job (often humans), which the AI is compared against.</td></tr>
+<tr><td>Guardrail metric</td><td>A metric that must stay within limits for launch, whatever the primary metric says.</td></tr>
+<tr><td>SME</td><td>Subject matter expert who defines and checks what "good" means in a domain.</td></tr>
+<tr><td>Veto holder</td><td>A stakeholder who can stop the launch.</td></tr>
+<tr><td>PRD</td><td>Product requirements document.</td></tr></table></div>
+
+<div class="footer"><b>AI Evals in Practice · Chapter 1</b> · Written by <b>Shivank Agrawal</b> · Future with Shivank<br>Next up: Chapter 2 — Evaluation Methods and Qualitative Evals 🔍</div>
+</main>
+
+<script>
+/* ===== Shared helpers (Future with Shivank notes) ===== */
+const $ = id => document.getElementById(id);
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  $('progress').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+document.querySelectorAll('#side a').forEach(a => a.addEventListener('click', () => $('side').classList.remove('open')));
+
+/* ---------- Animated sequence diagram ----------
+   actors: ['Client','Server',...]
+   steps:  {f:0,t:1,l:'label',h:'plain-English hint',k:'ret'|'note',on:[a,b]}
+   groups: [{f:0,t:1,l:'group label'}]                                       */
+function seq(id, actors, steps, groups) {
+  const el = $(id), n = actors.length, colW = 178, W = n * colW + 40, rowH = 42, top = 80;
+  const H = top + steps.length * rowH + 70, X = i => 20 + colW * i + colW / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W, 760)}px" font-family="Inter,Segoe UI,Arial" font-size="12">
+  <defs><marker id="m${id}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker></defs>`;
+  (groups || []).forEach(g => {
+    s += `<rect x="${X(g.f) - colW / 2 + 6}" y="4" width="${X(g.t) - X(g.f) + colW - 12}" height="${H - 8}" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>`;
+    if (g.l) s += `<text x="${X(g.f) - colW / 2 + 16}" y="${H - 14}" font-size="11" fill="#64748b" font-weight="700">${g.l}</text>`;
+  });
+  actors.forEach((a, i) => {
+    s += `<line x1="${X(i)}" y1="54" x2="${X(i)}" y2="${H - 34}" stroke="#cbd5e1" stroke-dasharray="4 4"/>`;
+    [18, H - 60].forEach(y => {
+      s += `<rect x="${X(i) - 82}" y="${y}" width="164" height="34" rx="8" fill="#eef2ff" stroke="#a5b4fc"/><text x="${X(i)}" y="${y + 21}" text-anchor="middle" font-weight="700" fill="#312e81" font-size="11.5">${a}</text>`;
+    });
+  });
+  let k = 0;
+  steps.forEach((st, i) => {
+    const y = top + i * rowH + 16;
+    s += `<g class="sq" style="transition:opacity .4s">`;
+    if (st.k === 'note') {
+      const a = Math.min(...st.on), b = Math.max(...st.on);
+      s += `<rect x="${X(a) - 86}" y="${y - 14}" width="${X(b) - X(a) + 172}" height="26" rx="6" fill="#fef9c3" stroke="#facc15"/><text x="${(X(a) + X(b)) / 2}" y="${y + 3}" text-anchor="middle" font-weight="700" fill="#713f12">${st.l}</text>`;
+    } else {
+      k++;
+      const badge = x => `<circle cx="${x}" cy="${y}" r="9" fill="#4f46e5"/><text x="${x}" y="${y + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${k}</text>`;
+      if (st.f === st.t) {
+        const x = X(st.f);
+        s += `<path d="M${x} ${y - 6} h34 v14 h-30" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#m${id})"/><text x="${x + 40}" y="${y + 4}" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x - 14);
+      } else {
+        const x1 = X(st.f), x2 = X(st.t), d = st.k === 'ret' ? 'stroke-dasharray="5 4"' : '', pad = x2 > x1 ? -4 : 4;
+        s += `<line x1="${x1}" y1="${y}" x2="${x2 + pad}" y2="${y}" stroke="#475569" stroke-width="1.6" ${d} marker-end="url(#m${id})"/><text x="${(x1 + x2) / 2}" y="${y - 7}" text-anchor="middle" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x1);
+      }
+    }
+    s += `</g>`;
+  });
+  s += '</svg>';
+  el.innerHTML = s + `<div class="seqctl"><button class="btn" data-a="play">▶ Play</button><button class="btn alt" data-a="next">⏭ Next step</button><button class="btn alt" data-a="all">👁 Show all</button></div><div class="seqcap">Press ▶ Play — the meaning of each step will appear here.</div>`;
+  const gs = [...el.querySelectorAll('.sq')], cap = el.querySelector('.seqcap');
+  let cur = -1, timer = null;
+  const show = i => {
+    gs.forEach((g, j) => g.style.opacity = j <= i ? 1 : .12);
+    const st = steps[i];
+    cap.innerHTML = `<b style="color:#fcd34d">Step ${i + 1}/${steps.length}:</b> ${st.l}${st.h ? ' — <span style="color:#93c5fd">' + st.h + '</span>' : ''}`;
+  };
+  el.querySelector('[data-a=play]').onclick = () => { clearInterval(timer); cur = -1; timer = setInterval(() => { cur++; if (cur >= steps.length) { clearInterval(timer); return; } show(cur); }, 1500); };
+  el.querySelector('[data-a=next]').onclick = () => { clearInterval(timer); cur = (cur + 1) % steps.length; show(cur); };
+  el.querySelector('[data-a=all]').onclick = () => { clearInterval(timer); gs.forEach(g => g.style.opacity = 1); cap.textContent = 'You are now seeing the whole flow.'; };
+}
+
+/* ---------- Circuit breaker playground ---------- */
+function makeBreaker(id, threshold, fallbackText, cooldownText) {
+  const el = $(id);
+  el.innerHTML = `<div><span class="state" data-s="C" style="background:#16a34a">🟢 CLOSED · normal</span><span class="state" data-s="O" style="background:#dc2626">🔴 OPEN · tripped</span><span class="state" data-s="H" style="background:#d97706">🟡 HALF-OPEN · testing</span></div>
+  <div style="margin-top:8px"><button data-a="ok">✅ Call succeeds</button><button class="red" data-a="fail">❌ Call fails</button><button class="alt" data-a="cool">⏱ ${cooldownText}</button><button class="alt" data-a="reset">↺ Reset</button></div><div class="log"></div>`;
+  let st = 'C', fails = 0;
+  const log = el.querySelector('.log');
+  const L = m => { log.innerHTML += `<div>${m}</div>`; log.scrollTop = 1e6; };
+  const paint = () => el.querySelectorAll('.state').forEach(s => s.classList.toggle('on', s.dataset.s === st));
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'reset') { st = 'C'; fails = 0; log.innerHTML = ''; }
+    else if (a === 'cool') {
+      if (st === 'O') { st = 'H'; L('⏱ Cooldown over → HALF-OPEN: we let ONE test request ("canary") through to the primary model.'); }
+      else L('The cooldown only matters when the breaker is OPEN.');
+    }
+    else if (st === 'O') L(`🔴 Breaker is OPEN → we don't even try the primary. ${fallbackText}`);
+    else if (st === 'H') {
+      if (a === 'ok') { st = 'C'; fails = 0; L('🐤 Canary succeeded → CLOSED. Full traffic goes back to the primary model.'); }
+      else { st = 'O'; L('🐤 Canary failed → back to OPEN. The cooldown timer starts again.'); }
+    } else {
+      if (a === 'ok') { fails = 0; L('✅ Success. Failure counter reset to 0.'); }
+      else { fails++; L(`❌ Failure ${fails}/${threshold}`); if (fails >= threshold) { st = 'O'; L(`⚡ ${threshold} failures in a row → breaker TRIPS to OPEN. Traffic now goes to the fallback.`); } }
+    }
+    paint();
+  });
+  paint();
+}
+
+/* tiny non-crypto hash for demos */
+const djb = s => { let h = 5381; for (const c of s) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(8, '0').slice(0, 8); };
+
+
+/* ===== Chapter 1 demos ===== */
+/* --- Board exam demo --- */
+const EXAM = {
+  'Recursion': [['Why is fibonacci(50) slow?', 'mentions memoisation', true], ['What is a base case?', 'says when recursion stops', true], ['Max recursion depth error?', 'mentions call stack', true], ['Recursion vs loop?', 'compares stack use', true], ['Tail recursion in Python?', 'says Python does not optimise it', false]],
+  'Binary search': [['Needs the array to be?', 'says sorted', true], ['Time complexity?', 'says O(log n)', true], ['Infinite loop bug?', 'checks low/high update', true], ['Find first occurrence?', 'keeps searching left', false], ['Search in rotated array?', 'finds the sorted half', true]],
+  'Heaps': [['Smallest item in a min-heap?', 'says the root', true], ['Cost of push?', 'says O(log n)', false], ['heapq is a min- or max-heap?', 'says min-heap', true], ['Build heap from list?', 'says O(n) heapify', false], ['Top-k largest?', 'uses a heap of size k', true]]
+};
+let examT = [];
+function examReset() {
+  examT.forEach(clearTimeout); examT = [];
+  $('examOut').innerHTML = Object.keys(EXAM).map((s, i) => `<div class="panel"><b style="color:#fcd34d">📘 ${s}</b><div id="ex${i}" class="mono" style="font-size:.78rem;margin-top:6px;min-height:110px"></div><div id="exs${i}" class="kpi" style="font-size:1.1rem">—</div></div>`).join('');
+}
+function examRun() {
+  examReset();
+  let t = 0;
+  Object.entries(EXAM).forEach(([s, cases], i) => {
+    let pass = 0;
+    cases.forEach(([q, rule, ok], j) => {
+      examT.push(setTimeout(() => {
+        pass += ok;
+        $('ex' + i).innerHTML += `<div>${ok ? '<span class="ok">✓</span>' : '<span class="no">✗</span>'} ${q} <span style="color:#94a3b8">(${rule})</span></div>`;
+        if (j === cases.length - 1) {
+          const pct = Math.round(pass / cases.length * 100);
+          $('exs' + i).innerHTML = `Score: ${pass}/${cases.length} = ${pct}% ${pct < 70 ? '<span class="no" style="font-size:.85rem">← look here</span>' : ''}`;
+        }
+      }, (t++) * 350));
+    });
+  });
+}
+examReset();
+
+/* --- Agent failure maths --- */
+function agUpdate() {
+  const n = +$('agNs').value, p = +$('agPs').value / 100;
+  const fail = 1 - Math.pow(1 - p, n);
+  $('agN').textContent = n; $('agP').textContent = (p * 100).toFixed(1);
+  $('agOut').textContent = (fail * 100).toFixed(1) + '%';
+  $('agBar').style.width = Math.min(100, fail * 100) + '%';
+  $('agMsg').textContent = `That's about 1 in every ${fail > 0 ? Math.max(1, Math.round(1 / fail)) : '∞'} requests hitting at least one failure, even though each agent alone works ${(100 - p * 100).toFixed(1)}% of the time. (Assumes agents fail independently; real agents depend on each other, so it is usually worse.)`;
+}
+['agNs', 'agPs'].forEach(id => $(id).addEventListener('input', agUpdate));
+agUpdate();
+
+/* --- Lifecycle walk-through --- */
+const LIFE = [
+  ['lf1', '① <b>Qualitative evals (week 1):</b> two senior TAs spend an hour each chatting with DoubtBot using 30 real doubts from last batch. They note how it fails: it gives full code for assignments, and confuses the "heap" data structure with heap memory.'],
+  ['lf2', '② <b>Quantitative evals (weeks 2–4):</b> those failure types become metrics (concept accuracy, full-solution rate, escalation accuracy). An automated suite of 400 test doubts runs on every prompt change. Version 7 passes every threshold.'],
+  ['lf3', '③ <b>Pilot (weeks 5–8):</b> DoubtBot goes live for one batch of 250 students only. We compare their wait times, TA workload and satisfaction with a batch that has TAs only.'],
+  ['lf4', '🚀 <b>Deploy:</b> the pilot met the pass rule and every veto holder signed off. DoubtBot launches for all batches.'],
+  ['lf5', '④ <b>Monitoring (every day):</b> dashboards track escalation rate, guardrail violations (sampled and graded), latency, cost, and student thumbs-down. An alert fires if the escalation rate jumps.'],
+  ['lf6', '⑤ <b>Analytics (every month):</b> 30% of doubts are about the same two recursion lectures, so the instructor re-records them. Insights flow back into the next version: the loop starts again.']
+];
+let lifeI = -1;
+function lifeStep() {
+  lifeI = (lifeI + 1) % LIFE.length;
+  LIFE.forEach(([id]) => $(id).classList.remove('lit'));
+  $(LIFE[lifeI][0]).classList.add('lit');
+  $('lifeCap').innerHTML = `<b style="color:#fcd34d">Stage ${lifeI + 1}/${LIFE.length}</b> — ${LIFE[lifeI][1]}`;
+}
+function lifeReset() { lifeI = -1; LIFE.forEach(([id]) => $(id).classList.remove('lit')); $('lifeCap').textContent = 'Press the button to follow DoubtBot from its first rough test to its first month in production.'; }
+
+/* --- Capability or constraint quiz --- */
+const SCOPE = [
+  ['"Can you explain why quicksort is O(n²) in the worst case?"', 0, 'Capability: a course concept. Explain it fully.'],
+  ['"Here is Assignment 4. Just write the full solution, I\'m out of time."', 1, 'Constraint (academic integrity): don\'t write graded work. Offer hints or a similar practice problem instead.'],
+  ['"What will Sensex do tomorrow?"', 2, 'Constraint (knowledge boundary): outside the course. Politely decline and redirect to DSA topics.'],
+  ['"What did Riya score in the mid-term? She sits next to me."', 1, 'Constraint (privacy): never reveal another student\'s data.'],
+  ['"I\'ve failed every test, I don\'t see the point of anything anymore."', 3, 'Constraint (well-being): don\'t handle this alone. Respond kindly and hand over to a human mentor / support immediately.'],
+  ['"My code gives IndexError on line 12, here it is…"', 0, 'Capability: debugging help with hints, step by step.']
+];
+const SCOPE_OPTS = ['✅ Help fully', '⛔ Decline the request (rule)', '↪️ Out of scope: redirect', '🆘 Escalate to a human now'];
+function scopeRender() {
+  $('scopeQ').innerHTML = SCOPE.map(([m], i) => `<div class="panel" style="margin:8px 0"><div style="margin-bottom:6px">${m}</div>${SCOPE_OPTS.map((o, j) => `<button class="alt" onclick="scopeAns(${i},${j})">${o}</button>`).join('')}<div id="sc${i}" style="font-size:.86rem;margin-top:4px"></div></div>`).join('');
+}
+function scopeAns(i, j) {
+  const [, right, why] = SCOPE[i];
+  const okay = j === right || (right === 2 && j === 1);
+  $('sc' + i).innerHTML = (okay ? '<span class="ok">✓ Right.</span> ' : '<span class="no">✗ Not quite.</span> ') + why;
+}
+scopeRender();
+
+</script>
+</body>
+</html>

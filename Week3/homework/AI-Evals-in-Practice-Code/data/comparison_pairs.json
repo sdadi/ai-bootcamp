@@ -1,0 +1,20 @@
+[
+  {"q": "Why is binary search O(log n)?",
+   "a1": "Every step looks at the middle element and throws away half of the array. Halving n until 1 item is left takes about log2(n) steps.",
+   "a2": "Because each comparison halves the remaining search space, so for n items you need roughly log n comparisons, e.g. about 20 for a million items."},
+  {"q": "What is a base case in recursion?",
+   "a1": "It is the condition where the function stops calling itself and returns directly, like n == 0 for factorial.",
+   "a2": "The base case is the simplest input that is answered without recursion. Without it the calls never stop and Python raises RecursionError."},
+  {"q": "Why does my DFS on a grid never finish?",
+   "a1": "You are probably not marking cells as visited, so DFS keeps going back to cells it has already seen. Keep a visited set.",
+   "a2": "DFS revisits cells forever if you never record which ones you've explored. Add each cell to a visited set before exploring its neighbours."},
+  {"q": "What does heapq.heappush cost?",
+   "a1": "O(log n): the new item is added at the end and sifts up at most the height of the tree.",
+   "a2": "It's logarithmic, because the pushed item only moves up along one path from a leaf to the root, and that path is about log n long."},
+  {"q": "Why is building a heap with heapify O(n)?",
+   "a1": "Most nodes are near the bottom and only move down a little, so the total work adds up to about 2n, not n log n.",
+   "a2": "heapify sifts down from the last parent to the root; nodes low in the tree have short paths, so the sum over all nodes is linear."},
+  {"q": "When should I use dynamic programming?",
+   "a1": "When the same subproblems repeat, like in fibonacci or coin change. Store their answers so each is solved only once.",
+   "a2": "Use DP if a recursive solution keeps solving identical subproblems; memoize or build a table bottom-up to avoid the repeated work."}
+]

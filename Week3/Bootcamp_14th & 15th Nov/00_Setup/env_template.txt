@@ -1,0 +1,5 @@
+# Hands-On: RAG and Tool Calling — created by Shivank Agarwal
+# Copy this file to the MAIN folder (the one that contains 00_Setup and the Module folders)
+# and name the copy exactly:  .env
+# Then paste your own OpenAI API key after the = sign (no quotes, no spaces).
+OPENAI_API_KEY=sk-paste-your-key-here

@@ -1,0 +1,6 @@
+# Agentic RAG project - created by Shivank Agrawal
+# Python 3.10, 3.11, 3.12 or 3.13
+crewai[tools]>=1.15,<2      # agents, tasks, crew + PDFSearchTool + ChromaDB (tested on 1.15)
+sentence-transformers>=3    # runs the Hugging Face embedding model locally (installs PyTorch)
+tavily-python>=0.7          # web search for AI agents
+python-dotenv>=1.0          # reads the secret keys from the .env file

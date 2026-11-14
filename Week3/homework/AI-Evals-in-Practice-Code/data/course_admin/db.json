@@ -1,0 +1,10 @@
+{
+  "students": {
+    "stu_1047": {"name": "Aisha Khan", "email": "aisha.khan@example.com", "roll_no": "DSA25-1047",
+                 "extensions_granted": 2,
+                 "deadlines": {"Assignment 7": "2026-11-15 23:59"}},
+    "stu_0412": {"name": "Riya Sharma", "email": "riya.sharma@example.com", "roll_no": "DSA25-0412",
+                 "extensions_granted": 0,
+                 "deadlines": {"Assignment 7": "2026-11-15 23:59"}}
+  }
+}

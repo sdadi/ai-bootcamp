@@ -1,0 +1,3 @@
+nemoguardrails>=0.24
+langchain-openai>=1.0
+python-dotenv

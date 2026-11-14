@@ -1,0 +1,16 @@
+sku,name,category,brand,price_inr,warranty_months,return_window_days
+NM-PHN-4821,Nimbu Volt 5G (8GB RAM / 128GB),Phones,Nimbu,18999,12,7
+NM-PHN-4822,Nimbu Volt 5G Pro (12GB RAM / 256GB),Phones,Nimbu,24999,12,7
+NM-TAB-2210,Nimbu Slate 11 inch Tablet,Tablets,Nimbu,21499,12,7
+NM-LAP-3307,AeroBook 14 Laptop (Ryzen 7 / 16GB / 512GB SSD),Laptops,Aero,54990,12,7
+NM-AUD-1204,PulseBuds ANC Wireless Earbuds,Audio,Pulse,2799,6,7
+NM-KIT-1150,Masala Pro 750W Mixer Grinder,Kitchen Appliances,Rasoi,3499,24,10
+NM-KIT-1171,Rasoi Smart Induction Cooktop,Kitchen Appliances,Rasoi,2999,24,10
+NM-TV-0942,ClearView 43 inch 4K Smart TV,Televisions,ClearView,27490,12,0
+NM-TV-0955,ClearView 55 inch 4K Smart TV,Televisions,ClearView,41990,12,0
+NM-FRG-0701,FrostFree 260L Double Door Refrigerator,Large Appliances,Himalaya,28990,12,0
+NM-WM-0808,SpinMax 7kg Front Load Washing Machine,Large Appliances,SpinMax,31990,24,0
+NM-FSH-5520,Cotton Kurta (Men) - Indigo,Fashion,Desi Threads,899,0,15
+NM-FSH-5601,Running Shoes Stride 2,Footwear,Stride,2499,3,15
+NM-BK-0099,Clean Code in Python (Paperback),Books,Nimbu Press,599,0,10
+NM-GFT-0001,Nimbu Mart Gift Card 1000,Gift Cards,Nimbu,1000,0,0

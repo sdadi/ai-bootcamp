@@ -1,0 +1,43 @@
+{
+  "_about": "Metadata for every document in data/policies. 'access' lists which user groups may see the document (everyone has 'public'; employees also have 'employees'; the security and procurement teams have their own groups). 'status' archived = superseded, retrievable only when the user asks for history. 'trust' untrusted = content written by people who are not policy owners; never cite it as policy. All content is fictional: Nimbu Mart is a made-up company used across these courses by Shivank Agrawal.",
+  "information_security_policy_2026.md": {
+    "title": "Information Security Policy (2026)", "doc_id": "NM-SEC-POL", "department": "security",
+    "doc_type": "policy", "access": ["employees"], "version": "2026.1", "effective_date": "2026-02-01",
+    "status": "active", "trust": "trusted"
+  },
+  "information_security_policy_2025.md": {
+    "title": "Information Security Policy (2025) — archived", "doc_id": "NM-SEC-POL", "department": "security",
+    "doc_type": "policy", "access": ["employees"], "version": "2025.2", "effective_date": "2025-03-01",
+    "status": "archived", "trust": "trusted", "superseded_by": "information_security_policy_2026.md"
+  },
+  "data_protection_policy.md": {
+    "title": "Data Protection Policy", "doc_id": "NM-DP-POL", "department": "legal",
+    "doc_type": "policy", "access": ["employees"], "version": "2026.1", "effective_date": "2026-01-01",
+    "status": "active", "trust": "trusted"
+  },
+  "ai_acceptable_use_policy.md": {
+    "title": "AI Tools Acceptable Use Policy", "doc_id": "NM-AI-POL", "department": "security",
+    "doc_type": "policy", "access": ["public"], "version": "2026.2", "effective_date": "2026-06-01",
+    "status": "active", "trust": "trusted"
+  },
+  "vendor_onboarding_checklist.md": {
+    "title": "Vendor Onboarding Checklist", "doc_id": "NM-PROC-CHK", "department": "procurement",
+    "doc_type": "procedure", "access": ["employees"], "version": "2026.1", "effective_date": "2026-01-01",
+    "status": "active", "trust": "trusted"
+  },
+  "approved_vendor_list.md": {
+    "title": "Approved Vendor List (restricted)", "doc_id": "NM-PROC-AVL", "department": "procurement",
+    "doc_type": "register", "access": ["procurement", "security"], "version": "2026-10-15", "effective_date": "2026-10-15",
+    "status": "active", "trust": "trusted"
+  },
+  "security_questionnaire_template.md": {
+    "title": "Vendor Security Questionnaire (template)", "doc_id": "NM-SEC-Q", "department": "security",
+    "doc_type": "template", "access": ["employees"], "version": "2026.1", "effective_date": "2026-01-01",
+    "status": "active", "trust": "trusted"
+  },
+  "team_chat_vendor_notes_untrusted.md": {
+    "title": "#tools-and-vendors chat export (untrusted)", "doc_id": "CHAT-EXPORT", "department": "none",
+    "doc_type": "chat_export", "access": ["employees"], "version": "2026-10-20", "effective_date": "2026-10-20",
+    "status": "active", "trust": "untrusted"
+  }
+}

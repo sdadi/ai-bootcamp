@@ -1,0 +1,4 @@
+openai>=3.50
+pydantic>=2.0
+numpy
+pytest

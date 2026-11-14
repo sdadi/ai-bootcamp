@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval Annotator · by Shivank Agarwal</title>
+<style>
+  :root { --bg:#14161b; --panel:#1d2027; --line:#2c303a; --text:#eceef2; --muted:#9aa1ad;
+          --amber:#f5a524; --amber-ink:#2a1a00; --blue:#2f80ed; --green:#27ae60; --red:#e5484d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .ann { max-width:1100px; margin:0 auto; padding:18px; }
+  .top { display:grid; grid-template-columns: 1fr auto; gap:14px; align-items:start; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .label { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--amber); margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; }
+  textarea { width:100%; background:#111318; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; resize:vertical; }
+  .btns { display:flex; flex-direction:column; gap:8px; }
+  button, .upload { font:600 14px system-ui,sans-serif; border:0; border-radius:8px; padding:9px 14px; cursor:pointer; }
+  .blue { background:var(--blue); color:#fff; }
+  .ghost { background:transparent; color:var(--text); border:1px solid var(--line); }
+  .upload input { display:none; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .progress { height:6px; background:#2a2e37; border-radius:4px; overflow:hidden; margin:14px 0 6px; }
+  .progress > div { height:100%; width:0; background:var(--green); transition:width .2s; }
+  .meta { display:flex; justify-content:space-between; color:var(--muted); font-size:13px; flex-wrap:wrap; gap:6px; }
+  .chip { display:inline-block; background:#2a2e37; border-radius:999px; padding:1px 9px; font-size:12px; color:var(--text); }
+  .main { display:grid; grid-template-columns: 1.25fr auto 1fr; gap:14px; margin-top:12px; align-items:stretch; }
+  .query { background:var(--amber); color:var(--amber-ink); border-radius:12px; padding:12px 14px; font-weight:600; }
+  .query .label { color:var(--amber-ink); }
+  .resp { margin-top:12px; background:#fff7e6; color:#2b2213; border-radius:12px; padding:12px 14px; max-height:340px; overflow:auto; white-space:pre-wrap; }
+  .resp .label { color:#8a5a00; }
+  details.ref { margin-top:10px; color:var(--muted); font-size:14px; }
+  details.ref summary { cursor:pointer; }
+  .votes { display:flex; flex-direction:column; justify-content:center; gap:14px; }
+  .vote { width:64px; height:64px; border-radius:14px; font-size:30px; background:#2a2e37; border:2px solid transparent; }
+  .vote.up.on { background:var(--green); border-color:#bff0d0; }
+  .vote.down.on { background:var(--red); border-color:#ffd0d2; }
+  .fb textarea { min-height:220px; background:#fff; color:#1b1d22; }
+  .nav { display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .empty { text-align:center; color:var(--muted); padding:60px 20px; border:1px dashed var(--line); border-radius:12px; margin-top:14px; }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#000; color:#fff; padding:8px 14px; border-radius:8px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.show { opacity:.92; }
+  .keys { color:var(--muted); font-size:12px; text-align:center; margin-top:8px; }
+  @media (max-width: 760px) {
+    .top { grid-template-columns: 1fr; } .btns { flex-direction:row; flex-wrap:wrap; }
+    .main { grid-template-columns: 1fr; } .votes { flex-direction:row; justify-content:center; }
+  }
+</style>
+</head>
+<body>
+<div class="ann" id="ann">
+  <div class="top">
+    <div class="card">
+      <div class="label">Evaluation function description</div>
+      <textarea id="annRubric" rows="3" aria-label="Evaluation function description">PASS if a warehouse manager could act on this answer as it is: it is correct, clear, and handles the edge case hidden in the question. Otherwise FAIL, and write down what went wrong.</textarea>
+    </div>
+    <div class="btns">
+      <label class="upload blue" tabindex="0">⬆ Upload agent output<input type="file" id="annFile" accept=".csv,text/csv"></label>
+      <button class="blue" id="annDownload" disabled>⬇ Download feedback</button>
+    </div>
+  </div>
+
+  <div class="progress"><div id="annBar"></div></div>
+  <div class="meta"><span id="annPos">No file loaded</span><span id="annDone"></span></div>
+
+  <div id="annEmpty" class="empty">Upload <b>prompt_eval_results.csv</b> or <b>rag_eval_results.csv</b> (made by the eval scripts).<br>Any CSV with a question column and a response column works.</div>
+
+  <div id="annWork" hidden>
+    <div class="main">
+      <div>
+        <div class="query"><div class="label"><span>User query</span><span id="annTag"></span></div><div id="annQuery"></div></div>
+        <div class="resp"><div class="label">Agent response</div><div id="annResp"></div></div>
+        <details class="ref" id="annRefBox"><summary>Show the reference answer</summary><div id="annRef"></div></details>
+      </div>
+      <div class="votes">
+        <button class="vote up" id="annUp" title="Pass (P)" aria-label="Pass">👍</button>
+        <button class="vote down" id="annDown" title="Fail (F)" aria-label="Fail">👎</button>
+      </div>
+      <div class="card fb">
+        <div class="label">Qualitative reviewer feedback</div>
+        <textarea id="annNote" placeholder="What exactly is wrong or right? e.g. 'ignores the PO arriving tomorrow'"></textarea>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="ghost" id="annPrev">← Previous</button>
+      <button class="blue" id="annSubmit">Submit feedback</button>
+      <button class="ghost" id="annNext">Next →</button>
+    </div>
+    <div class="keys">Keys: P = pass · F = fail · ← / → move · Ctrl+Enter = submit</div>
+  </div>
+</div>
+<div class="toast" id="annToast"></div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  let rows = [], cols = [], i = 0, fileName = "agent_output.csv";
+  const Q = ["question", "query", "user_query", "q", "input"];
+  const R = ["response", "answer", "agent_response", "output", "generated_answer"];
+  const REF = ["expected", "reference", "reference_answer", "a"];
+  const TAG = ["prompt_version", "config", "variant"];
+  const pick = names => cols.find(c => names.includes(c.trim().toLowerCase()));
+
+  // CSV reader that handles quotes, commas and line breaks inside fields
+  function parseCSV(text) {
+    const out = []; let row = [], f = "", q = false;
+    for (let k = 0; k < text.length; k++) {
+      const c = text[k];
+      if (q) { if (c === '"') { if (text[k + 1] === '"') { f += '"'; k++; } else q = false; } else f += c; }
+      else if (c === '"') q = true;
+      else if (c === ",") { row.push(f); f = ""; }
+      else if (c === "\n" || c === "\r") { if (c === "\r" && text[k + 1] === "\n") k++; row.push(f); out.push(row); row = []; f = ""; }
+      else f += c;
+    }
+    if (f !== "" || row.length) { row.push(f); out.push(row); }
+    return out.filter(r => r.some(x => x.trim() !== ""));
+  }
+  const esc = v => /[",\n\r]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+
+  function load(text, name) {
+    const data = parseCSV(text.replace(/^\uFEFF/, ""));
+    if (data.length < 2) return toast("That file has no rows.");
+    cols = data[0];
+    if (!pick(Q) || !pick(R)) return toast("Need a question column and a response column.");
+    rows = data.slice(1).map(r => Object.fromEntries(cols.map((c, j) => [c, r[j] ?? ""])));
+    rows.forEach(r => { r.human_label = r.human_label || ""; r.human_feedback = r.human_feedback || ""; });
+    fileName = name || fileName; i = 0;
+    $("annEmpty").hidden = true; $("annWork").hidden = false; $("annDownload").disabled = false;
+    show();
+  }
+
+  function show() {
+    const r = rows[i], qc = pick(Q), rc = pick(R), refc = pick(REF), tagc = pick(TAG);
+    $("annQuery").textContent = r[qc];
+    $("annResp").textContent = r[rc];
+    $("annRefBox").hidden = !refc; if (refc) $("annRef").textContent = r[refc];
+    $("annTag").innerHTML = tagc ? '<span class="chip">' + r[tagc].replace(/[<>&]/g, "") + "</span>" : "";
+    $("annNote").value = r.human_feedback;
+    $("annUp").classList.toggle("on", r.human_label === "pass");
+    $("annDown").classList.toggle("on", r.human_label === "fail");
+    $("annPrev").disabled = i === 0; $("annNext").disabled = i === rows.length - 1;
+    const done = rows.filter(x => x.human_label).length;
+    $("annPos").textContent = `Item ${i + 1} of ${rows.length}`;
+    $("annDone").textContent = `${done} annotated · ${rows.filter(x => x.human_label === "fail").length} failures`;
+    $("annBar").style.width = (100 * done / rows.length) + "%";
+  }
+
+  function vote(label) { if (!rows.length) return; rows[i].human_label = rows[i].human_label === label ? "" : label; show(); }
+  function submit() {
+    if (!rows.length) return;
+    rows[i].human_feedback = $("annNote").value.trim();
+    if (!rows[i].human_label) return toast("Pick 👍 or 👎 first.");
+    toast("Saved"); if (i < rows.length - 1) i++; show();
+  }
+  function move(d) { if (!rows.length) return; rows[i].human_feedback = $("annNote").value.trim(); i = Math.min(rows.length - 1, Math.max(0, i + d)); show(); }
+  function download() {
+    rows[i].human_feedback = $("annNote").value.trim();
+    const header = [...cols.filter(c => c !== "human_label" && c !== "human_feedback"), "human_label", "human_feedback"];
+    const csv = [header.map(esc).join(",")].concat(rows.map(r => header.map(c => esc(r[c] ?? "")).join(","))).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
+    a.download = fileName.replace(/\.csv$/i, "") + "_feedback.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  function toast(msg) { const t = $("annToast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1200); }
+
+  $("annFile").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => load(t, f.name)); e.target.value = ""; });
+  $("annUp").onclick = () => vote("pass"); $("annDown").onclick = () => vote("fail");
+  $("annSubmit").onclick = submit; $("annPrev").onclick = () => move(-1); $("annNext").onclick = () => move(1);
+  $("annDownload").onclick = download;
+  document.addEventListener("keydown", e => {
+    if (!rows.length) return;
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) return submit();
+    if (e.target.tagName === "TEXTAREA") return;
+    if (e.key === "ArrowLeft") move(-1); else if (e.key === "ArrowRight") move(1);
+    else if (e.key.toLowerCase() === "p") vote("pass"); else if (e.key.toLowerCase() === "f") vote("fail");
+  });
+  window.annotatorLoad = load;      // lets a page preload rows: annotatorLoad(csvText, "name.csv")
+})();
+</script>
+</body>
+</html>

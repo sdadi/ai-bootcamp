@@ -1,0 +1,28 @@
+# Hands-On: RAG and Tool Calling — created by Shivank Agarwal
+# Install with:  pip install -r 00_Setup/requirements.txt
+# Python 3.11, 3.12 or 3.13 recommended.
+
+# LLM + embeddings (OpenAI)
+openai>=2.0
+langchain-core>=1.0
+langchain-openai>=1.7
+
+# Chunking, vector store, local models
+langchain-text-splitters>=1.0
+langchain-experimental>=0.4
+langchain-chroma>=1.0
+langchain-huggingface>=1.0
+chromadb>=1.0
+sentence-transformers>=5.0
+
+# Word vectors, keyword search, maths
+gensim>=4.4
+rank_bm25>=0.2.2
+numpy>=2.0
+pandas>=2.2
+scikit-learn>=1.5
+
+# Web apps, notebooks, settings
+gradio>=6.0
+jupyter
+python-dotenv>=1.0

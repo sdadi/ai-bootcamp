@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Shivank Agarwal">
+<title>Chapter 4 — Case Study: Designing an Adaptive Learning App | LLM System Design by Shivank Agarwal</title>
+<style>
+:root{
+  --ink:#1e293b; --ink2:#334155; --muted:#64748b; --bg:#f7f8fb; --card:#ffffff; --line:#94a3b8; --soft:#eef2f7;
+  --brand:#4f46e5; --brand2:#0891b2; --accent:#ea580c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0;z-index:999}
+
+/* ---------- Sidebar ---------- */
+#side{position:fixed;top:0;left:0;bottom:0;width:290px;background:#0f172a;color:#cbd5e1;overflow-y:auto;padding:22px 16px 40px;font-size:.86rem;z-index:50;transition:transform .3s}
+#side .brand{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#a5b4fc;font-weight:700}
+#side h3{color:#fff;margin:.3em 0 .2em;font-size:1.05rem;line-height:1.35}
+#side .by{font-size:.78rem;color:#94a3b8;margin-bottom:14px}
+#side a{display:block;color:#cbd5e1;text-decoration:none;padding:4px 10px;border-radius:7px;line-height:1.45}
+#side a:hover{background:#1e293b;color:#fff}
+#side .grp-t{color:#fbbf24;font-weight:700;margin-top:14px;padding:0 10px;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+#side .sub{padding-left:24px;font-size:.8rem;color:#94a3b8}
+#menuBtn{display:none;position:fixed;top:12px;left:12px;z-index:60;background:#0f172a;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+main{margin-left:290px;padding:34px 4.5vw 90px;max-width:1180px}
+@media (max-width:960px){#side{transform:translateX(-100%)}#side.open{transform:none}#menuBtn{display:block}main{margin-left:0;padding:64px 16px 70px}}
+
+/* ---------- Typography ---------- */
+h1{font-size:2.4rem;line-height:1.2;margin:.25em 0 .3em;letter-spacing:-.01em}
+h2.chapter{font-size:1.9rem;line-height:1.3;margin-top:56px;padding:26px 28px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+h2.chapter small{display:block;font-size:1rem;opacity:.92;font-weight:400;margin-top:4px}
+h3.sec{font-size:1.55rem;line-height:1.35;margin:64px 0 10px;padding-bottom:8px;border-bottom:3px solid #e0e7ff}
+h3.sec .num{color:var(--brand)}
+h4{font-size:1.2rem;margin:34px 0 8px;color:#1e3a8a}
+h5{font-size:1rem}
+p{margin:.65em 0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+b,strong{color:#0f172a}
+a{color:var(--brand)}
+code{background:#eef2ff;padding:1px 6px;border-radius:5px;font-size:.86em;color:#9d174d;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.84rem;line-height:1.6;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+pre .c{color:#94a3b8} pre .k{color:#c4b5fd} pre .s{color:#86efac} pre .o{color:#fcd34d}
+.lede{font-size:1.1rem;color:var(--ink2)}
+
+/* ---------- Tables ---------- */
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;font-size:.92rem;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+th{background:#1e293b;color:#fff;text-align:left;padding:10px 12px;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid #edf0f4;vertical-align:top}
+tr:nth-child(even) td{background:#fafbfd}
+td code{white-space:nowrap}
+
+/* ---------- Hero ---------- */
+.hero{background:#fff;border-radius:22px;padding:34px 34px 28px;box-shadow:0 6px 28px rgba(15,23,42,.06);border:1px solid #e2e8f0}
+.hero .kicker{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);background:#eef2ff;padding:4px 12px;border-radius:30px}
+.author{display:flex;align-items:center;gap:12px;margin:14px 0 6px}
+.author .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.author b{display:block;line-height:1.2}
+.author span{font-size:.85rem;color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+.legend div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.5}
+.learn{columns:2;column-gap:28px}
+@media(max-width:800px){.learn{columns:1}}
+
+/* ---------- Callout boxes ---------- */
+.box{border-radius:14px;padding:14px 18px;margin:18px 0;border-left:5px solid;background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.box>.t{display:block;margin-bottom:4px;font-weight:700}
+.box p:first-of-type{margin-top:.2em}
+.analogy{border-color:#ea580c;background:#fff7ed}
+.real{border-color:#2563eb;background:#eff6ff}
+.example{border-color:#0d9488;background:#f0fdfa}
+.interview{border-color:#16a34a;background:#f0fdf4}
+.deep{border-color:#7c3aed;background:#f5f3ff}
+.warn{border-color:#d97706;background:#fffbeb}
+.takeaways{border-color:#4f46e5;background:#eef2ff}
+.plain{border-color:#64748b;background:#f8fafc}
+
+/* ---------- Diagram canvas ---------- */
+.fig{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:26px 16px 16px;margin:22px 0;box-shadow:0 2px 10px rgba(15,23,42,.04);overflow-x:auto}
+.fig .ft{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin:-8px 0 14px 4px}
+.cap{text-align:center;font-size:.86rem;color:var(--muted);margin-top:14px}
+
+/* nodes */
+.node{display:inline-block;padding:10px 14px;border-radius:11px;border:1.5px solid #cbd5e1;background:#f8fafc;font-weight:600;text-align:center;font-size:.88rem;line-height:1.4;min-width:110px;color:#1e293b}
+.node small{display:block;font-weight:400;opacity:.85;font-size:.78rem;margin-top:2px}
+.n-blue{background:#eff6ff;border-color:#60a5fa;color:#1e3a8a}
+.n-green{background:#f0fdf4;border-color:#4ade80;color:#14532d}
+.n-orange{background:#fff7ed;border-color:#fb923c;color:#7c2d12}
+.n-red{background:#fef2f2;border-color:#f87171;color:#7f1d1d}
+.n-purple{background:#f5f3ff;border-color:#a78bfa;color:#4c1d95}
+.n-yellow{background:#fefce8;border-color:#facc15;color:#713f12}
+.n-teal{background:#f0fdfa;border-color:#2dd4bf;color:#134e4a}
+.n-pink{background:#fdf2f8;border-color:#f472b6;color:#831843}
+.n-gray{background:#f1f5f9;border-color:#94a3b8;color:#334155}
+.n-dark{background:#1e293b;border-color:#0f172a;color:#fff}
+.n-navy{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.db{border-radius:50% / 14%;padding:16px 16px}
+.pill{border-radius:30px}
+.diamond{width:190px;height:106px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;font-weight:700;padding:0 38px;background:#e0e7ff;color:#312e81;flex-shrink:0;line-height:1.3}
+
+/* layout helpers */
+.fv{display:flex;flex-direction:column;align-items:center}
+.fh{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.cols{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.grp{border:1.5px dashed #cbd5e1;border-radius:14px;padding:24px 14px 14px;position:relative;background:#fbfcfe;margin:12px 4px}
+.grp>.gt{position:absolute;top:-11px;left:14px;white-space:nowrap;background:#fff;padding:0 8px;font-weight:700;font-size:.76rem;color:#475569;border-radius:6px;border:1px solid #e2e8f0}
+.ladder .step{display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
+
+/* arrows (static, clean) */
+.va{width:2px;height:32px;background:var(--line);position:relative;margin:4px auto 10px}
+.va::after{content:'';position:absolute;bottom:-8px;left:-5px;border:6px solid transparent;border-top-color:var(--line)}
+.va>span{position:absolute;left:12px;top:5px;white-space:nowrap;font-size:.72rem;background:#f1f5f9;padding:1px 8px;border-radius:6px;color:#334155;border:1px solid #e2e8f0}
+.ha{height:2px;width:46px;background:var(--line);position:relative;margin:0 12px 0 4px;flex-shrink:0}
+.ha::after{content:'';position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-left-color:var(--line)}
+.ha>span{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.7rem;background:#f1f5f9;padding:0 7px;border-radius:6px;border:1px solid #e2e8f0}
+.ha:has(>span){width:104px}
+.ha.long{width:110px}
+.dash{background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.dashv{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.lbl{font-size:.74rem;background:#f1f5f9;padding:2px 9px;border-radius:6px;color:#334155;display:inline-block;margin:3px;border:1px solid #e2e8f0}
+
+/* CSS tree */
+.tree{overflow-x:auto;padding-bottom:6px}
+.tree ul{padding-top:20px;position:relative;display:flex;justify-content:center;margin:0;padding-left:0}
+.tree li{list-style:none;text-align:center;position:relative;padding:20px 5px 0;margin:0}
+.tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid #cbd5e1;width:50%;height:20px}
+.tree li::after{right:auto;left:50%;border-left:2px solid #cbd5e1}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid #cbd5e1;border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid #cbd5e1;height:20px}
+.tree>ul{padding-top:0}.tree>ul>li{padding-top:0}
+.tree .node{font-size:.78rem;min-width:auto;padding:7px 10px}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:14px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+@media(max-width:860px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 6px rgba(15,23,42,.06);border-top:4px solid #60a5fa;font-size:.95rem;line-height:1.65}
+.card h5{margin:0 0 6px;font-size:1.02rem;color:#0f172a}
+.card ul,.card ol{margin:.3em 0;padding-left:1.2em}
+.card pre{font-size:.78rem;margin:8px 0 0}
+.c-bad{border-top-color:#f87171}.c-good{border-top-color:#4ade80}.c-warn{border-top-color:#fbbf24}.c-vio{border-top-color:#a78bfa}.c-teal{border-top-color:#2dd4bf}
+.c-bad h5{color:#b91c1c}.c-good h5{color:#15803d}
+.quote{background:#f8fafc;border:1px solid #e2e8f0;padding:9px 13px;border-radius:9px;font-size:.92rem;font-family:"JetBrains Mono",Consolas,monospace;white-space:pre-wrap;line-height:1.55}
+
+/* ---------- Demos ---------- */
+.demo{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:18px 20px;margin:20px 0}
+.demo h5{margin:0 0 6px;color:#fcd34d;font-size:1rem}
+.demo p.hint{font-size:.85rem;color:#94a3b8;margin:4px 0 10px}
+.demo label{font-size:.9rem}
+.demo input[type=text],.demo input[type=number],.demo textarea,.demo select{width:100%;padding:9px 10px;border-radius:9px;border:0;font-size:.93rem;font-family:inherit;background:#f8fafc;color:#0f172a}
+.demo textarea{font-family:"JetBrains Mono",Consolas,monospace;font-size:.84rem}
+.demo button,.btn{background:#4f46e5;color:#fff;border:0;border-radius:9px;padding:8px 15px;margin:4px 6px 4px 0;font-weight:600;cursor:pointer;font-size:.88rem;font-family:inherit}
+.demo button.alt,.btn.alt{background:#334155}
+.demo button.red{background:#dc2626}
+.demo button:hover,.btn:hover{filter:brightness(1.12)}
+.panel{background:#1e293b;border-radius:11px;padding:12px 14px;min-height:56px}
+.mono{font-family:"JetBrains Mono",Consolas,monospace}
+.log{background:#020617;border-radius:10px;padding:10px 12px;max-height:190px;overflow-y:auto;font-family:"JetBrains Mono",Consolas,monospace;font-size:.8rem;margin-top:10px;line-height:1.6}
+.state{display:inline-block;padding:7px 14px;border-radius:9px;font-weight:700;margin:4px;opacity:.28;transition:all .3s;color:#fff}
+.state.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.kpi{font-size:1.45rem;font-weight:800;color:#fcd34d}
+.chip{display:inline-block;padding:3px 8px;margin:3px;border-radius:7px;font-family:"JetBrains Mono",Consolas,monospace;font-size:.86rem;color:#0f172a}
+.bar{height:18px;border-radius:6px;background:linear-gradient(90deg,#6366f1,#06b6d4);transition:width .3s;margin:3px 0}
+.lit{outline:3px solid #fbbf24;outline-offset:3px}
+.slot{display:inline-block;padding:4px 8px;margin:2px;border-radius:6px;background:#4ade80;color:#052e16;font-family:monospace;font-size:.78rem;font-weight:700}
+.ok{color:#4ade80;font-weight:700}.no{color:#f87171;font-weight:700}
+.seqctl{text-align:center;margin-top:10px}
+.seqcap{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 14px;margin-top:8px;min-height:44px;font-size:.92rem}
+
+/* formula */
+.formula{font-size:1.12rem;text-align:center;margin:16px 0;font-family:"Cambria Math",Georgia,serif}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 6px}
+.frac span:first-child{border-bottom:2px solid #0f172a;padding:0 6px}
+
+/* ER diagram */
+.er{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:860px){.er{grid-template-columns:1fr}}
+.ent{background:#fff;border:1.5px solid #a78bfa;border-radius:10px;overflow:hidden;font-size:.82rem}
+.ent b{display:block;background:#ede9fe;color:#4c1d95;padding:6px 10px;text-align:center}
+.ent div{padding:4px 10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px}
+.ent i{color:#64748b;font-style:normal}.ent em{color:#be185d;font-style:normal;font-weight:700}
+.rel{font-size:.78rem;text-align:center;color:#475569;background:#f1f5f9;border-radius:8px;padding:5px}
+
+/* misc */
+details{background:#fff;border-radius:12px;padding:11px 16px;margin:10px 0;box-shadow:0 1px 6px rgba(15,23,42,.05);border-left:4px solid #a78bfa}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px;color:#5b21b6}
+.phone{max-width:340px;margin:auto;border:3px solid #1e293b;border-radius:28px;padding:18px 14px;background:#f8fafc}
+.footer{text-align:center;color:var(--muted);margin-top:70px;font-size:.88rem;border-top:1px solid #e2e8f0;padding-top:22px}
+.footer b{color:#1e293b}
+.toc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.toc-chips span{background:#eef2ff;color:#3730a3;border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:600}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:10px 0}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:27px;height:27px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem}
+.kv dt{font-family:"JetBrains Mono",Consolas,monospace;color:#9d174d;font-size:.85rem}
+.kv dd{margin:0}
+
+/* ---------- Narrow screens: turn horizontal chains into vertical ones ---------- */
+@media (max-width:1080px){
+  .fh:has(>.ha), .ladder .step{flex-direction:column}
+  .fh:has(>.ha)>.ha, .ladder .step>.ha{width:2px!important;height:32px;margin:4px auto 10px}
+  .fh:has(>.ha)>.ha::after, .ladder .step>.ha::after{right:auto;left:-5px;top:auto;bottom:-8px;border-left-color:transparent;border-top-color:var(--line)}
+  .fh:has(>.ha)>.ha>span, .ladder .step>.ha>span{left:12px;bottom:auto;top:5px;transform:none}
+  .fh:has(>.ha)>.ha.dash, .ladder .step>.ha.dash{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+  .grid2 .fh .node, .fig .node{max-width:100%}
+  h1{font-size:1.9rem}
+  .hero{padding:24px 18px}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="menuBtn" onclick="document.getElementById('side').classList.toggle('open')">☰ Contents</button>
+<nav id="side">
+  <div class="brand">Future with Shivank</div>
+  <h3>LLM System Design<br>Chapter 4 · Adaptive Learning App</h3>
+  <div class="by">by Shivank Agarwal</div>
+  <a href="#start">🏁 Start here</a>
+  <a href="#kit">🎒 Starter kit (16 ideas)</a>
+  <div class="grp-t">Understand the problem</div>
+  <a href="#intro">4.1 Introduction</a>
+  <a href="#fr">4.2 What it must do</a>
+  <a href="#nfr">4.3 How well it must do it</a>
+  <a href="#scale">4.4 Back-of-envelope numbers</a>
+  <a href="#api">4.5 API design</a>
+  <a class="sub" href="#api-admin">Admin APIs (7)</a>
+  <a class="sub" href="#api-cur">Learner API</a>
+  <div class="grp-t">The blueprint</div>
+  <a href="#hld">4.6 Two systems, not one</a>
+  <a class="sub" href="#off">System I: offline factory</a>
+  <a class="sub" href="#orch1">The orchestrator</a>
+  <a class="sub" href="#on">System II: online tutor</a>
+  <a class="sub" href="#warm">Warm path</a>
+  <a class="sub" href="#cold">Cold path</a>
+  <a class="sub" href="#orch2">Orchestrator up close</a>
+  <a class="sub" href="#res">Resilience layer</a>
+  <a class="sub" href="#safe">Validation &amp; data lake</a>
+  <div class="grp-t">Data</div>
+  <a href="#db">4.7 Databases &amp; data model</a>
+  <div class="grp-t">Deep dives</div>
+  <a href="#dd">4.8 Async generation</a>
+  <a class="sub" href="#scaling">Scaling</a>
+  <a class="sub" href="#fc">Exact grading with tools</a>
+  <a href="#test">4.9 Testing</a>
+  <a href="#mon">4.10 Monitoring &amp; alerts</a>
+  <a href="#sum">4.11 Summary</a>
+  <a class="sub" href="#int">Interview framework</a>
+  <a class="sub" href="#cheat">Cheat sheet</a>
+  <a class="sub" href="#quiz">Quiz</a>
+</nav>
+
+<main>
+<section id="start" class="hero">
+  <span class="kicker">LLM System Design · Chapter 4 · Case study</span>
+  <h1>Designing an Adaptive Learning App</h1>
+  <p style="color:#64748b;margin-top:-6px">A language-learning app like Duolingo that uses LLMs to create lessons and personalise them for every learner</p>
+  <div class="author"><div class="av">SA</div><div><b>Shivank Agarwal</b><span>Future with Shivank</span></div></div>
+  <p class="lede">Imagine a tutor who knows exactly what you've mastered, what you keep getting wrong, and what question to ask you next, for 50 million learners at the same time. In this chapter we design that system step by step, like a real interview: requirements → numbers → APIs → blueprint → database → deep dives → testing → monitoring.</p>
+  <p>This chapter <b>stands on its own</b>. Start with the starter kit if any term is new.</p>
+  <div class="legend">
+    <div>🧠 <b>Think of it like…</b> an everyday analogy</div>
+    <div>🌍 <b>Real-world example</b> where you have seen this</div>
+    <div>🔍 <b>Worked example</b> step by step, with real values</div>
+    <div>⚠️ <b>Watch out</b> a common mistake</div>
+    <div>🎯 <b>Interview tip</b> a line you can say in an interview</div>
+    <div>🚀 <b>Going deeper</b> optional, for the curious</div>
+    <div>🎬 <b>Sequence diagrams</b> press ▶ Play to animate them</div>
+  </div>
+</section>
+
+<!-- ============ STARTER KIT ============ -->
+<h3 class="sec" id="kit">🎒 Starter kit: 16 ideas you need for this chapter</h3>
+<div class="grid2">
+<div class="card"><h5>1. LLM &amp; prompt</h5>An LLM (Large Language Model) is a big AI model like GPT, Claude or Gemini that reads and writes text. The instruction you give it is the <b>prompt</b>. LLM calls are <b>slow (seconds) and cost money</b>.<br>🧠 A brilliant friend who charges a fee per question and takes a moment to think.</div>
+<div class="card"><h5>2. Hallucination</h5>LLMs sometimes state wrong things confidently. In a learning app, teaching wrong grammar destroys trust, which is why <b>human experts review</b> content in this design.<br>🧠 The uncle who says "go straight" even when he doesn't know the way.</div>
+<div class="card c-warn"><h5>3. DAU, RPS, P99</h5><b>DAU</b> = daily active users. <b>RPS</b> = requests per second. <b>P99 &lt; 500 ms</b> = 99 of every 100 requests finish within half a second. Servers are sized for peak RPS.<br>🧠 Railways plan counters for the festival rush, not a quiet day.</div>
+<div class="card"><h5>4. API gateway</h5>The front door for every request: checks identity and permissions, then routes it to the right service.<br>🧠 Your society's security guard.</div>
+<div class="card c-good"><h5>5. Sync vs async, "202 Accepted"</h5><b>Sync</b>: the user waits for the answer. <b>Async</b>: work happens in the background; the server instantly replies <b>202 Accepted</b> with a <b>job_id</b>, and the user checks status later (<b>polling</b>).<br>🧠 Chai stall (sync) vs dry cleaner's token slip (async).</div>
+<div class="card c-good"><h5>6. Message queue &amp; workers</h5>A queue (SQS, Kafka) is a line of jobs. Producers add jobs; <b>workers</b> pick them up at their own pace. In a spike, the line grows but nothing crashes (<b>backpressure</b>).<br>🧠 A bank's token system: counters call the next token when ready.</div>
+<div class="card c-vio"><h5>7. Cache &amp; Redis</h5>Redis is a super-fast in-memory store (milliseconds). Keep ready-made results there. <b>Hit</b> = found; <b>miss</b> = fetch from the source. <b>TTL</b> = expiry.<br>🧠 Daily tea leaves on the kitchen shelf, not in the storeroom.</div>
+<div class="card c-vio"><h5>8. Redis list &amp; LPOP</h5>A Redis list is an ordered line of items. <b>LPOP</b> takes the first item out <b>and removes it</b> in one <b>atomic</b> step, so no one else can grab the same item at the same moment.<br>🧠 A candy dispenser: the top candy comes out, and it can't come out twice. 🍬</div>
+<div class="card"><h5>9. SQL (PostgreSQL) vs NoSQL (DynamoDB / Cassandra)</h5><b>PostgreSQL</b>: tables, relationships, flexible queries; scale reads with <b>read replicas</b>. <b>DynamoDB / Cassandra</b>: built for huge numbers of <b>writes per second</b> and scale out horizontally.<br>🧠 A well-organised office register (SQL) vs a station with hundreds of ticket counters (NoSQL).</div>
+<div class="card"><h5>10. Partition key &amp; sort key</h5>In DynamoDB, the <b>partition key</b> (e.g. <code>user_id</code>) decides which "cupboard" the data goes into; the <b>sort key</b> orders items inside that cupboard (e.g. by session).<br>🧠 One cupboard per person; files inside sorted by date.</div>
+<div class="card c-vio"><h5>11. Embedding &amp; pgvector</h5>An embedding is the <b>meaning</b> of text as a list of numbers (e.g. 768). Similar meanings → nearby vectors. <b>pgvector</b> is a PostgreSQL add-on that stores them and finds "similar" items.<br>🧠 A GPS address for the meaning of each question.</div>
+<div class="card c-bad"><h5>12. Retry, backoff, circuit breaker</h5><b>Retry with exponential backoff</b>: on failure, wait and retry, waiting longer each time. <b>Circuit breaker</b>: if a provider keeps failing, stop calling it for a while (open), try one test request later (half-open), go back to normal if it works (closed).<br>🧠 The MCB switch at home. ⚡</div>
+<div class="card c-good"><h5>13. Human-in-the-loop (HITL)</h5>Before AI-made content goes live, a <b>human expert checks it</b>: accept, edit or reject.<br>🧠 A reporter writes; the editor approves before printing. 📰</div>
+<div class="card"><h5>14. Cron job / nightly job</h5>A task that runs automatically at a fixed time, e.g. every night at 2 am.<br>🧠 The milkman who arrives at 5 am every day without being called. 🥛</div>
+<div class="card"><h5>15. Data lake, Parquet, streams</h5>A <b>data lake</b> is cheap cloud storage (like Amazon S3) holding all historical data for analysis. <b>Parquet</b> is a compressed file format that's fast to analyse. <b>DynamoDB Streams</b> is a live feed of every change in a table.<br>🧠 Old belongings go to the storeroom: not used daily, but not thrown away.</div>
+<div class="card c-warn"><h5>16. Function calling, CEFR levels, distractors</h5><b>Function calling</b>: instead of judging itself, the LLM asks a <b>tool</b> (like an answer checker) for an exact result. <b>CEFR A1–C2</b> are standard language levels (A1 = beginner … C2 = near-native). <b>Distractors</b> are the wrong-but-believable options in a multiple-choice question.<br>🧠 A teacher grades with the answer key, not by mood.</div>
+</div>
+
+<!-- ============ 4.1 ============ -->
+<h2 class="chapter" id="intro">Chapter 4 · Case Study: Designing an Adaptive Learning App<small>LLM-generated lessons + personalised curation for every learner</small></h2>
+<h3 class="sec"><span class="num">4.1</span> Introduction: the future of learning is personal</h3>
+<p>A great learning app moves at <b>each learner's own pace</b>. It spends less time on what you already know and more on lessons that are <b>challenging but not discouraging</b>, which is the sweet spot for staying motivated. It also needs fresh lessons regularly, as it learns from usage and feedback what works.</p>
+<p>LLMs can transform this in two ways:</p>
+<div class="grid2"><div class="card c-good"><h5>🏭 1. Creating new exercises</h5>Generate thousands of new practice questions quickly, across many languages and levels.</div><div class="card c-vio"><h5>🎯 2. Personalising the path</h5>Pick the perfect <b>next question</b> for each learner, based on their history.</div></div>
+<p>We'll design the core AI features of a Duolingo-style app: personalised lesson progression and interactive exercises. <b>Out of scope:</b> detailed scoring systems (XP, leagues). They matter for the product, but we'll keep our focus on the AI architecture.</p>
+<div class="fig"><div class="ft">What the learner experiences</div>
+<div class="phone"><div style="text-align:center;font-size:.82rem;font-weight:700;margin-bottom:6px">📱 Learner's phone</div>
+<div class="fv">
+<span class="node" style="width:100%">Home screen<small>🔥 Streak: 12 days<br>🎯 Next: Unit 3, Travel</small></span><div class="va"><span>tap Start</span></div>
+<span class="node" style="width:100%">Interactive lesson<small>🤖 Personalised question:<br><i>"Translate: the cat"</i></small></span><div class="va"><span>learner types an answer</span></div>
+<div class="diamond" style="width:150px;height:90px">Check the answer</div>
+<div class="cols" style="gap:10px"><div class="fv"><div class="va"><span>correct</span></div><span class="node n-green">Positive feedback<small>✅ "el gato"<br>+10 XP</small></span></div><div class="fv"><div class="va"><span>wrong</span></div><span class="node n-red">Helpful correction<small>❌ "gato" is masculine,<br>so it's "el", not "la"</small></span></div></div>
+<div class="va"></div><span class="node n-purple">Next personalised question</span></div></div>
+<div class="cap">One small loop: question → answer → feedback → the next question chosen for this learner.</div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A great <b>tuition teacher</b> 👩‍🏫 doesn't repeat what you already know. She gives you more practice exactly where you struggle: never so hard that you give up, never so easy that you get bored. This app is that teacher, for crores of students at once.</div>
+<p><b>Roadmap:</b> functional requirements → non-functional requirements → scale → API design → blueprint → databases → deep dives → testing → monitoring.</p>
+
+<!-- ============ 4.2 ============ -->
+<h3 class="sec" id="fr"><span class="num">4.2</span> Functional requirements: what must it DO?</h3>
+<div class="grid2">
+<div class="card c-good"><h5>🏭 Lesson generation</h5>Create complete exercises and lessons for every language and level, so there's always a <b>fresh, relevant</b> stream of content.</div>
+<div class="card c-vio"><h5>🎯 Adaptive curation</h5>Look at a learner's past answers and pick the <b>perfect next question</b>: not too hard, not too easy.</div></div>
+
+<!-- ============ 4.3 ============ -->
+<h3 class="sec" id="nfr"><span class="num">4.3</span> Non-functional requirements: how WELL must it work?</h3>
+<div class="tbl"><table><tr><th>Requirement</th><th>Target / meaning</th></tr>
+<tr><td>⚡ Low latency</td><td>From submitting an answer to seeing feedback or the next question: <b>P99 under 500 ms</b>.</td></tr>
+<tr><td>🎯 High accuracy</td><td>A matter of <b>trust</b>: no wrong answers, no confusing explanations.</td></tr>
+<tr><td>🛡 High availability</td><td>An LLM provider outage must not take the whole app down.</td></tr>
+<tr><td>👤 Personalised</td><td>Lessons fit the learner: not too hard, not too easy.</td></tr>
+<tr><td>💸 Cost-effective</td><td>LLM calls are expensive, so we need a clear strategy for <b>when and where</b> to use them.</td></tr>
+<tr><td>📈 Scalable</td><td>Handle peaks when busy hours in different time zones overlap.</td></tr></table></div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"The central tension: personalisation needs an LLM, but a 500 ms P99 and cost limits mean we <b>cannot call an LLM on every request</b>. So I'll push the LLM work <b>offline and into the background</b>, and serve the live path from pre-computed caches."</div>
+
+<!-- ============ 4.4 ============ -->
+<h3 class="sec" id="scale"><span class="num">4.4</span> Back-of-envelope numbers</h3>
+<p>Assume <b>50 million daily active users</b>. The app teaches <b>50 languages</b>; the most popular have about <b>250 lessons</b> each, less common ones up to <b>70</b>. Each lesson has up to <b>10 questions</b>.</p>
+<div class="box example"><span class="t">🔍 Worked example: from users to requests per second</span>
+<ol class="steps">
+<li><b>Questions served per day:</b> 50M users × 3 lessons × 10 questions = <b>1.5 billion</b> questions/day.</li>
+<li><b>Per second:</b> 1.5 billion ÷ 86,400 seconds in a day ≈ <b>17,400 questions per second</b>.</li>
+<li><b>API calls per question:</b> at least 3: <code>GET</code> the question, <code>POST</code> the answer, <code>GET</code> the feedback. So 17,400 × 3 ≈ <b>52,000 RPS on average</b>.</li>
+<li><b>Peak (×5):</b> traffic isn't flat; evenings and overlapping time zones bring spikes. 52K × 5 ≈ <b>260,000 RPS</b>.</li>
+<li><b>Extra features:</b> conversation practice (+20%) and real-time analytics (+15%): 260K × 1.35 ≈ <b>~350,000 RPS at peak</b>.</li>
+<li><b>How many are writes?</b> Roughly 1 in 3 calls (submitting answers, saving progress) writes data: 260K ÷ 3 ≈ <b>~90,000 writes per second</b> at peak. This number will drive our database choice.</li></ol></div>
+<div class="demo"><h5>🎮 Try it: change the assumptions</h5>
+<div class="grid3">
+<label>DAU<input type="number" id="sD" value="50000000"></label>
+<label>Lessons / user / day<input type="number" id="sL" value="3"></label>
+<label>Questions / lesson<input type="number" id="sQ" value="10"></label>
+<label>API calls / question<input type="number" id="sA" value="3"></label>
+<label>Peak multiplier<input type="number" id="sP" value="5"></label>
+<label>Extra load % (20 + 15)<input type="number" id="sE" value="35"></label></div>
+<div class="grid4" style="margin-top:12px"><div class="panel">Questions / second<div class="kpi" id="o1"></div></div><div class="panel">Average API RPS<div class="kpi" id="o2"></div></div><div class="panel">Peak RPS<div class="kpi" id="o3"></div></div><div class="panel">Total peak (with extras)<div class="kpi" id="o4"></div></div></div>
+<p class="hint">Peak writes ≈ one third of the peak API RPS (before extras): <b id="o5" style="color:#fcd34d"></b></p></div>
+<div class="box deep"><span class="t">🚀 Going deeper: why the LLM can't sit on the live path</span>If every question needed an LLM call, that's 17,000+ LLM calls per second, each taking 1–5 seconds: tens of thousands of calls in flight at any moment and an enormous bill. But if <b>one</b> LLM call picks a playlist of 20–30 questions, we need 20–30× fewer calls, and they can happen in the background. That single idea shapes this entire design.</div>
+
+<!-- ============ 4.5 ============ -->
+<h3 class="sec" id="api"><span class="num">4.5</span> API design</h3>
+<p>Two groups of APIs: <b>admin APIs</b> for language experts who create and review content, and a <b>learner API</b> that serves personalised lessons. Every question moves through these statuses:</p>
+<div class="fig"><div class="ft">A question's life</div>
+<div class="fv"><span class="node n-gray">NEW<small>the LLM just made it</small></span><div class="va"></div>
+<div class="fh"><span class="node n-yellow">IN_REVIEW<small>waiting for an expert</small></span><div class="ha"><span>expert says no</span></div><span class="node n-red">REJECTED<small>never goes live</small></span></div>
+<div class="va"><span>expert says yes</span></div><span class="node n-green">ACCEPTED<small>approved</small></span><div class="va"><span>nightly job</span></div><span class="node n-blue">LIVE<small>in the question bank</small></span></div></div>
+
+<h4 id="api-admin">🛠 Admin APIs (for content experts)</h4>
+<p>All admin APIs require an admin login token in the header: <code>Authorization: Bearer &lt;admin_token&gt;</code>.</p>
+
+<h4 style="font-size:1.05rem">1. Generate a few questions right now (sync): <code>POST /api/v1/admin/questions</code></h4>
+<p><b>Why:</b> for small batches (5 or fewer), for quick testing. The admin waits a few seconds and gets the questions directly, with no queue.</p>
+<div class="grid2"><pre><code><span class="c">// Request</span>
+{ <span class="s">"format"</span>: <span class="s">"FILL_IN_THE_BLANK"</span>,
+  <span class="s">"count"</span>: 2,
+  <span class="s">"level"</span>: <span class="s">"A2"</span>,
+  <span class="s">"language"</span>: <span class="s">"Spanish"</span>,
+  <span class="s">"topic"</span>: <span class="s">"prepositions"</span> }</code></pre>
+<pre><code><span class="c">// Response</span>
+{ <span class="s">"count_generated"</span>: 2, <span class="s">"status"</span>: <span class="s">"IN_REVIEW"</span>,
+  <span class="s">"questions"</span>: [
+   { <span class="s">"id"</span>: <span class="s">"q_137293"</span>,
+     <span class="s">"text"</span>: <span class="s">"El libro está ___ la mesa."</span>,
+     <span class="s">"choices"</span>: [<span class="s">"en"</span>,<span class="s">"sobre"</span>,<span class="s">"hacia"</span>,<span class="s">"entre"</span>] },
+   { <span class="s">"id"</span>: <span class="s">"q_137294"</span>,
+     <span class="s">"text"</span>: <span class="s">"Caminamos ___ el parque."</span>,
+     <span class="s">"choices"</span>: [<span class="s">"por"</span>,<span class="s">"sobre"</span>,<span class="s">"hacia"</span>,<span class="s">"entre"</span>] } ] }</code></pre></div>
+<p style="font-size:.92rem">(For English readers: "El libro está ___ la mesa" = "The book is ___ the table"; the answer is <i>sobre</i>, "on". "Caminamos ___ el parque" = "We walk ___ the park"; the answer is <i>por</i>, "through".)</p>
+<dl class="kv"><dt>format</dt><dd>Type of exercise: FILL_IN_THE_BLANK, MULTIPLE_CHOICE, TRANSLATION…</dd><dt>level</dt><dd>CEFR level (A1 beginner … C2 near-native).</dd><dt>topic</dt><dd>The grammar or vocabulary focus.</dd><dt>status</dt><dd>New questions always start in review: nothing goes live without a human.</dd></dl>
+
+<h4 style="font-size:1.05rem">2. Start a big generation job (async): <code>POST /api/v1/admin/question-generation-jobs</code></h4>
+<p><b>Why:</b> generating 100+ questions takes minutes. The request is queued and the admin's screen stays usable.</p>
+<div class="grid2"><pre><code><span class="c">// Request</span>
+{ <span class="s">"format"</span>: <span class="s">"FILL_IN_THE_BLANK"</span>, <span class="s">"count"</span>: 100,
+  <span class="s">"level"</span>: <span class="s">"A2"</span>, <span class="s">"language"</span>: <span class="s">"Spanish"</span>,
+  <span class="s">"topic"</span>: <span class="s">"prepositions"</span> }</code></pre>
+<pre><code><span class="c">// Response: 202 Accepted (immediately)</span>
+{ <span class="s">"job_id"</span>: <span class="s">"job_d9e8f7a6"</span>, <span class="s">"status"</span>: <span class="s">"PENDING"</span>,
+  <span class="s">"status_url"</span>:
+   <span class="s">"/api/v1/admin/question-generation-jobs/job_d9e8f7a6"</span> }</code></pre></div>
+
+<h4 style="font-size:1.05rem">3. Check job status: <code>GET /api/v1/admin/question-generation-jobs/{job_id}</code></h4>
+<p><b>Why:</b> the dashboard polls this to show "Processing…" and then "Done".</p>
+<div class="grid2"><pre><code><span class="c">// While running</span>
+{ <span class="s">"job_id"</span>: <span class="s">"job_d9e8f7a6"</span>, <span class="s">"status"</span>: <span class="s">"PROCESSING"</span>,
+  <span class="s">"progress"</span>: <span class="s">"6 of 10 batches done"</span> }</code></pre>
+<pre><code><span class="c">// When finished</span>
+{ <span class="s">"job_id"</span>: <span class="s">"job_d9e8f7a6"</span>, <span class="s">"status"</span>: <span class="s">"COMPLETED"</span>,
+  <span class="s">"message"</span>: <span class="s">"Generated 100 questions."</span>,
+  <span class="s">"results_url"</span>: <span class="s">"/api/v1/admin/questions?job_id=job_d9e8f7a6"</span> }</code></pre></div>
+
+<h4 style="font-size:1.05rem">4. Get a job's questions: <code>GET /api/v1/admin/questions?job_id=job_d9e8f7a6</code></h4>
+<pre><code>[ { <span class="s">"id"</span>: <span class="s">"q_201"</span>, <span class="s">"text"</span>: <span class="s">"Vivo ___ Madrid."</span>, <span class="s">"type"</span>: <span class="s">"FILL_IN_THE_BLANK"</span>,
+    <span class="s">"language"</span>: <span class="s">"Spanish"</span>, <span class="s">"level"</span>: <span class="s">"A2"</span>, <span class="s">"status"</span>: <span class="s">"IN_REVIEW"</span> },
+  { <span class="s">"id"</span>: <span class="s">"q_202"</span>, <span class="s">"text"</span>: <span class="s">"El gato duerme ___ la cama."</span>, ... }
+  <span class="c">// ... 100 questions in total (paginated)</span>
+]</code></pre>
+
+<h4 style="font-size:1.05rem">5. Review one question in detail: <code>GET /api/v1/admin/questions/{question_id}</code></h4>
+<pre><code>{ <span class="s">"id"</span>: <span class="s">"q_137293"</span>, <span class="s">"text"</span>: <span class="s">"El libro está ___ la mesa."</span>,
+  <span class="s">"type"</span>: <span class="s">"FILL_IN_THE_BLANK"</span>, <span class="s">"choices"</span>: [<span class="s">"en"</span>,<span class="s">"sobre"</span>,<span class="s">"hacia"</span>,<span class="s">"entre"</span>],
+  <span class="s">"answer"</span>: <span class="s">"sobre"</span>, <span class="s">"explanation"</span>: <span class="s">"'sobre' = on top of"</span>,
+  <span class="s">"status"</span>: <span class="s">"IN_REVIEW"</span>, <span class="s">"language"</span>: <span class="s">"Spanish"</span>, <span class="s">"level"</span>: <span class="s">"A2"</span>, <span class="s">"topic"</span>: <span class="s">"prepositions"</span> }</code></pre>
+<p style="font-size:.92rem">The <b>answer</b> is visible here because only experts see this API.</p>
+
+<h4 style="font-size:1.05rem">6. Approve or reject many at once: <code>POST /api/v1/admin/questions:batchUpdateStatus</code></h4>
+<div class="grid2"><pre><code><span class="c">// Request</span>
+{ <span class="s">"question_ids"</span>: [<span class="s">"q_201"</span>, <span class="s">"q_202"</span>, <span class="s">"q_207"</span>],
+  <span class="s">"status"</span>: <span class="s">"ACCEPTED"</span> }</code></pre>
+<pre><code><span class="c">// Response</span>
+{ <span class="s">"updated"</span>: 3, <span class="s">"status"</span>: <span class="s">"ACCEPTED"</span> }</code></pre></div>
+
+<h4 style="font-size:1.05rem">7. Fix a question: <code>PATCH /api/v1/admin/questions/{question_id}</code></h4>
+<p><b>Why:</b> the AI got something slightly wrong; the expert corrects the text, options or difficulty before approving. <code>PATCH</code> means "change only these fields".</p>
+<div class="grid2"><pre><code><span class="c">// Request</span>
+{ <span class="s">"text"</span>: <span class="s">"El libro está ___ la mesa. (on top of)"</span>,
+  <span class="s">"choices"</span>: [<span class="s">"en"</span>, <span class="s">"sobre"</span>, <span class="s">"bajo"</span>] }</code></pre>
+<pre><code><span class="c">// Response: the updated question</span>
+{ <span class="s">"id"</span>: <span class="s">"q_137293"</span>,
+  <span class="s">"text"</span>: <span class="s">"El libro está ___ la mesa. (on top of)"</span>,
+  <span class="s">"choices"</span>: [<span class="s">"en"</span>, <span class="s">"sobre"</span>, <span class="s">"bajo"</span>],
+  <span class="s">"status"</span>: <span class="s">"IN_REVIEW"</span> }</code></pre></div>
+
+<h4 id="api-cur">🎯 Learner API: start a personalised lesson: <code>POST /api/v1/lesson-sessions</code></h4>
+<p><b>Why:</b> builds a full lesson (10–20 questions) for <i>this</i> learner, based on their current level and history. <b>When:</b> the learner taps "Start".</p>
+<div class="grid2"><pre><code><span class="c">// Request</span>
+{ <span class="s">"skill_id"</span>: <span class="s">"skill_past_tense_verbs"</span>,
+  <span class="s">"type"</span>: <span class="s">"PRACTICE"</span>,   <span class="c">// or TEST, REVIEW</span>
+  <span class="s">"preferred_question_count"</span>: 10 }</code></pre>
+<pre><code><span class="c">// Response</span>
+{ <span class="s">"lesson_session_id"</span>: <span class="s">"session_a4b1c2d3"</span>,
+  <span class="s">"estimated_duration_seconds"</span>: 300,
+  <span class="s">"questions"</span>: [
+    { <span class="s">"question_id"</span>: <span class="s">"q_12483240"</span>, <span class="s">"type"</span>: <span class="s">"MULTIPLE_CHOICE"</span>,
+      <span class="s">"prompt"</span>: <span class="s">"She ___ to the store yesterday."</span>,
+      <span class="s">"options"</span>: [ {<span class="s">"id"</span>:<span class="s">"opt_1"</span>,<span class="s">"text"</span>:<span class="s">"go"</span>},
+                   {<span class="s">"id"</span>:<span class="s">"opt_2"</span>,<span class="s">"text"</span>:<span class="s">"went"</span>},
+                   {<span class="s">"id"</span>:<span class="s">"opt_3"</span>,<span class="s">"text"</span>:<span class="s">"gone"</span>} ] },
+    { <span class="s">"question_id"</span>: <span class="s">"q_43854"</span>, <span class="s">"type"</span>: <span class="s">"FILL_IN_THE_BLANK"</span>,
+      <span class="s">"prompt"</span>: <span class="s">"We ___ the movie last night."</span> } ] }</code></pre></div>
+<div class="box warn"><span class="t">⚠️ Notice what's missing</span>The learner's response contains <b>no answers</b>. If it did, anyone could open the browser's developer tools and see them. Answers are checked on the server when the learner submits.</div>
+<div class="fig"><div class="ft">Walk a question through its life</div>
+<div class="demo" style="margin:0"><h5>🎮 Try it: use the buttons in a sensible order (and in a silly order, to see the rules)</h5>
+<div><span class="state" id="q1" style="background:#64748b">🆕 NEW</span><span class="state" id="q2" style="background:#d97706">🔍 IN_REVIEW</span><span class="state" id="q3" style="background:#16a34a">✅ ACCEPTED</span><span class="state" id="q4" style="background:#dc2626">❌ REJECTED</span><span class="state" id="q5" style="background:#2563eb">🏦 LIVE in question bank</span></div>
+<button onclick="qs('gen')">🏭 Generate</button><button class="alt" onclick="qs('edit')">✏️ Edit (PATCH)</button><button onclick="qs('acc')">✅ Accept</button><button class="red" onclick="qs('rej')">❌ Reject</button><button class="alt" onclick="qs('night')">🌙 Nightly job runs</button>
+<div class="log" id="qLog"></div></div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>The sync API is buying "two jalebis, please" at a sweet shop: you get them on the spot. The async API is ordering "500 laddoos for a wedding": you get a receipt (<code>job_id</code>), call to check progress (polling), and collect when ready (<code>results_url</code>). 🍬</div>
+
+<!-- ============ 4.6 ============ -->
+<h3 class="sec" id="hld"><span class="num">4.6</span> The blueprint: two systems, not one</h3>
+<p>In education, <b>safety and quality are non-negotiable</b>. Letting an LLM create lessons on the fly, live, for each learner is risky: errors, inconsistencies, even inappropriate content could reach a child's screen. So the core design idea is to <b>separate quality from speed</b>:</p>
+<div class="fig"><div class="ft">Two separate systems</div>
+<div class="cols" style="align-items:stretch">
+<div class="grp"><span class="gt">🏭 System I: offline content factory</span><div class="fv"><span class="node n-orange">LLM creates<small>at scale</small></span><div class="va"></div><span class="node n-green">Experts review<small>human-in-the-loop</small></span><div class="va"></div><span class="node n-yellow">Quality checks</span><div class="va"></div><span class="node n-blue db">Question bank</span></div><p style="font-size:.86rem;text-align:center;color:#64748b">Can be slow. Quality comes first.</p></div>
+<div class="grp"><span class="gt">⚡ System II: online tutor</span><div class="fv"><span class="node n-blue db">Question bank</span><div class="va"><span>select</span></div><span class="node n-purple">Personalised lesson</span><div class="va"></div><span class="node pill">👤 Learner</span></div><p style="font-size:.86rem;text-align:center;color:#64748b">Only picks from already-approved questions: fast and safe.</p></div></div>
+<div class="cap">The best of both: AI's scale and creativity + human quality control.</div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A restaurant's <b>central kitchen</b> (System I) prepares gravies and bases in the morning, and the head chef tastes and approves them. At the <b>serving counter</b> (System II), an order is assembled in two minutes. Nobody starts the gravy from scratch for every order! 🍛</div>
+
+<h4 id="off">🏭 System I: the offline content factory</h4>
+<p>Its only job: fill one central <b>question bank</b> with lots of high-quality, approved content. It runs <b>offline</b>, so it never affects live learners.</p>
+<div class="fig"><div class="ft">The offline pipeline</div>
+<div class="fv">
+<div class="grp"><span class="gt">Content team</span><div class="fh" style="gap:60px"><span class="node n-purple">Admin portal</span><span class="node n-purple">Review portal</span></div></div>
+<div class="fh" style="gap:30px"><span class="lbl">↓ POST generation job</span><span class="lbl">↑ 202 Accepted + job_id</span></div>
+<div class="cols" style="align-items:flex-start">
+<div class="grp"><span class="gt">Async generation pipeline</span><div class="fv">
+<span class="node n-purple">Lesson generation service</span><div class="va"><span>publish job(s)</span></div>
+<span class="node n-purple db">Generation job queue</span><div class="va"><span>worker takes a job</span></div>
+<div class="fh"><span class="node n-purple">Orchestrator workers</span><div class="ha long"><span>call ⇄ result</span></div><span class="node n-orange">LLM</span></div><div class="va"><span>publish result</span></div>
+<span class="node n-purple db">Results queue</span><div class="va"><span>DB worker takes it</span></div>
+<span class="node n-teal db">Staging DB<small>questions waiting for review</small></span>
+<div class="lbl">⇅ review portal loads, edits, accepts, rejects</div></div></div>
+<div class="grp"><span class="gt">Going live</span><div class="fv"><span class="node n-purple">Nightly job</span><div class="va"><span>reads ACCEPTED questions</span></div><span class="node n-yellow">Automatic checks</span><div class="va"><span>insert</span></div><span class="node n-green db">Main question bank</span></div></div>
+</div></div></div>
+<div class="grid3">
+<div class="card"><h5>🌱 Requesting content</h5>Language experts use internal tools to call the admin API and ask for a batch of questions, choosing the <b>language, level, topic and format</b>.</div>
+<div class="card"><h5>🚪 API gateway</h5>Checks the admin's identity and permissions, then forwards the request to the <b>lesson generation service</b>.</div>
+<div class="card c-vio"><h5>🏗 Lesson generation service</h5>Manages the whole lifecycle: sends generation requests to the <b>orchestrator</b>, stores results in the <b>staging area</b>, supports many rounds of review until each question is right, and marks good ones as <b>accepted</b>. A scheduled job then moves accepted questions into the live bank.</div></div>
+
+<h4 id="orch1">🧠 The orchestrator</h4>
+<p>Depending on the request (a simple check, bulk generation, a complex conversation), the orchestrator picks the <b>best model</b>, builds the full prompt, adds resilience (retries, fallbacks), and validates the reply.</p>
+<div class="fig"><div class="ft">Inside the orchestrator</div>
+<div class="grp"><span class="gt">LLM orchestrator</span>
+<div class="fv">
+<span class="node n-purple">Request in</span><div class="va"></div>
+<span class="node n-purple">Model router<small>rules: cost · speed · complexity</small></span><div class="va"><span>chosen model</span></div>
+<span class="node n-purple">Prompt layer<small>builds the full prompt</small></span><div class="va"></div>
+<div class="grp" style="background:#fef2f2"><span class="gt">Resilience layer</span><div class="fh"><span class="node n-red">Automatic retries</span><div class="ha"></div><span class="node n-red">Circuit breaker</span><div class="ha"></div><span class="node n-red">Reroute / fallback</span></div></div>
+<div class="va"></div><span class="node n-orange">External LLM providers</span><div class="va"></div>
+<span class="node n-green">Safety &amp; validation layer<small>checks format and content</small></span><div class="va"></div>
+<span class="node n-purple pill">Response out</span></div></div></div>
+<div class="box example"><span class="t">🔍 Worked example: generating questions with a clear prompt</span>
+<p>A good generation prompt is precise about the count, the level, the theme, the answer format and the output shape:</p>
+<div class="quote">Create 10 fill-in-the-blank questions for Spanish learners at level A2
+to practise the simple future tense. Theme: food.
+For each question give exactly one correct answer and three believable wrong options (distractors).
+Tag each question with its grammar point.
+Return only a JSON object: {"questions": [...]}</div>
+<pre><code><span class="k">from</span> pydantic <span class="k">import</span> BaseModel
+
+<span class="k">class</span> Question(BaseModel):          <span class="c"># the exact shape of one question</span>
+    sentence: str
+    answer: str
+    distractors: list[str]
+    grammar_tag: str
+    level: str
+    topic: str
+
+<span class="k">class</span> QuestionSet(BaseModel):
+    questions: list[Question]
+
+r = client.chat.completions.parse(
+    model=<span class="s">"gpt-6.1-terra"</span>,
+    response_format=QuestionSet,          <span class="c"># Structured Outputs: every question has exactly these fields</span>
+    messages=[{<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: <span class="s">"You are an expert Spanish teacher writing exercises."</span>},
+              {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: prompt}])
+questions = r.choices[0].message.parsed.questions     <span class="c"># already Python objects, no json.loads</span>
+print(questions[0].model_dump())</code></pre>
+<p><b>Output (first question):</b></p>
+<pre><code>{"sentence": "Mañana yo ___ paella con mi familia.",
+ "answer": "comeré",
+ "distractors": ["comí", "como", "comía"],
+ "grammar_tag": "future_simple", "level": "A2", "topic": "food"}</code></pre>
+<p>("Tomorrow I ___ paella with my family." The answer, <i>comeré</i>, means "I will eat"; the distractors are past and present forms.)</p></div>
+<div class="box warn"><span class="t">⚠️ Watch out: say exactly what you mean</span>If a prompt says "create 10 <i>lessons</i>" when you want 10 <i>questions</i>, the model may produce 10 full lessons. Use precise words and give the exact JSON shape you expect.</div>
+<div class="grid2">
+<div class="card c-good"><h5>🙋 Human review</h5>Experts check every question: grammar, difficulty, format and platform standards. They fix small issues and then <b>accept or reject</b>.</div>
+<div class="card"><h5>🏦 Going live (ingestion)</h5>A scheduled <b>nightly job</b> picks up newly accepted questions, runs <b>automatic checks</b> (valid JSON, answer is among the options, no duplicates…), and inserts them into the main <b>question bank</b>. The bank is the <b>single source of truth</b> for all approved, live content in every language.</div></div>
+
+<h4 id="on">⚡ System II: the online tutor</h4>
+<div class="grid2">
+<div class="card"><h5>1. Request &amp; gateway</h5>The learner's app asks for a lesson (<code>POST /api/v1/lesson-sessions</code>). The gateway checks identity and routes it to the <b>lesson curator service</b>.</div>
+<div class="card c-vio"><h5>2. Lesson curator service</h5>The real-time brain: fetches the learner's next lesson from the approved bank, based on their level, understanding and progress, and keeps adapting as they improve.</div>
+<div class="card"><h5>3. Learner context</h5>A <b>user context service</b> keeps each learner's progress: completed lessons, scores per skill, known vocabulary, strengths and <b>recent mistakes</b>.</div>
+<div class="card c-warn"><h5>4. Prepare in advance</h5>We <b>cannot</b> run a slow, expensive LLM call for every learner in real time. So the online path uses <b>proactive curation</b>: the next lessons are chosen <i>before</i> the learner asks.</div></div>
+<p><b>Why prepare in advance?</b> If we waited until a learner finished a question and only then asked an LLM "what's the best next question?", they would stare at a spinner for seconds every time. Instead, we do that thinking <b>ahead of time, in the background, in batches</b>, and keep the results ready in a fast cache. That gives us two paths: <b>warm</b> (results ready) and <b>cold</b> (nothing ready yet).</p>
+
+<h4 id="warm">🔥 The warm path: instant lessons for active learners</h4>
+<div class="fig"><div class="ft">Serving a lesson</div>
+<div class="fv">
+<span class="node n-purple">Learner's app</span><div class="va"><span>1. request a lesson</span></div>
+<span class="node n-purple">API gateway</span><div class="va"></div>
+<span class="node n-purple">Lesson curator service</span><div class="va"><span>2. check the cache</span></div>
+<div class="diamond">Playlist ready in the cache?</div>
+<div class="cols">
+<div class="fv"><div class="va"><span>yes · warm path</span></div><span class="node n-green">3a. Fetch full content<small>from the question bank</small></span><div class="va"><span>4a. serve the lesson</span></div><span class="node pill">→ Learner</span></div>
+<div class="fv"><div class="va"><span>no · cold path</span></div><span class="node n-blue">3b. Rule-based lesson<small>quick query on the bank</small></span><div class="cols" style="gap:10px"><div class="fv"><div class="va"><span>4b. serve it</span></div><span class="node pill">→ Learner</span></div><div class="fv"><div class="va"><span>5b. refill later</span></div><span class="node n-orange">Background refill job</span></div></div></div></div>
+</div></div>
+<p><b>The warm path in one line:</b> when a learner requests a lesson, the curator takes the next lesson's question IDs from that learner's ready-made playlist in Redis (<code>precomputed_lesson_playlists</code>) using <b>LPOP</b>, fetches the questions, and serves them instantly.</p>
+<div class="fig"><div class="ft">How the playlist gets refilled in the background</div>
+<div class="fv">
+<span class="node n-purple">Trigger<small>lesson completed, or a cache miss</small></span><div class="va"></div>
+<span class="node n-purple db">Refill-check queue</span><div class="va"></div>
+<div class="grp"><span class="gt">Personalisation job</span><div class="fv">
+<span class="node n-purple">Curation worker</span>
+<div class="cols" style="gap:14px"><div class="fv"><div class="va"><span>get learner context</span></div><span class="node n-gray db">Progress DB</span></div><div class="fv"><div class="va"><span>get candidates</span></div><span class="node n-gray db">Question bank</span></div><div class="fv"><div class="va"><span>publish job</span></div><span class="node n-purple db">Personalisation queue</span></div></div>
+<div class="va"></div>
+<div class="fh"><span class="node n-purple">Orchestrator worker</span><div class="ha long"><span>"sequence these" ⇄</span></div><span class="node n-orange">LLM</span></div>
+<div class="va"><span>ordered question IDs</span></div><span class="node n-green db">Redis playlist</span>
+</div></div></div></div>
+<div class="grid2">
+<div class="card"><h5>⚡ Event trigger</h5>When a learner completes a lesson (or does anything that shows they're active), a tiny message such as <code>{"userId": "user_123"}</code> is put on a dedicated <b>low-priority</b> queue called <code>refill_check_queue</code>.</div>
+<div class="card"><h5>🧮 Buffer check</h5>A background worker reads the queue and checks how many lessons are left in that learner's Redis playlist. If it's running low (say <b>fewer than 5</b>), it starts a refill.</div>
+<div class="card c-vio"><h5>📦 Gather context</h5>The worker collects the learner's recent progress, the history of their <b>last 50 lessons</b>, and a pool of <b>a few hundred unseen questions</b> from the bank at the right level, bundles it all into one message, and puts it on an <b>SQS</b> queue.</div>
+<div class="card c-good"><h5>🧠 LLM sequencing</h5>Orchestrator workers take these jobs at a <b>controlled pace</b> (so neither the LLM nor our services are overwhelmed). Prompt: <i>"Based on this learner's history, choose and order the best 20–30 questions from this candidate pool."</i> The resulting question IDs are pushed onto the learner's Redis playlist.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: the playlist in Redis, command by command</span>
+<p>Each element of the list is one lesson: a group of question IDs.</p>
+<pre><code><span class="c"># the background job adds 3 lessons to the end of user_123's playlist</span>
+&gt; RPUSH playlist:user_123 "q_88,q_91,q_17,q_42,q_63" "q_12,q_19,q_77,q_80,q_05" "q_31,q_33,q_09,q_51,q_70"
+(integer) 3
+
+<span class="c"># learner taps Start → take the FIRST lesson and remove it, in one atomic step</span>
+&gt; LPOP playlist:user_123
+"q_88,q_91,q_17,q_42,q_63"
+
+&gt; LLEN playlist:user_123          <span class="c"># how many lessons are left?</span>
+(integer) 2
+
+<span class="c"># ...two more lessons later...</span>
+&gt; LPOP playlist:user_123
+(nil)                             <span class="c"># empty → this is the cold path</span></code></pre>
+<p>Why LPOP and not "read, then delete"? Because LPOP does both in <b>one atomic step</b>. If the learner opens the app on their phone and tablet at the same moment, each device gets a <b>different</b> lesson; the same lesson can never be served twice. The small buffer of ready lessons also hides any short delays in the background refill.</p></div>
+<div class="fig"><div class="ft">🎬 The full curation flow (press Play)</div><div id="seq46"></div></div>
+<div class="box plain"><span class="t">Two triggers, one purpose</span>Refills are started by <b>events</b> (a lesson completed → refill immediately) and also by a <b>safety scan every 5 minutes</b> that catches any learner whose event was missed. The new plan is saved twice: in the <b>database</b> (durable, survives crashes) and in <b>Redis</b> (fast to serve).</div>
+
+<h4 id="cold">🧊 The cold path: new and returning learners</h4>
+<p>This path is for learners who have <b>no ready playlist</b>: brand-new users, or people returning after weeks away whose playlist has expired.</p>
+<div class="fig"><div class="ft">Cold path</div>
+<div class="fv">
+<span class="node n-purple">Learner</span><div class="va"><span>1. request a lesson</span></div>
+<div class="grp"><span class="gt">Cold-path logic</span><div class="fv">
+<span class="node n-green">Curation service</span><div class="va"><span>2. check the cache</span></div>
+<div class="diamond" style="background:#fee2e2;color:#7f1d1d">Cache empty?</div><div class="va"><span>yes</span></div>
+<span class="node n-purple">3. Quick rule-based query<small>no LLM involved</small></span><div class="va"></div>
+<span class="node n-teal">Question bank</span><div class="va"><span>4. one lesson</span></div>
+<span class="node n-purple">5. Serve + start a refill</span></div></div>
+<div class="cols"><div class="fv"><div class="va"><span>6a. serve now</span></div><span class="node pill">→ Learner</span></div><div class="fv"><div class="va"><span>6b. refill in background</span></div><span class="node n-orange">Async refill</span></div></div>
+</div></div>
+<div class="grid3">
+<div class="card c-bad"><h5>1. Cache miss</h5>The learner asks for a lesson; Redis <code>LPOP</code> returns <b>nil</b> (nothing there).</div>
+<div class="card c-warn"><h5>2. Synchronous fallback</h5>Don't make them wait for the background job. Build just <b>this one lesson</b> right now with a fast <b>rule-based query</b> that <b>skips the LLM</b>: match the learner's language and level, and exclude questions they've seen recently. Not perfectly personalised, but fast and reliable.</div>
+<div class="card c-good"><h5>3. Serve and trigger</h5>Send that first lesson immediately, and at the same time start the async refill, so every following request takes the <b>warm path</b>.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: the rule-based query</span>
+<pre><code><span class="c">-- One lesson for a Spanish A2 learner, skipping recently seen questions</span>
+SELECT id FROM question_bank
+WHERE language = <span class="s">'Spanish'</span>
+  AND difficulty_level = <span class="s">'A2'</span>
+  AND id NOT IN (:recently_seen_ids)     <span class="c">-- from the learner's last 20 lessons</span>
+ORDER BY random()
+LIMIT 10;</code></pre>
+<p><b>Output:</b> 10 question IDs, returned in a few milliseconds. No LLM, no waiting.</p></div>
+<div class="box takeaways"><span class="t">✅ Why this design works</span><ol>
+<li><b>Decoupling:</b> the personalisation engine is separated from what learners click, so the LLM sees steady, predictable load instead of sudden bursts.</li>
+<li><b>Buffering:</b> keeping 20–30 lessons ready means short hiccups in the background pipeline are invisible to learners.</li>
+<li><b>Graceful degradation:</b> if the LLM providers are down or slow, don't send work to the orchestrator; use the rule-based selection (same level, not seen in the last 20 lessons). Lessons keep flowing, just a little less personalised.</li></ol></div>
+<div class="demo"><h5>🎮 Try it: warm and cold paths for one learner's playlist</h5>
+<p class="hint">Start lessons and watch the playlist drain and refill. Then take the LLM down, or crash Redis, and see what happens.</p>
+<button onclick="wc('start')">▶ Start a lesson</button><button class="alt" onclick="wc('llm')" id="llmBtn">🤖 LLM: UP</button><button class="red" onclick="wc('crash')">💥 Crash Redis</button><button class="alt" onclick="wc('reset')">↺ New learner</button>
+<div class="panel" style="margin-top:10px"><b>playlist:user_123</b> <span id="bufN" class="mono"></span><div id="buf" style="margin-top:6px;min-height:28px"></div></div>
+<div class="log" id="wcLog"></div>
+<p class="hint">Demo rules: refill when fewer than 5 lessons remain; a refill adds 20 lessons and takes ~1.5 s. Each green box is one lesson.</p></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span><b>Warm path</b> = tiffins packed the night before and kept in the fridge: grab one and go (LPOP). <b>Cold path</b> = unexpected guests and no tiffin ready: make quick Maggi now (rule-based), and start cooking a proper meal for tomorrow (async refill). If the gas runs out (LLM down), serve whatever's ready at home (graceful degradation). 🍱</div>
+<div class="box deep"><span class="t">🚀 Going deeper</span><ul>
+<li><b>Duplicate refills:</b> several "refill check" messages for the same learner can arrive together. Use a per-learner lock (for example Redis <code>SET refill:user_123 1 NX EX 60</code>, which only succeeds if no lock exists) so only one LLM job runs per learner.</li>
+<li><b>Stale playlists:</b> if a learner jumps a level, the ready playlist may now be too easy. Give playlists a version or expiry, or clear them when a skill level changes.</li>
+<li><b>Memory estimate:</b> 50M learners × 30 IDs × ~36 bytes ≈ <b>54 GB</b> of raw data, before Redis overhead. That needs a sharded Redis cluster; keeping playlists only for recently active learners (with a TTL) shrinks it a lot.</li>
+<li><b>Cost win:</b> one LLM call sequences 20–30 lessons, so it's 20–30× cheaper than calling per question.</li></ul></div>
+
+<h4 id="orch2">🧠 The orchestrator, up close</h4>
+<p>The orchestrator builds detailed prompts, decides which LLM should serve each request (based on availability, response time and whether the use case needs accuracy or speed), and runs a <b>safety and validation check</b> on every reply before passing it back to the calling service.</p>
+<h5 style="font-size:1.05rem">🔀 The model router: rules for reliability and cost</h5>
+<div class="tbl"><table><tr><th>Rule</th><th>Condition</th><th>Route to</th></tr>
+<tr><td>Rule 1: simple task</td><td>A simple grammar check?</td><td>A small, fast model hosted in-house (e.g. Llama 3.1 8B)</td></tr>
+<tr><td>Rule 2: complex task</td><td>Part of a complex conversation practice?</td><td>A strong mid-tier model (e.g. Claude Sonnet 5.5 or <code>gpt-6.1-terra</code>)</td></tr>
+<tr><td>Rule 3: premium feature</td><td>A premium learner asking for a deep explanation?</td><td>A top-tier model (e.g. <code>gpt-6-astra</code>)</td></tr></table></div>
+<h5 style="font-size:1.05rem">✍️ The prompt layer</h5>
+<p>Builds the prompt for the chosen model and the learner's context: instructions, guardrails ("never use slang with A1 learners"), the expected output format, and a few examples so the reply comes back in the right shape.</p>
+
+<h4 id="res">🛡 The resilience layer</h4>
+<p>The orchestrator depends on outside APIs, which can fail in four typical ways:</p>
+<div class="grid4">
+<div class="card c-warn"><h5>📶 Network blips</h5>Brief glitches, failed secure handshakes, momentary packet loss.</div>
+<div class="card c-warn"><h5>🚦 Rate limits (429)</h5>The provider is busy, or we've used our quota.</div>
+<div class="card c-bad"><h5>💥 Outages (5xx)</h5>Major failure at the provider: errors or full downtime.</div>
+<div class="card c-bad"><h5>🐢 Timeouts</h5>The model takes longer than we can wait.</div></div>
+<div class="grid3">
+<div class="card"><h5>🔁 Automatic retries</h5>On a temporary error (like <b>429</b> or <b>503</b>), retry automatically.<br><b>Purpose:</b> fix short glitches without a human or a model switch.<br><b>Exponential backoff:</b> wait longer between each attempt, so we don't pile more load onto a struggling provider (a "retry storm").<br><b>Limit:</b> usually <b>3 attempts</b>. If all fail, the problem isn't temporary, and the circuit breaker takes over.</div>
+<div class="card c-bad"><h5>⚡ Circuit breaker</h5>Stops sending requests to a provider that is clearly and repeatedly failing.</div>
+<div class="card c-good"><h5>↪️ Rerouting</h5><b>When:</b> the breaker is open, or the primary still times out after retries.<br><b>What:</b> switch to a backup provider (e.g. primary OpenAI → backup Anthropic or Google).<br><b>Tiered fallback:</b> first a strong backup, then a cheaper, simpler one (graceful degradation).<br><b>Keep the context:</b> translate the prompt, context and history correctly into the backup provider's API format.</div></div>
+<div class="tbl"><table><tr><th>Breaker state</th><th>When</th><th>What the orchestrator does</th></tr>
+<tr><td>🟢 Closed (normal)</td><td>Everything is healthy</td><td>All requests go to the primary provider</td></tr>
+<tr><td>🔴 Open (failing)</td><td>A failure threshold is crossed (e.g. <b>5 server errors in a row</b>, or a <b>20% error rate within 60 seconds</b>)</td><td>Stop sending traffic immediately; fail fast or reroute. No time or tokens wasted on doomed requests, and the failing provider gets breathing room.</td></tr>
+<tr><td>🟡 Half-open (testing)</td><td>After a cooldown (e.g. <b>30 seconds</b>)</td><td>Send one test request. Success → closed. Failure → open again.</td></tr></table></div>
+<div class="demo"><h5>🎮 Try it: the circuit breaker (trips after 5 failures in a row)</h5><div id="cb4"></div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span><b>Retry</b> = a call doesn't connect, so you wait a bit and redial (waiting longer each time). <b>Circuit breaker</b> = after hearing "the number you are calling is switched off" 5 times, you stop trying for 30 seconds and call a different friend instead (backup provider). 📞</div>
+
+<h4 id="safe">✅ The safety &amp; validation layer · 🗄 the data lake</h4>
+<div class="grid2">
+<div class="card c-good"><h5>✅ Safety &amp; validation</h5>Every LLM reply is checked for <b>structure</b> (is it valid JSON with the right fields?), <b>parsing</b> and <b>content</b> (is it appropriate and within guidelines?). Bad replies are discarded and logged, and the results feed a <b>feedback loop</b> to improve prompts.</div>
+<div class="card"><h5>🗄 Data lake for learning</h5>To keep improving, every service sends events (lesson started, answer submitted, mistake made) to a central <b>event streaming platform</b>, which lands them in a <b>data lake</b> on cloud object storage, in a modern <b>open table format</b> so big analysis jobs run reliably. Analysts and models learn from this to improve content and personalisation.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: validating the LLM's playlist</span>
+<pre><code><span class="k">def</span> validate_playlist(reply_text, candidate_ids):
+    data = json.loads(reply_text)                      <span class="c"># 1. must be valid JSON (else retry/reroute)</span>
+    ids = data[<span class="s">"question_ids"</span>]
+    <span class="k">assert</span> 20 &lt;= len(ids) &lt;= 30                       <span class="c"># 2. right size</span>
+    <span class="k">assert</span> set(ids) &lt;= set(candidate_ids)             <span class="c"># 3. NO invented IDs allowed!</span>
+    <span class="k">assert</span> len(ids) == len(set(ids))                  <span class="c"># 4. no duplicates</span>
+    <span class="k">return</span> ids
+
+validate_playlist(<span class="s">'{"question_ids": ["q_88", "q_999999", ...]}'</span>, candidates)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>AssertionError  (q_999999 was never in the candidate pool → the LLM made it up → rejected)</code></pre>
+<p>The most dangerous hallucination here is the LLM returning a question ID that doesn't exist. This check is cheap, exact and catches it every time.</p></div>
+
+<!-- ============ 4.7 ============ -->
+<h3 class="sec" id="db"><span class="num">4.7</span> Databases and data modelling</h3>
+<p>Different kinds of data have very different needs, so we use <b>different databases</b> for each, choosing the best fit for performance, scale and reliability.</p>
+<div class="fig"><div class="ft">How the data relates</div>
+<div class="er">
+<div class="fv" style="gap:10px">
+<div class="ent"><b>QUESTIONS_STAGING</b><div><i>uuid</i>id<em>PK</em></div><div><i>uuid</i>job_id<em>FK</em></div><div><i>text</i>status<span></span></div><div><i>jsonb</i>content<span></span></div></div>
+<div class="rel">STAGING ──promoted to──▶ QUESTION_BANK</div></div>
+<div class="fv" style="gap:10px">
+<div class="ent"><b>PLAYLIST (Redis)</b><div><i>text</i>user_id<em>key</em></div><div><i>list</i>lessons (question IDs)<span></span></div></div>
+<div class="rel">PLAYLIST ──points to──▶ QUESTION_BANK</div>
+<div class="ent" style="border-color:#4ade80"><b style="background:#dcfce7;color:#14532d">QUESTION_BANK</b><div><i>uuid</i>id<em>PK</em></div><div><i>vector</i>embedding<em>index</em></div><div><i>jsonb</i>content<span></span></div><div><i>text</i>language<span></span></div><div><i>text</i>difficulty_level<span></span></div></div></div>
+<div class="fv" style="gap:10px">
+<div class="ent"><b>SKILL_STRENGTH</b><div><i>uuid</i>user_id<em>PK</em></div><div><i>text</i>skill_id<em>SK</em></div><div><i>int</i>strength_percent<span></span></div></div>
+<div class="rel">LESSON_HISTORY ──used to calculate──▶ SKILL_STRENGTH</div>
+<div class="ent"><b>LESSON_HISTORY</b><div><i>uuid</i>user_id<em>PK</em></div><div><i>text</i>session_id#lesson_id<em>SK</em></div><div><i>int</i>score<span></span></div><div><i>timestamp</i>completed_at<span></span></div></div>
+<div class="rel">LESSON_HISTORY ──refers to──▶ QUESTION_BANK</div></div>
+</div><div class="cap">PK = partition/primary key · SK = sort key · FK = foreign key.</div></div>
+
+<h4>1. Learner progress: a write-heavy NoSQL store (DynamoDB or Cassandra)</h4>
+<p>At peak we expect <b>~90,000 writes per second</b> of learner activity. That calls for a database built for massive write throughput, like <b>DynamoDB</b> or <b>Cassandra</b>. We split progress into two models: the <b>raw history</b> and a <b>calculated summary</b>.</p>
+<div class="grid2">
+<div><h5 style="font-size:1.05rem">📜 <code>lesson_history</code>: every lesson ever completed</h5><p><b>What:</b> an <b>append-only log</b> (we only ever add rows, never change them) of every completed lesson. <b>Access:</b> written the moment a lesson ends; streamed to the data lake via <b>DynamoDB Streams</b> for model training.</p>
+<div class="tbl"><table><tr><th>Field</th><th>Type</th><th>Description</th></tr><tr><td>user_id</td><td>partition key</td><td>Which learner</td></tr><tr><td>session_id#lesson_id</td><td>sort key</td><td>Two IDs joined with "#", so a learner's lessons sort by session</td></tr><tr><td>score</td><td>int</td><td>The learner's score</td></tr><tr><td>completed_at</td><td>timestamp</td><td>When it finished</td></tr></table></div>
+<pre><code>{ <span class="s">"user_id"</span>: <span class="s">"user_123"</span>,
+  <span class="s">"session_id#lesson_id"</span>: <span class="s">"s_0912#l_44"</span>,
+  <span class="s">"score"</span>: 80,
+  <span class="s">"mistakes"</span>: [<span class="s">"q_17: ser vs estar"</span>],
+  <span class="s">"completed_at"</span>: <span class="s">"2026-11-10T19:42:05Z"</span> }</code></pre></div>
+<div><h5 style="font-size:1.05rem">💪 <code>skill_strength</code>: how good the learner is at each skill</h5><p><b>What:</b> a summary table with the learner's current strength in each skill (e.g. "Spanish future tense: 72%"). <b>Access:</b> read constantly by the curator to choose difficulty; recalculated <b>in the background</b> from <code>lesson_history</code>, not on every answer.</p>
+<div class="tbl"><table><tr><th>Field</th><th>Type</th><th>Description</th></tr><tr><td>user_id</td><td>partition key</td><td>Which learner</td></tr><tr><td>skill_id</td><td>sort key (text)</td><td>e.g. <code>skill_future_tense</code></td></tr><tr><td>strength_percent</td><td>int</td><td>0–100</td></tr><tr><td>updated_at</td><td>timestamp</td><td>Last recalculation</td></tr></table></div>
+<pre><code>{ <span class="s">"user_id"</span>: <span class="s">"user_123"</span>,
+  <span class="s">"skill_id"</span>: <span class="s">"skill_future_tense"</span>,
+  <span class="s">"strength_percent"</span>: 72,
+  <span class="s">"updated_at"</span>: <span class="s">"2026-11-10T20:00:00Z"</span> }</code></pre></div></div>
+<div class="fig"><div class="ft">Hot store vs cold store: where history lives over time</div>
+<div class="fv"><span class="node n-purple">Lesson completed</span><div class="va"><span>write</span></div>
+<div class="grp"><span class="gt">🔥 Hot: DynamoDB + TTL</span><span class="node n-orange db">Last 90 days only<small>fast "already seen?" checks for the cold path<br>TTL deletes old rows automatically, for free</small></span></div>
+<div class="va"><span>DynamoDB Streams (every write and delete)</span></div><span class="node n-teal">Kinesis Firehose<small>batches → Parquet files</small></span><div class="va"></div>
+<div class="grp"><span class="gt">🧊 Cold: S3 data lake</span><span class="node n-blue db">Full history (Parquet)<small>model training · long-term analytics</small></span></div></div></div>
+<div class="box warn"><span class="t">⚠️ Why not keep everything in DynamoDB?</span>Keeping an endless, ever-growing log in a high-performance database is a <b>money trap</b>: you pay premium prices to store years of data you rarely read. So we keep only 90 days "hot". DynamoDB Streams captures every write (and every TTL delete), and Firehose batches them into Parquet files on S3, where storage is cheap.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Hot store = the last three months' bills in your wallet (needed often). Cold store = years of bills in a file at home (needed once a year at tax time). Keep ten years of bills in your wallet and it bursts! 👛</div>
+
+<h4>2. Curated playlists: Redis lists</h4>
+<p>Each learner's ready-made playlist lives in a Redis list, with light <b>RDB snapshots</b> (Redis periodically saves a copy to disk) so a failed node can recover quickly. Redis answers in milliseconds, which is what makes lessons start in <b>under 50 ms</b>.</p>
+<div class="tbl"><table><tr><th>Field</th><th>Type</th><th>Description</th></tr><tr><td>key: <code>playlist:{user_id}</code></td><td>text</td><td>One list per learner</td></tr><tr><td>value</td><td>list</td><td>Upcoming lessons, each a group of question IDs; served with LPOP</td></tr></table></div>
+
+<h4>3. Questions awaiting review: <code>questions_staging</code> (PostgreSQL)</h4>
+<p><b>What:</b> the holding area for AI-generated questions waiting for <b>human review</b>. <b>Access:</b> written by the generation pipeline; read by the review portal's dashboards.</p>
+<div class="tbl"><table><tr><th>Field</th><th>Type</th><th>Description</th></tr><tr><td>id</td><td>UUID</td><td>Question ID</td></tr><tr><td>job_id</td><td>UUID</td><td>Which generation job made it</td></tr><tr><td>difficulty_level</td><td>text</td><td>A1 … C2</td></tr><tr><td>language</td><td>text</td><td>Language being taught</td></tr><tr><td>content</td><td>JSONB</td><td>The question itself, as JSON</td></tr><tr><td>question_type</td><td>text</td><td>fill in the blank, match, dialogue…</td></tr><tr><td>concept_tags</td><td>text[]</td><td>Grammar or vocabulary concepts tested</td></tr><tr><td>status</td><td>text</td><td>NEW / IN_REVIEW / ACCEPTED / REJECTED</td></tr></table></div>
+
+<h4>4. The live question bank: <code>question_bank</code> (PostgreSQL + pgvector)</h4>
+<p><b>What:</b> the single source of truth for all approved, live questions, with an <b>embedding</b> for each. <b>Access:</b> very read-heavy: by ID (warm path) or by tags and similarity (cold path and content creation). PostgreSQL + pgvector keeps structured data, flexible JSON and vectors in <b>one</b> database, so there's no separate vector database to run. Reads scale easily with <b>read replicas</b>; writes are light (a nightly batch).</p>
+<div class="tbl"><table><tr><th>Field</th><th>Type</th><th>Description</th></tr><tr><td>id</td><td>UUID</td><td>Question ID</td></tr><tr><td>difficulty_level</td><td>text</td><td>A1 … C2</td></tr><tr><td>language</td><td>text</td><td>Language</td></tr><tr><td>content</td><td>JSONB</td><td>Question, options, answer, explanation</td></tr><tr><td>question_type</td><td>text</td><td>Format</td></tr><tr><td>concept_tags</td><td>text[]</td><td>Concepts</td></tr><tr><td>embedding</td><td>vector(768), indexed</td><td>For "find similar questions"</td></tr></table></div>
+<div class="box example"><span class="t">🔍 Worked example: catching near-duplicate questions</span>
+<p>Before a new question goes live, check whether the bank already has one that means almost the same thing:</p>
+<pre><code>SELECT id, content-&gt;&gt;<span class="s">'text'</span> AS text,
+       1 - (embedding &lt;=&gt; :new_question_vec) AS similarity
+FROM question_bank
+WHERE language = <span class="s">'Spanish'</span> AND difficulty_level = <span class="s">'A2'</span>
+ORDER BY embedding &lt;=&gt; :new_question_vec
+LIMIT 3;</code></pre>
+<p><b>Output:</b></p>
+<pre><code>   id    |              text               | similarity
+---------+---------------------------------+-----------
+ q_5521  | El libro está ___ la mesa.      |      0.97   ← near-duplicate, flag it
+ q_8810  | La taza está ___ la mesa.       |      0.88
+ q_3302  | El gato está ___ la silla.      |      0.81</code></pre></div>
+<div class="box deep"><span class="t">🚀 Going deeper: two kinds of vector index</span>pgvector offers two approximate-search indexes. <b>IVFFlat</b> groups vectors into clusters and searches only the nearest clusters: uses less memory. <b>HNSW</b> builds a multi-layer "shortcut" graph: usually faster with better accuracy, but uses more memory. Both trade a tiny bit of accuracy for big speed gains.</div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"Polyglot persistence: write-heavy, key-based progress goes to DynamoDB (partitioned by user_id) with a 90-day TTL and Streams to S3; read-heavy content with duplicate detection goes to PostgreSQL + pgvector with read replicas; per-learner playlists live in Redis lists with atomic LPOP. If Redis is lost, personalisation dips for a while, but no learner loses any progress."</div>
+
+<!-- ============ 4.8 ============ -->
+<h3 class="sec" id="dd"><span class="num">4.8</span> Deep dive: async generation, scaling and exact grading</h3>
+<div class="tbl"><table><tr><th>Requirement</th><th>How the design meets it</th></tr>
+<tr><td>Lesson generation</td><td>An offline "factory": LLMs create content in bulk, decoupled from learners; human experts review before anything goes live.</td></tr>
+<tr><td>Adaptive curation</td><td>Personalised playlists prepared in advance in Redis (warm path); a rule-based fallback for learners without one (cold path).</td></tr>
+<tr><td>High availability</td><td>Orchestrator with retries, circuit breakers and rerouting to survive LLM outages.</td></tr>
+<tr><td>Storing data</td><td>PostgreSQL + pgvector (content), DynamoDB (progress), Redis (playlists), S3 (history).</td></tr>
+<tr><td>Scale</td><td><i>This section:</i> async worker patterns for generation spikes; read replicas for the bank.</td></tr>
+<tr><td>Grading accuracy</td><td><i>This section:</i> function calling so the LLM never "guesses" whether an answer is right.</td></tr></table></div>
+
+<h4>⏳ Asynchronous processing for content generation</h4>
+<p>When an admin asks for hundreds of questions, a normal blocking request would freeze their screen and almost certainly time out. Instead, we <b>decouple</b> the request from the work with a message queue:</p>
+<div class="grid3">
+<div class="card"><h5>1. Submit the job</h5>The admin asks for 100 questions; the portal calls the API.</div>
+<div class="card c-vio"><h5>2. Accept and split</h5>The lesson generation service validates the request, saves a job record with a unique <b>job_id</b>, and replies <b>202 Accepted</b> immediately. Workers handle up to <b>10 questions</b> at a time, so the 100-question job is split into <b>10 messages</b> (this is called <b>fan-out</b>) on <code>generation_jobs_queue</code>.</div>
+<div class="card c-good"><h5>3. The queue as a buffer</h5>The queue decouples the service from the workers, absorbs spikes (<b>backpressure</b>), and keeps messages safe if a worker crashes, so no request is lost.</div>
+<div class="card"><h5>4. Generation workers</h5>Workers inside the orchestrator take messages, call the LLM to write questions, and put the results on <code>generation_results_queue</code>.</div>
+<div class="card"><h5>5. Save to staging</h5>A database worker takes results and inserts them into <code>questions_staging</code>. When all <b>10 child batches</b> are done, the parent job is marked <b>COMPLETED</b> with a results URL.</div>
+<div class="card c-warn"><h5>6. The admin checks in</h5>The admin's screen stays usable and polls the status endpoint (<code>GET …/question-generation-jobs/{job_id}</code>) to show "Processing…" then "Completed".</div></div>
+<p><b>Hybrid rule:</b> for tiny requests (<b>5 questions or fewer</b>), skip all this and answer synchronously. The queue's overhead isn't worth it, and the admin wants instant results.</p>
+<div class="fig"><div class="ft">🎬 Async question generation (press Play)</div><div id="seq49"></div></div>
+<div class="demo"><h5>🎮 Try it: submit a generation job</h5>
+<p class="hint">Try 3 (sync) and 100 (async fan-out). Press "Check status" while it runs.</p>
+<label>How many questions? <input type="number" id="jC" value="100" style="width:110px;display:inline-block"></label>
+<button onclick="job()">🏭 Submit</button><button class="alt" onclick="poll()">🔄 Check status</button>
+<div class="panel" style="margin-top:10px" id="jOut">—</div>
+<div id="jBars" style="margin-top:10px"></div></div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>For 1,000 rotis at a wedding, you don't hire one cook. You hire <b>10 cooks</b> (workers) and give each 100 (fan-out). The manager (generation service) ticks a register as each cook finishes, and only when all 10 say "done" does he announce "food is ready!" (COMPLETED). 🫓</div>
+<div class="box deep"><span class="t">🚀 Going deeper: what can go wrong with queues</span><ul>
+<li><b>Duplicate delivery:</b> SQS may deliver the same message twice ("at-least-once"). Workers must be <b>idempotent</b>: if batch 7 was already processed, skip it. Otherwise you get 110 questions instead of 100.</li>
+<li><b>Poison messages:</b> a batch that fails every time should go to a <b>dead-letter queue</b> (DLQ) for inspection, and the job should be marked PARTIAL or FAILED instead of retrying forever.</li>
+<li><b>Counting completions:</b> increment "batches done" atomically (a database transaction or conditional update), so two workers finishing at once can't both write "10/10" wrongly.</li>
+<li><b>Semantic de-duplication:</b> use pgvector to flag new questions that are near-identical to ones already in the bank.</li></ul></div>
+
+<h4 id="scaling">📈 Scaling</h4>
+<p>Two sides to scale: the <b>services</b> (compute) and the <b>data</b> (storage and throughput).</p>
+<div class="grid2">
+<div class="card"><h5>🧱 Scaling services</h5>Scale <b>horizontally</b>: run more copies. The curation service auto-scales on incoming API traffic. The orchestrator workers auto-scale on <b>two signals</b>: the number of messages waiting in the queue, and CPU use. More waiting messages → more workers.</div>
+<div class="card"><h5>🗄 Scaling data</h5><b>Question bank (PostgreSQL):</b> read-heavy, so cache each question by ID and add <b>read replicas</b>.<br><b>Progress (DynamoDB):</b> scales horizontally for heavy writes; reads are spiky when learners fetch their next exercise.<br><b>Playlists (Redis):</b> a Redis cluster. Even if the whole cluster is lost, <b>no learner loses progress or history</b> (that's in DynamoDB); the pipeline simply rebuilds playlists. Worst case: lessons are a bit slower and less personalised for a while (cold path).</div></div>
+<h5 style="font-size:1.05rem">🔗 Scaling our dependence on LLM providers (the orchestrator's job)</h5>
+<div class="grid3">
+<div class="card c-good"><h5>Multiple providers</h5>Integrate several LLM providers so there's no single point of failure; breakers, retries and rerouting keep traffic flowing.</div>
+<div class="card"><h5>Tiered models</h5>Route by urgency and complexity: simple curation → small, cheap model; reserve top-tier models for premium conversation features.</div>
+<div class="card c-bad"><h5>Breakers everywhere</h5>Wrap every provider in its own circuit breaker. On a latency spike or error burst, trip it and reroute to a fast backup model, or to a <b>non-AI response</b> (rule-based selection).</div></div>
+
+<h4 id="fc">🧮 Exact grading with function calling</h4>
+<p>LLMs are probabilistic and can stumble on precise checks. Asking an LLM "is this answer correct?" will occasionally get a wrong verdict, and marking a correct answer wrong is a terrible experience for a learner. Instead, use <b>function calling</b>: the LLM is given a tool like <code>check_answer(question_id, user_answer)</code>. The tool runs ordinary, <b>deterministic</b> code (string comparison, or maths in a sandbox for numeric answers) and returns a plain <b>true/false</b>. The LLM then uses that fact to write a friendly, encouraging message. Result: <b>exact grading</b> plus the warm, conversational tone of AI.</p>
+<div class="demo"><h5>🎮 Try it: the tool decides, the LLM only explains</h5>
+<div class="panel"><b>She ___ to the store yesterday.</b><br>
+<button class="alt" onclick="grade('go')">go</button><button class="alt" onclick="grade('went')">went</button><button class="alt" onclick="grade('gone')">gone</button><button class="alt" onclick="grade(' Went ')">" Went " (typed with spaces)</button></div>
+<div class="log" id="gLog" style="max-height:240px"></div></div>
+<div class="box example"><span class="t">🔍 Worked example: grading with a tool call</span>
+<pre><code>ANSWER_KEY = {<span class="s">"q_12483240"</span>: <span class="s">"went"</span>}
+
+<span class="k">def</span> check_answer(question_id, user_answer):                 <span class="c"># deterministic: no AI involved</span>
+    correct = ANSWER_KEY[question_id]
+    <span class="k">return</span> {<span class="s">"is_correct"</span>: user_answer.strip().lower() == correct, <span class="s">"correct"</span>: correct}
+
+TUTOR = <span class="s">"You are a friendly English tutor. Give one short line of feedback."</span>
+tools = [{<span class="s">"type"</span>: <span class="s">"function"</span>,                      <span class="c"># Responses API: name/parameters sit directly here</span>
+    <span class="s">"name"</span>: <span class="s">"check_answer"</span>,
+    <span class="s">"description"</span>: <span class="s">"Check a learner&#x27;s answer against the answer key. Always use this; never judge yourself."</span>,
+    <span class="s">"parameters"</span>: {<span class="s">"type"</span>: <span class="s">"object"</span>, <span class="s">"properties"</span>: {
+        <span class="s">"question_id"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}, <span class="s">"user_answer"</span>: {<span class="s">"type"</span>: <span class="s">"string"</span>}},
+        <span class="s">"required"</span>: [<span class="s">"question_id"</span>, <span class="s">"user_answer"</span>]}}]
+
+r = client.responses.create(                         <span class="c"># tool calling on gpt-6.1-terra needs the Responses API</span>
+    model=<span class="s">"gpt-6.1-terra"</span>, instructions=TUTOR, tools=tools,
+    input=<span class="s">"Question q_12483240: &#x27;She ___ to the store yesterday.&#x27; My answer: go"</span>)
+call = next(item <span class="k">for</span> item <span class="k">in</span> r.output <span class="k">if</span> item.type == <span class="s">"function_call"</span>)   <span class="c"># the model asked for the tool</span>
+result = check_answer(**json.loads(call.arguments))
+print(<span class="s">"Tool result:"</span>, result)
+
+final = client.responses.create(
+    model=<span class="s">"gpt-6.1-terra"</span>, instructions=TUTOR, tools=tools,
+    previous_response_id=r.id,                       <span class="c"># continue the same conversation</span>
+    input=[{<span class="s">"type"</span>: <span class="s">"function_call_output"</span>, <span class="s">"call_id"</span>: call.call_id, <span class="s">"output"</span>: json.dumps(result)}])
+print(final.output_text)</code></pre>
+<p><b>Output:</b></p>
+<pre><code>Tool result: {'is_correct': False, 'correct': 'went'}
+Almost! Because of "yesterday" we need the past tense: "She went to the store yesterday." 😊</code></pre></div>
+<div class="box plain"><span class="t">Code note (GPT-6 API)</span>On <code>gpt-6.1-terra</code>, tool calling only works through the <b>Responses API</b>, so this example uses <code>client.responses.create</code>: tools are listed with <code>name</code> and <code>parameters</code> directly (no nested <code>"function"</code> key), the tool request arrives as an item of type <code>function_call</code> in <code>r.output</code>, and we send the tool's result back as a <code>function_call_output</code> linked to the earlier turn with <code>previous_response_id</code>. The question-generation example earlier uses <b>Structured Outputs</b> (<code>.parse</code> with a Pydantic class) so every generated question is guaranteed to have the right fields.</div>
+<div class="box warn"><span class="t">⚠️ Where this works, and where it doesn't</span>Deterministic checking is perfect wherever there is <b>one exact right answer</b>: multiple choice, fill-in-the-blank, numeric answers. For open answers like free-text translation ("the cat sleeps on the bed" has many correct versions), you need LLM-based grading with a clear rubric, and "100% exact" is no longer guaranteed.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>The teacher (LLM) says kindly, "Great effort, just one small mistake!", but the <b>marks come from the answer key</b> (the tool), never from her mood. ✔️</div>
+
+<!-- ============ 4.9 ============ -->
+<h3 class="sec" id="test"><span class="num">4.9</span> Testing</h3>
+<div class="grid2">
+<div class="card"><h5>🏋️ Load testing</h5>Goal: prove auto-scaling really works. Use a tool like <b>k6</b> or <b>JMeter</b> to simulate thousands of learners starting lessons at once, and ramp up (10K → 50K → 100K virtual users) to find the breaking point, measure wait times and tune auto-scaling rules.</div>
+<div class="card c-vio"><h5>🎯 AI quality regression</h5>LLM behaviour can "drift" when prompts or models change. Keep a dataset of hundreds of typical inputs with ideal outputs (questions to generate, playlists to sequence, feedback to write), and run it on every prompt tweak or model upgrade to confirm answers stay accurate, safe and in the right tone.</div></div>
+<div class="box example"><span class="t">🔍 Worked example: a small k6 load test</span>
+<pre><code><span class="k">import</span> http <span class="k">from</span> <span class="s">'k6/http'</span>;
+<span class="k">import</span> { check, sleep } <span class="k">from</span> <span class="s">'k6'</span>;
+
+<span class="k">export const</span> options = { stages: [
+  { duration: <span class="s">'5m'</span>,  target: 10000 },     <span class="c">// ramp to 10K virtual learners</span>
+  { duration: <span class="s">'10m'</span>, target: 50000 },
+  { duration: <span class="s">'10m'</span>, target: 100000 } ] };
+
+<span class="k">export default function</span> () {
+  <span class="k">const</span> res = http.post(<span class="s">'https://api.example-learn.app/api/v1/lesson-sessions'</span>,
+    JSON.stringify({ skill_id: <span class="s">'skill_past_tense_verbs'</span>, type: <span class="s">'PRACTICE'</span> }),
+    { headers: { <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span>, Authorization: <span class="s">`Bearer ${__ENV.TOKEN}`</span> } });
+  check(res, { <span class="s">'status is 200'</span>: r =&gt; r.status === 200,
+               <span class="s">'under 500 ms'</span>:  r =&gt; r.timings.duration &lt; 500 });
+  sleep(1);                                     <span class="c">// a learner "reads" for a second</span>
+}</code></pre>
+<p><b>Summary at the end (illustrative):</b></p>
+<pre><code>✓ status is 200 ......... 99.98%
+✗ under 500 ms .......... 98.70%   ← 1.3% slower than target at 100K users
+http_req_duration ....... p(95)=290ms  p(99)=640ms</code></pre>
+<p>Reading this: we meet the 500 ms target until about 100K users, then P99 slips. Next step: find the bottleneck (cache hit rate? database? too few curation instances?) and tune auto-scaling.</p></div>
+<h4>🐒 Chaos testing: break things on purpose</h4>
+<p>While the system is under load, deliberately inject failures (this practice is called <b>chaos engineering</b>) to check that the safety nets really work:</p>
+<div class="tbl"><table><tr><th>Experiment</th><th>What we expect</th></tr>
+<tr><td>Kill a random curation-service instance</td><td>Nothing breaks: the service is stateless, so other instances keep serving and the load balancer routes around it.</td></tr>
+<tr><td>Add network delay between services and Redis</td><td>Timeouts and retries behave correctly; the cold path takes over if Redis is too slow.</td></tr>
+<tr><td>Wipe the Redis cluster</td><td>Learners still get lessons via the cold path; no progress is lost; playlists refill.</td></tr>
+<tr><td>Make the LLM provider slow or return errors</td><td>The circuit breaker trips and traffic fails over to a backup model or rule-based selection.</td></tr>
+<tr><td>Pause the queue consumers (workers)</td><td>The queue-depth alert fires; nothing is lost; work resumes when workers return.</td></tr></table></div>
+
+<!-- ============ 4.10 ============ -->
+<h3 class="sec" id="mon"><span class="num">4.10</span> Monitoring and alerts</h3>
+<div class="tbl"><table><tr><th>Signal</th><th>Why it matters</th></tr>
+<tr><td>⏱ P99 lesson-serving latency</td><td>End-to-end time to serve a lesson: the main measure of user experience.</td></tr>
+<tr><td>🎯 Cache hit rate</td><td><b>Critical alert.</b> If the Redis hit rate drops, more learners are on the slower, less personalised cold path. Investigate right away.</td></tr>
+<tr><td>📥 Queue depth</td><td><b>Primary alert.</b> If waiting messages keep growing, workers can't keep up: scale out.</td></tr>
+<tr><td>⏳ End-to-end job duration</td><td>P99 time from "job queued" to "playlist ready in cache": reveals slow LLM or database steps.</td></tr>
+<tr><td>🩺 Worker &amp; dependency health</td><td>Error rates of workers and outside services. A spike in LLM provider errors means fallbacks are probably active.</td></tr>
+<tr><td>🚗 Traffic</td><td>Load on the system, especially requests per second to downstream dependencies.</td></tr>
+<tr><td>❌ Errors</td><td>HTTP 5xx rates for internal services and external APIs (especially the LLM provider). A sudden jump means trouble.</td></tr>
+<tr><td>🛢 Saturation</td><td>How close we are to capacity: server CPU, and especially <b>Redis memory</b>.</td></tr></table></div>
+<p>All of these go into one central observability platform (such as <b>Grafana</b> or <b>Datadog</b>), so the whole team sees the same real-time picture.</p>
+<div class="box real"><span class="t">🌍 Learning-quality metrics worth tracking too</span>Lesson completion rate · next-day return rate (streaks) · accuracy trend per skill (is difficulty well calibrated?) · rejection rate in human review (is generation quality slipping?) · share of lessons served by the cold path (how many learners got no personalisation).</div>
+
+<!-- ============ 4.11 ============ -->
+<h3 class="sec" id="sum"><span class="num">4.11</span> Summary</h3>
+<p>LLMs are powerful for learning platforms in both directions: <b>creating content</b> and <b>personalising it</b>. On the creation side, LLMs speed up lesson writing while experts review and refine to guarantee quality. On the personalisation side, learners get lessons that match their pace and style.</p>
+<p>The common thread in both flows is <b>retrieval and context injection</b>: fetching the learner's history to personalise the next lesson, or grounding a generated exercise in the approved curriculum. You'll see the same pattern in AI-powered e-commerce search, where the system adapts to a shopper's intent and behaviour the way this app adapts to a learner.</p>
+<div class="fig"><div class="ft">The complete system</div>
+<div class="cols" style="align-items:stretch">
+<div class="grp"><span class="gt">🏭 Offline (quality)</span><div class="fv" style="gap:8px"><span class="node n-purple">Admin portal → gateway</span><span class="node n-purple">Generation service<small>sync if ≤ 5 · async fan-out × 10</small></span><span class="node n-orange">SQS → orchestrator workers → LLM</span><span class="node n-teal db">questions_staging</span><span class="node n-green">Human review</span><span class="node n-blue">Nightly ingestion + checks</span></div></div>
+<div class="grp"><span class="gt">⚡ Online (speed)</span><div class="fv" style="gap:8px"><span class="node n-purple">App → gateway → curator</span><span class="node n-green">Redis playlist LPOP<small>warm path, under 50 ms</small></span><span class="node n-blue">Rule-based fallback<small>cold path</small></span><span class="node n-orange">refill queue → worker → SQS → LLM sequencing</span><span class="node n-red">Tool-based grading</span></div></div>
+<div class="grp"><span class="gt">🗄 Data</span><div class="fv" style="gap:8px"><span class="node n-blue db">PostgreSQL + pgvector<small>question_bank · staging · read replicas</small></span><span class="node n-orange db">DynamoDB<small>lesson_history (90-day TTL) · skill_strength</small></span><span class="node n-gray db">S3 data lake (Parquet)</span><span class="node n-green db">Redis cluster</span></div></div></div></div>
+
+<h4 id="int">🎯 Interview framework: "Design Duolingo with AI" in 45 minutes</h4>
+<div class="tbl"><table><tr><th>Time</th><th>What to do</th><th>Key lines to say</th></tr>
+<tr><td>0–5 min</td><td>Requirements</td><td>"Two jobs: LLM content generation and adaptive curation. Scoring is out of scope. Safety is non-negotiable: teaching wrong grammar destroys trust."</td></tr>
+<tr><td>5–10</td><td>NFRs + numbers</td><td>"P99 under 500 ms. 50M DAU × 3 lessons × 10 questions ≈ 17K questions/s, × 3 calls ≈ 52K RPS, × 5 at peak ≈ 260K, + 35% ≈ 350K RPS, about 90K writes/s. So an LLM call per request is impossible."</td></tr>
+<tr><td>10–15</td><td>Core insight</td><td>"Separate quality from real time: an offline factory (LLM + human review) and an online tutor that only picks from approved content."</td></tr>
+<tr><td>15–25</td><td>High-level design</td><td>"Offline: admin API → generation service → SQS → workers → staging → review → nightly ingestion. Online: curator → Redis LPOP (warm) or rule-based (cold) → async refill via queue + LLM sequencing."</td></tr>
+<tr><td>25–30</td><td>Data</td><td>"DynamoDB for progress (90-day TTL + Streams to S3 Parquet), PostgreSQL + pgvector for the bank, Redis lists for playlists."</td></tr>
+<tr><td>30–40</td><td>Deep dive</td><td>Async fan-out with polling, sync for 5 or fewer; resilience (3 retries + backoff, breaker at 5 failures / 30 s half-open, tiered rerouting, non-AI fallback); scaling (queue-depth auto-scaling, read replicas, losing Redis loses no data); tool-based grading.</td></tr>
+<tr><td>40–45</td><td>Quality + operations</td><td>"k6 load tests, chaos experiments (kill instances, add latency, degrade the LLM), a regression suite on every prompt or model change; alerts on cache hit rate, queue depth, P99, job duration, 5xx and Redis memory."</td></tr></table></div>
+<div class="box deep"><span class="t">🚀 Trade-offs worth saying out loud</span><ul>
+<li><b>Freshness vs latency:</b> playlists are prepared in advance, so a mistake the learner made a minute ago isn't reflected immediately. Event-driven refills and a small buffer shrink this gap.</li>
+<li><b>Personalisation vs cost:</b> a bigger buffer means fewer LLM calls but a higher risk of stale playlists; a smaller one is fresher but costs more.</li>
+<li><b>Human review throughput:</b> experts guarantee quality but can become a bottleneck. Batch approvals, AI pre-scoring, and deep review only for low-confidence items help.</li>
+<li><b>Graceful degradation:</b> LLM down → rule-based; Redis down → cold path; even with both down, learners keep getting lessons.</li></ul></div>
+
+<h4 id="cheat">📋 Cheat sheet</h4>
+<div class="grid3">
+<div class="card"><h5>Numbers</h5>50M DAU · 3 lessons · 10 questions · ≈ 17,400 questions/s · × 3 calls ≈ 52K · × 5 ≈ 260K · + 20% + 15% ≈ 350K RPS · ≈ 90K writes/s · P99 &lt; 500 ms · lesson start &lt; 50 ms · 50 languages (250 / 70 lessons) · refill when &lt; 5 left · playlist of 20–30 · last 50 lessons as context · 90-day TTL · sync if ≤ 5 · 10 per worker batch · 3 retries · breaker: 5 failures or 20% in 60 s, 30 s cooldown</div>
+<div class="card c-good"><h5>Offline factory</h5>Request (language, level, topic, format) → gateway → generation service → generation_jobs_queue → orchestrator workers → LLM → generation_results_queue → DB worker → questions_staging → human review → nightly job + checks → question_bank</div>
+<div class="card c-vio"><h5>Online tutor</h5>Warm: Redis LPOP → content from the bank. Cold: LPOP returns nil → rule-based SQL (level + language − recently seen) → serve + async refill. Refill: event → refill_check_queue → buffer check → context + candidates → SQS → LLM sequencing → Redis (and DB).</div>
+<div class="card c-warn"><h5>Orchestrator</h5>Model router (simple → small in-house model; complex → strong mid-tier; premium → top tier) · prompt layer · resilience (retries + backoff, breaker, tiered rerouting, context preserved) · safety &amp; validation (no invented IDs)</div>
+<div class="card"><h5>Data</h5>DynamoDB: lesson_history (user_id PK, session#lesson SK), skill_strength (user_id PK, skill_id SK) · Redis lists + RDB snapshots · PostgreSQL + pgvector: staging, bank (vector 768) · S3 Parquet via Streams + Firehose</div>
+<div class="card c-bad"><h5>Quality &amp; operations</h5>Tool-based grading · k6 / JMeter load tests · chaos experiments · regression set · alerts: P99, cache hit rate, queue depth, job duration, dependency health, traffic, 5xx, saturation (Redis memory) · Grafana / Datadog</div></div>
+<div class="box takeaways"><span class="t">✅ Key takeaways</span><ul>
+<li>Never put a slow, costly LLM call on the live path at 350K RPS; prepare results in advance.</li>
+<li>Separate the offline quality factory (LLM + human review) from the online tutor (approved content only).</li>
+<li>Warm path: atomic LPOP from a ready playlist. Cold path: fast rule-based query, then refill.</li>
+<li>Pick each database for its job: DynamoDB for heavy writes, PostgreSQL + pgvector for content, Redis for speed, S3 for history.</li>
+<li>Let deterministic tools grade; let the LLM explain kindly.</li>
+<li>Test by breaking things, and alert on cache hit rate and queue depth first.</li></ul></div>
+
+<h4 id="quiz">📝 Quiz (click to reveal)</h4>
+<details><summary>Q1. Why not have the LLM create lessons live for each learner?</summary>Safety and quality risk (errors, inappropriate content), plus latency and cost: at ~350K RPS, an LLM call per request is impossible. So content is generated offline and reviewed by humans, and the online path only selects from approved content.</details>
+<details><summary>Q2. What's the difference between the warm and cold paths?</summary>Warm: the learner's Redis playlist has ready lessons → atomic LPOP → served instantly. Cold: LPOP returns nil (new or returning learner) → skip the LLM, run a rule-based query (same level and language, excluding recently seen) → serve one lesson and trigger an async refill.</details>
+<details><summary>Q3. Why must LPOP be atomic?</summary>It takes and removes the item in one step, so the same lesson can never be served twice, even if the learner opens the app on two devices at the same moment.</details>
+<details><summary>Q4. When and how does a playlist get refilled?</summary>When a lesson is completed (or another activity happens), <code>{userId}</code> goes onto refill_check_queue. A worker checks the buffer (fewer than 5 left?), gathers context (last 50 lessons + a few hundred unseen candidates), and sends it via SQS to the orchestrator, which asks the LLM to choose and order 20–30 lessons and pushes them to Redis. A 5-minute scan catches anything missed.</details>
+<details><summary>Q5. How is a 100-question admin request processed?</summary>A job record is created (PENDING) and 202 Accepted + job_id is returned. The job fans out into 10 messages of 10 on generation_jobs_queue; workers call the LLM and publish to generation_results_queue; a DB worker inserts into questions_staging; when all 10 batches finish, the job becomes COMPLETED with a results URL. The admin polls meanwhile. For 5 or fewer questions, it's synchronous.</details>
+<details><summary>Q6. Name the three circuit-breaker states and the thresholds used here.</summary>Closed (normal); open (after 5 consecutive server errors or a 20% error rate within 60 s: stop traffic and reroute); half-open (after 30 s, send one test request: success → closed, failure → open).</details>
+<details><summary>Q7. Why not keep all lesson history in DynamoDB forever?</summary>An endlessly growing log in a premium database is a money trap. Keep 90 days hot (with TTL) for fast checks; stream every change via DynamoDB Streams → Kinesis Firehose → Parquet files on S3 for cheap long-term storage and training.</details>
+<details><summary>Q8. What happens if the whole Redis cluster is lost?</summary>No learner loses progress or history (that's in DynamoDB). Learners are served via the cold path while the pipeline rebuilds playlists; lessons are slightly slower and less personalised for a while.</details>
+<details><summary>Q9. Why use function calling for grading?</summary>LLMs are probabilistic and can misjudge exact answers. A deterministic tool returns true/false from the answer key; the LLM only writes friendly feedback. That gives exact grading for questions with one correct answer.</details>
+<details><summary>Q10. Which two alerts matter most, and why?</summary>Queue depth (workers can't keep up → scale out) and cache hit rate (more learners falling to the slower, less personalised cold path).</details>
+<details><summary>Q11. What are the three model-router rules?</summary>Simple grammar check → small in-house model; complex conversation → strong mid-tier model; premium deep explanation → top-tier model.</details>
+<details><summary>Q12. The LLM returns a playlist containing a question ID that wasn't in the candidate pool. What should happen?</summary>The validation layer rejects it: every returned ID must come from the candidates provided. Then retry, reroute, or fall back to rule-based selection.</details>
+
+<div class="footer"><b>LLM System Design · Chapter 4</b> · Written by <b>Shivank Agarwal</b> · Future with Shivank<br>Next up: Chapter 5 — AI-Powered Search for E-Commerce 🛒</div>
+</main>
+
+<script>
+/* ===== Shared helpers (Future with Shivank notes) ===== */
+const $ = id => document.getElementById(id);
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  $('progress').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+document.querySelectorAll('#side a').forEach(a => a.addEventListener('click', () => $('side').classList.remove('open')));
+
+/* ---------- Animated sequence diagram ----------
+   actors: ['Client','Server',...]
+   steps:  {f:0,t:1,l:'label',h:'plain-English hint',k:'ret'|'note',on:[a,b]}
+   groups: [{f:0,t:1,l:'group label'}]                                       */
+function seq(id, actors, steps, groups) {
+  const el = $(id), n = actors.length, colW = 178, W = n * colW + 40, rowH = 42, top = 80;
+  const H = top + steps.length * rowH + 70, X = i => 20 + colW * i + colW / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W, 760)}px" font-family="Inter,Segoe UI,Arial" font-size="12">
+  <defs><marker id="m${id}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker></defs>`;
+  (groups || []).forEach(g => {
+    s += `<rect x="${X(g.f) - colW / 2 + 6}" y="4" width="${X(g.t) - X(g.f) + colW - 12}" height="${H - 8}" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>`;
+    if (g.l) s += `<text x="${X(g.f) - colW / 2 + 16}" y="${H - 14}" font-size="11" fill="#64748b" font-weight="700">${g.l}</text>`;
+  });
+  actors.forEach((a, i) => {
+    s += `<line x1="${X(i)}" y1="54" x2="${X(i)}" y2="${H - 34}" stroke="#cbd5e1" stroke-dasharray="4 4"/>`;
+    [18, H - 60].forEach(y => {
+      s += `<rect x="${X(i) - 82}" y="${y}" width="164" height="34" rx="8" fill="#eef2ff" stroke="#a5b4fc"/><text x="${X(i)}" y="${y + 21}" text-anchor="middle" font-weight="700" fill="#312e81" font-size="11.5">${a}</text>`;
+    });
+  });
+  let k = 0;
+  steps.forEach((st, i) => {
+    const y = top + i * rowH + 16;
+    s += `<g class="sq" style="transition:opacity .4s">`;
+    if (st.k === 'note') {
+      const a = Math.min(...st.on), b = Math.max(...st.on);
+      s += `<rect x="${X(a) - 86}" y="${y - 14}" width="${X(b) - X(a) + 172}" height="26" rx="6" fill="#fef9c3" stroke="#facc15"/><text x="${(X(a) + X(b)) / 2}" y="${y + 3}" text-anchor="middle" font-weight="700" fill="#713f12">${st.l}</text>`;
+    } else {
+      k++;
+      const badge = x => `<circle cx="${x}" cy="${y}" r="9" fill="#4f46e5"/><text x="${x}" y="${y + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${k}</text>`;
+      if (st.f === st.t) {
+        const x = X(st.f);
+        s += `<path d="M${x} ${y - 6} h34 v14 h-30" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#m${id})"/><text x="${x + 40}" y="${y + 4}" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x - 14);
+      } else {
+        const x1 = X(st.f), x2 = X(st.t), d = st.k === 'ret' ? 'stroke-dasharray="5 4"' : '', pad = x2 > x1 ? -4 : 4;
+        s += `<line x1="${x1}" y1="${y}" x2="${x2 + pad}" y2="${y}" stroke="#475569" stroke-width="1.6" ${d} marker-end="url(#m${id})"/><text x="${(x1 + x2) / 2}" y="${y - 7}" text-anchor="middle" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x1);
+      }
+    }
+    s += `</g>`;
+  });
+  s += '</svg>';
+  el.innerHTML = s + `<div class="seqctl"><button class="btn" data-a="play">▶ Play</button><button class="btn alt" data-a="next">⏭ Next step</button><button class="btn alt" data-a="all">👁 Show all</button></div><div class="seqcap">Press ▶ Play — the meaning of each step will appear here.</div>`;
+  const gs = [...el.querySelectorAll('.sq')], cap = el.querySelector('.seqcap');
+  let cur = -1, timer = null;
+  const show = i => {
+    gs.forEach((g, j) => g.style.opacity = j <= i ? 1 : .12);
+    const st = steps[i];
+    cap.innerHTML = `<b style="color:#fcd34d">Step ${i + 1}/${steps.length}:</b> ${st.l}${st.h ? ' — <span style="color:#93c5fd">' + st.h + '</span>' : ''}`;
+  };
+  el.querySelector('[data-a=play]').onclick = () => { clearInterval(timer); cur = -1; timer = setInterval(() => { cur++; if (cur >= steps.length) { clearInterval(timer); return; } show(cur); }, 1500); };
+  el.querySelector('[data-a=next]').onclick = () => { clearInterval(timer); cur = (cur + 1) % steps.length; show(cur); };
+  el.querySelector('[data-a=all]').onclick = () => { clearInterval(timer); gs.forEach(g => g.style.opacity = 1); cap.textContent = 'You are now seeing the whole flow.'; };
+}
+
+/* ---------- Circuit breaker playground ---------- */
+function makeBreaker(id, threshold, fallbackText, cooldownText) {
+  const el = $(id);
+  el.innerHTML = `<div><span class="state" data-s="C" style="background:#16a34a">🟢 CLOSED · normal</span><span class="state" data-s="O" style="background:#dc2626">🔴 OPEN · tripped</span><span class="state" data-s="H" style="background:#d97706">🟡 HALF-OPEN · testing</span></div>
+  <div style="margin-top:8px"><button data-a="ok">✅ Call succeeds</button><button class="red" data-a="fail">❌ Call fails</button><button class="alt" data-a="cool">⏱ ${cooldownText}</button><button class="alt" data-a="reset">↺ Reset</button></div><div class="log"></div>`;
+  let st = 'C', fails = 0;
+  const log = el.querySelector('.log');
+  const L = m => { log.innerHTML += `<div>${m}</div>`; log.scrollTop = 1e6; };
+  const paint = () => el.querySelectorAll('.state').forEach(s => s.classList.toggle('on', s.dataset.s === st));
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'reset') { st = 'C'; fails = 0; log.innerHTML = ''; }
+    else if (a === 'cool') {
+      if (st === 'O') { st = 'H'; L('⏱ Cooldown over → HALF-OPEN: we let ONE test request ("canary") through to the primary model.'); }
+      else L('The cooldown only matters when the breaker is OPEN.');
+    }
+    else if (st === 'O') L(`🔴 Breaker is OPEN → we don't even try the primary. ${fallbackText}`);
+    else if (st === 'H') {
+      if (a === 'ok') { st = 'C'; fails = 0; L('🐤 Canary succeeded → CLOSED. Full traffic goes back to the primary model.'); }
+      else { st = 'O'; L('🐤 Canary failed → back to OPEN. The cooldown timer starts again.'); }
+    } else {
+      if (a === 'ok') { fails = 0; L('✅ Success. Failure counter reset to 0.'); }
+      else { fails++; L(`❌ Failure ${fails}/${threshold}`); if (fails >= threshold) { st = 'O'; L(`⚡ ${threshold} failures in a row → breaker TRIPS to OPEN. Traffic now goes to the fallback.`); } }
+    }
+    paint();
+  });
+  paint();
+}
+
+/* tiny non-crypto hash for demos */
+const djb = s => { let h = 5381; for (const c of s) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(8, '0').slice(0, 8); };
+
+/* ===== Chapter 4 demos ===== */
+
+/* --- Sequence diagrams --- */
+seq('seq46', ['Curation service', 'Redis cache', 'Databases', 'SQS queues', 'Orchestrator + LLM'], [
+  { k: 'note', on: [0, 1], l: 'Event: lesson completed (plus a 5-min safety scan)' },
+  { f: 0, t: 1, l: 'Check playlist length (LLEN)', h: 'Is this learner running low on ready lessons?' },
+  { f: 1, t: 0, l: 'Only 3 lessons left', k: 'ret', h: 'Below the threshold of 5 → refill' },
+  { f: 0, t: 2, l: 'Get history + candidate questions', h: 'Last 50 lessons + a few hundred unseen questions at this level' },
+  { f: 2, t: 0, l: 'Learner context + candidates', k: 'ret' },
+  { f: 0, t: 3, l: 'Publish "personalise" job' },
+  { k: 'note', on: [3, 4], l: 'The AI planning is fully decoupled' },
+  { f: 3, t: 4, l: 'Worker takes the job', h: 'At a controlled pace, so the LLM is never flooded' },
+  { f: 4, t: 4, l: 'LLM picks + orders 20–30 lessons' },
+  { f: 4, t: 4, l: 'Validate: only candidate IDs, no duplicates' },
+  { f: 4, t: 3, l: 'Publish the curated plan' },
+  { f: 3, t: 2, l: 'Save the plan durably (DB)' },
+  { f: 3, t: 1, l: 'RPUSH lessons onto the playlist', h: 'Ready for the next instant LPOP' }
+]);
+
+seq('seq49', ['Admin portal', 'Generation service', 'Job queue (SQS)', 'Worker', 'LLM', 'Results queue', 'Staging DB'], [
+  { k: 'note', on: [0, 1], l: '1. Submit the job' },
+  { f: 0, t: 1, l: 'POST generation job (count = 100)' },
+  { f: 1, t: 6, l: 'Create job record: PENDING' },
+  { f: 1, t: 2, l: 'Publish 10 messages × 10', h: 'Fan-out: one big job becomes 10 small ones' },
+  { f: 1, t: 0, l: '202 Accepted + job_id', k: 'ret', h: "The admin's screen is free immediately" },
+  { k: 'note', on: [2, 5], l: '2. Background processing — repeated for each batch' },
+  { f: 3, t: 2, l: 'Take a message' },
+  { f: 3, t: 4, l: 'Generate 10 questions (prompt)' },
+  { f: 4, t: 3, l: 'JSON questions', k: 'ret' },
+  { f: 3, t: 5, l: 'Publish the results' },
+  { k: 'note', on: [5, 6], l: '3. Save for review' },
+  { f: 5, t: 6, l: 'DB worker takes the results' },
+  { f: 6, t: 6, l: 'Insert into questions_staging' },
+  { f: 6, t: 6, l: 'All 10 batches done → COMPLETED', h: 'The admin sees "Completed" on the next status check' }
+], [{ f: 2, t: 5 }]);
+
+/* --- Scale calculator --- */
+function calc() {
+  const v = i => +$(i).value || 0;
+  const r = v('sD') * v('sL') * v('sQ') / 86400, a = r * v('sA'), p = a * v('sP'), t = p * (1 + v('sE') / 100);
+  $('o1').textContent = Math.round(r).toLocaleString();
+  $('o2').textContent = Math.round(a / 1000) + 'K';
+  $('o3').textContent = Math.round(p / 1000) + 'K';
+  $('o4').textContent = Math.round(t / 1000) + 'K';
+  $('o5').textContent = '≈ ' + Math.round(p / 3 / 1000) + 'K writes per second';
+}
+['sD', 'sL', 'sQ', 'sA', 'sP', 'sE'].forEach(id => $(id).addEventListener('input', calc));
+calc();
+
+/* --- Question lifecycle --- */
+let qS = 0;
+function qPaint() { [1, 2, 3, 4, 5].forEach(i => $('q' + i).classList.toggle('on', i === qS)); }
+function qL(m) { $('qLog').innerHTML += `<div>${m}</div>`; $('qLog').scrollTop = 1e6; }
+function qs(a) {
+  if (a === 'gen') { qS = 2; qL('🏭 The LLM created a question → saved in questions_staging with status IN_REVIEW (NEW questions go straight to review).'); }
+  else if (!qS) qL('Generate a question first.');
+  else if (a === 'edit') { qS === 2 ? qL('✏️ The expert fixed a small mistake (PATCH). Still IN_REVIEW.') : qL('Only questions IN_REVIEW can be edited.'); }
+  else if (a === 'acc') { if (qS === 2) { qS = 3; qL('✅ ACCEPTED. Not live yet: it waits for the nightly job.'); } else qL('Only questions IN_REVIEW can be accepted.'); }
+  else if (a === 'rej') { if (qS === 2) { qS = 4; qL('❌ REJECTED. It will never reach learners.'); } else qL('Only questions IN_REVIEW can be rejected.'); }
+  else if (a === 'night') { if (qS === 3) { qS = 5; qL('🌙 Nightly job: automatic checks passed → inserted into the question bank. Learners can now get it!'); } else qL('🌙 Nightly job ran and skipped this question (it is not ACCEPTED).'); }
+  qPaint();
+}
+qPaint();
+
+/* --- Warm / cold path simulator --- */
+let buf = [], llmUp = true, refilling = false, nextId = 1, served = 0;
+function wcL(m) { $('wcLog').innerHTML += `<div>${m}</div>`; $('wcLog').scrollTop = 1e6; }
+function bufPaint() {
+  $('buf').innerHTML = buf.map((x, i) => `<span class="slot" style="${i === 0 ? 'outline:2px solid #fcd34d' : ''}">L${x}</span>`).join('') || '<span class="no">(empty → LPOP returns nil)</span>';
+  $('bufN').textContent = `[${buf.length} lessons ready]`;
+  $('llmBtn').textContent = llmUp ? '🤖 LLM: UP' : '🤖 LLM: DOWN';
+}
+function refill() {
+  if (refilling) return; refilling = true;
+  wcL(llmUp ? '📨 refill_check_queue → worker gathers context (last 50 lessons) + candidates → SQS → LLM orders the next lessons…'
+            : '⚠️ LLM is down → graceful degradation: rule-based picks (same level, not seen in the last 20 lessons).');
+  setTimeout(() => { for (let i = 0; i < 20; i++) buf.push(nextId++); refilling = false; wcL(`✅ Playlist refilled with 20 lessons ${llmUp ? '(LLM-personalised)' : '(rule-based)'}.`); bufPaint(); }, 1500);
+}
+function wc(a) {
+  if (a === 'llm') { llmUp = !llmUp; wcL(llmUp ? '🤖 LLM provider is back UP.' : '💥 LLM provider is DOWN.'); }
+  else if (a === 'crash') { buf = []; wcL('💥 Redis crashed: playlists are gone. Progress is safe in DynamoDB ✅. Next request will use the cold path.'); }
+  else if (a === 'reset') { buf = []; served = 0; nextId = 1; $('wcLog').innerHTML = ''; wcL('👤 A brand-new learner: no playlist yet.'); }
+  else {
+    served++;
+    if (!buf.length) { wcL(`🧊 Lesson #${served}: LPOP → nil → COLD PATH: a rule-based SQL query builds 1 lesson (no LLM) → served now + refill started.`); refill(); }
+    else {
+      const id = buf.shift();
+      wcL(`🔥 Lesson #${served}: LPOP → L${id} (atomic: it can't be served twice) → content from the bank → served in under 50 ms.`);
+      if (buf.length < 5) { wcL(`🧮 Lesson completed → only ${buf.length} left (below 5) → refill triggered.`); refill(); }
+    }
+  }
+  bufPaint();
+}
+bufPaint();
+
+/* --- Circuit breaker --- */
+makeBreaker('cb4', 5, 'Rerouted to the backup provider, or to rule-based (non-AI) selection.', 'Cooldown (30 s) ends');
+
+/* --- Async generation job --- */
+let jobs = null, jT = null;
+function job() {
+  clearInterval(jT);
+  const n = Math.max(1, +$('jC').value || 1);
+  if (n <= 5) { $('jOut').innerHTML = `<b class="ok">⚡ SYNC mode (5 or fewer):</b> ${n} question(s) returned directly in the response, status IN_REVIEW. No queue needed.`; $('jBars').innerHTML = ''; jobs = null; return; }
+  const k = Math.ceil(n / 10);
+  jobs = { id: 'job_' + Math.random().toString(16).slice(2, 10), n, seg: Array(k).fill(0) };
+  $('jOut').innerHTML = `<b>202 Accepted</b> · job_id: <span class="mono">${jobs.id}</span> · status: PENDING · split into ${k} messages of up to 10 questions on generation_jobs_queue`;
+  jT = setInterval(() => {
+    let done = true;
+    jobs.seg = jobs.seg.map(p => { const q = Math.min(100, p + Math.random() * 35); if (q < 100) done = false; return q; });
+    $('jBars').innerHTML = jobs.seg.map((p, i) => `<div style="display:flex;gap:8px;align-items:center;font-size:.76rem"><span style="width:76px">batch ${i + 1}</span><div style="flex:1;background:#1e293b;border-radius:6px;height:12px"><div style="width:${p}%;height:12px;border-radius:6px;background:${p >= 100 ? '#22c55e' : '#f59e0b'}"></div></div></div>`).join('');
+    if (done) clearInterval(jT);
+  }, 600);
+}
+function poll() {
+  if (!jobs) { $('jOut').innerHTML += '<br>No async job is running.'; return; }
+  const d = jobs.seg.filter(p => p >= 100).length, k = jobs.seg.length;
+  $('jOut').innerHTML = d === k
+    ? `<b class="ok">GET status → COMPLETED</b> · "Generated ${jobs.n} questions." · results_url: <span class="mono">/api/v1/admin/questions?job_id=${jobs.id}</span>`
+    : `<b style="color:#fcd34d">GET status → PROCESSING</b> · ${d} of ${k} batches done`;
+}
+
+/* --- Tool-based grading --- */
+function grade(ans) {
+  const correct = 'went', ok = ans.trim().toLowerCase() === correct;
+  $('gLog').innerHTML = `<div>🙋 Learner answered: "${ans}"</div>
+  <div>🤖 LLM → tool call: <span class="mono">check_answer("q_12483240", "${ans}")</span></div>
+  <div>🧮 Tool (plain code, no AI) → <span class="mono">{"is_correct": ${ok}, "correct": "went"}</span></div>
+  <div>💬 LLM writes feedback (it cannot change the verdict): ${ok
+    ? '<span class="ok">"Perfect! 🎉 \'went\' is the past tense of \'go\', which fits \'yesterday\'. +10 XP"</span>'
+    : `<span class="no">"Almost! 😊 \'Yesterday\' needs the past tense, so it\'s \'went\'. \'${ans.trim()}\' doesn\'t fit here."</span>`}</div>`;
+}
+
+</script>
+</body>
+</html>

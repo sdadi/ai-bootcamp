@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capstone: AI Vendor Risk Assessor — Shivank Agrawal</title>
+<meta name="description" content="Capstone project by Shivank Agrawal (Future with Shivank): build an AI vendor risk assessor that combines a production RAG policy library, an agentic router with graders, and a deep-search research agent — with a human in the loop.">
+<meta name="author" content="Shivank Agrawal">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#eef2f5; --panel:#fff; --panel-2:#f6f8fa; --ink:#14213d; --ink-2:#3a4a66; --ink-3:#66758f; --rule:#cdd6e0;
+  --marker:#f5d547; --marker-soft:#fbeaa0; --teal:#0b7f81; --teal-soft:#d8efef; --amber:#b26a00; --amber-soft:#fbe9cc;
+  --red:#c21f3a; --red-soft:#f8dde2; --blue:#2b59c3; --blue-soft:#dde6f8; --code-bg:#14213d; --code-ink:#e9eef5;
+  --shadow:0 1px 0 rgba(20,33,61,.06),0 6px 18px -10px rgba(20,33,61,.25);
+  --f-body:"Literata",Georgia,serif; --f-ui:"Archivo","Segoe UI",system-ui,sans-serif; --f-code:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0d1625; --panel:#141f33; --panel-2:#18253c; --ink:#e6ecf3; --ink-2:#c0cbda; --ink-3:#8d9bb1; --rule:#2a3a55;
+  --marker:#e3c13c; --marker-soft:#4a4220; --teal:#3cc3c5; --teal-soft:#123a3e; --amber:#f0a73a; --amber-soft:#43301a;
+  --red:#ff6b80; --red-soft:#4a1c26; --blue:#7ea2ff; --blue-soft:#1d2b4d; --code-bg:#0a1220; --code-ink:#e2e8f0;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 8px 22px -12px rgba(0,0,0,.7); color-scheme:dark; }}
+:root[data-theme="dark"]{
+  --paper:#0d1625; --panel:#141f33; --panel-2:#18253c; --ink:#e6ecf3; --ink-2:#c0cbda; --ink-3:#8d9bb1; --rule:#2a3a55;
+  --marker:#e3c13c; --marker-soft:#4a4220; --teal:#3cc3c5; --teal-soft:#123a3e; --amber:#f0a73a; --amber-soft:#43301a;
+  --red:#ff6b80; --red-soft:#4a1c26; --blue:#7ea2ff; --blue-soft:#1d2b4d; --code-bg:#0a1220; --code-ink:#e2e8f0;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 8px 22px -12px rgba(0,0,0,.7); color-scheme:dark; }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6}
+a{color:var(--blue)}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100vh}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:22px 18px;border-right:1px solid var(--rule);background:var(--panel);font-family:var(--f-ui)}
+nav .brand{font-weight:800;font-size:15px;letter-spacing:.02em;text-transform:uppercase;color:var(--teal)}
+nav .by{font-size:13px;color:var(--ink-3);margin:4px 0 16px}
+nav h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 6px}
+nav a{display:block;color:var(--ink-2);text-decoration:none;font-size:14px;padding:5px 8px;border-radius:6px}
+nav a:hover{background:var(--panel-2);color:var(--ink)}
+nav a .n{display:inline-block;width:22px;color:var(--ink-3);font-family:var(--f-code);font-size:12px}
+nav button{margin-top:16px;font:13px var(--f-ui);padding:6px 10px;border:1px solid var(--rule);background:var(--panel-2);color:var(--ink-2);border-radius:6px;cursor:pointer}
+main{padding:36px 56px 90px;max-width:1120px}
+header.hero{padding:10px 0 28px;border-bottom:1px solid var(--rule);margin-bottom:36px}
+.kicker{font-family:var(--f-ui);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700}
+h1{font-family:var(--f-ui);font-weight:900;font-size:42px;line-height:1.08;margin:8px 0 10px;letter-spacing:-.01em}
+.sub{font-size:19px;color:var(--ink-2);max-width:70ch}
+.meta{font-family:var(--f-ui);font-size:14px;color:var(--ink-3);margin-top:14px}
+h2{font-family:var(--f-ui);font-weight:800;font-size:28px;margin:56px 0 12px;letter-spacing:-.01em;scroll-margin-top:20px}
+h2 .n{color:var(--ink-3);font-family:var(--f-code);font-size:16px;margin-right:10px;vertical-align:middle}
+h3{font-family:var(--f-ui);font-weight:700;font-size:19px;margin:30px 0 8px}
+p{max-width:72ch}
+ul,ol{max-width:72ch;padding-left:24px}
+li{margin:4px 0}
+code{font-family:var(--f-code);font-size:.86em;background:var(--panel-2);border:1px solid var(--rule);border-radius:4px;padding:1px 5px}
+pre{background:var(--code-bg);color:var(--code-ink);padding:16px 18px;border-radius:10px;overflow:auto;font-family:var(--f-code);font-size:13.5px;line-height:1.55;box-shadow:var(--shadow)}
+pre code{background:none;border:0;padding:0;color:inherit;font-size:inherit}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:14px 0 8px;background:var(--panel);box-shadow:var(--shadow);border-radius:10px;overflow:hidden}
+th,td{padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top;text-align:left}
+th{font-family:var(--f-ui);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);background:var(--panel-2)}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:18px 22px;margin:18px 0;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.callout{border-left:4px solid var(--teal);background:var(--teal-soft);padding:12px 16px;border-radius:0 10px 10px 0;margin:18px 0;max-width:80ch}
+.callout.amber{border-color:var(--amber);background:var(--amber-soft)}
+.callout.red{border-color:var(--red);background:var(--red-soft)}
+.callout.blue{border-color:var(--blue);background:var(--blue-soft)}
+.callout p{margin:6px 0}
+.pill{display:inline-block;font-family:var(--f-ui);font-size:12px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-right:4px}
+.pill.rag{background:var(--blue-soft);color:var(--blue)}
+.pill.agentic{background:var(--amber-soft);color:var(--amber)}
+.pill.deep{background:var(--teal-soft);color:var(--teal)}
+.pill.new{background:var(--marker-soft);color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ms{border:1px solid var(--rule);border-radius:12px;background:var(--panel);margin:22px 0;box-shadow:var(--shadow)}
+.ms header{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--rule);background:var(--panel-2);border-radius:12px 12px 0 0}
+.ms header .num{font-family:var(--f-code);font-weight:600;color:var(--teal)}
+.ms header h3{margin:0;flex:1}
+.ms header label{font-family:var(--f-ui);font-size:13px;color:var(--ink-3);display:flex;gap:6px;align-items:center;cursor:pointer}
+.ms .body{padding:6px 20px 18px}
+.ms .time{font-family:var(--f-ui);font-size:13px;color:var(--ink-3)}
+.done{display:inline-block;font-family:var(--f-ui);font-size:13px;font-weight:700;color:var(--teal)}
+.verdict{font-family:var(--f-ui);font-weight:700;font-size:13px;padding:2px 8px;border-radius:6px}
+.v-pass{background:var(--teal-soft);color:var(--teal)} .v-fail{background:var(--red-soft);color:var(--red)} .v-rev{background:var(--amber-soft);color:var(--amber)} .v-unk{background:var(--panel-2);color:var(--ink-3)}
+figure{margin:20px 0}
+figcaption{font-family:var(--f-ui);font-size:13.5px;color:var(--ink-3);margin-top:6px}
+svg text{font-family:var(--f-ui);font-size:12.5px;fill:var(--ink)}
+svg .box{fill:var(--panel);stroke:var(--rule);stroke-width:1.2}
+svg .box.teal{fill:var(--teal-soft);stroke:var(--teal)} svg .box.blue{fill:var(--blue-soft);stroke:var(--blue)} svg .box.amber{fill:var(--amber-soft);stroke:var(--amber)} svg .box.red{fill:var(--red-soft);stroke:var(--red)} svg .box.new{fill:var(--marker-soft);stroke:var(--amber)}
+svg .arrow{stroke:var(--ink-3);stroke-width:1.4;fill:none;marker-end:url(#ah)}
+svg .lab{fill:var(--ink-3);font-size:10.5px}
+footer{margin-top:70px;padding-top:18px;border-top:1px solid var(--rule);font-family:var(--f-ui);font-size:13.5px;color:var(--ink-3)}
+@media (max-width:900px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule)}main{padding:24px 16px 60px}.grid2{grid-template-columns:1fr}h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="brand">Future with Shivank</div>
+  <div class="by">Capstone · by Shivank Agrawal</div>
+  <h4>Brief</h4>
+  <a href="#start"><span class="n">0</span>Start here</a>
+  <a href="#problem"><span class="n">1</span>The problem</a>
+  <a href="#architecture"><span class="n">2</span>Architecture</a>
+  <a href="#coursemap"><span class="n">3</span>Course map</a>
+  <h4>Build</h4>
+  <a href="#milestones"><span class="n">4</span>Milestones</a>
+  <a href="#data"><span class="n">5</span>The data pack</a>
+  <a href="#rules"><span class="n">6</span>Rules of the project</a>
+  <h4>Finish</h4>
+  <a href="#rubric"><span class="n">7</span>Evaluation &amp; rubric</a>
+  <a href="#demo"><span class="n">8</span>Demo checklist</a>
+  <a href="#stretch"><span class="n">9</span>Stretch goals</a>
+  <a href="#faq"><span class="n">10</span>FAQ</a>
+  <a href="#glossary"><span class="n">A</span>Glossary</a>
+  <button id="theme">Light / dark</button>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="kicker">Capstone project · after the Production RAG, Agentic RAG and Deep Search courses</div>
+  <h1>AI Vendor Risk Assessor</h1>
+  <p class="sub">Build the assistant every security and procurement team wishes it had: ask <em>“Can our support team use this AI tool with customer data?”</em> and get a review file with every policy requirement checked against evidence from the web — source, date and verdict — plus the exact questions still to ask the vendor. A human approves. The system never does.</p>
+  <div class="meta">Solo: 2–3 weeks · Team of 3–4: 4 weeks · Starter kit runs offline on day one · Created by Shivank Agrawal</div>
+</header>
+
+<h2 id="start"><span class="n">0</span>Start here</h2>
+<p>You have finished three courses. Each one built a serious component in isolation: a <strong>production RAG pipeline</strong> over company documents, an <strong>agentic RAG</strong> crew that routes and grades, and a <strong>deep search</strong> agent that researches the open web and refuses to be fooled. This capstone puts the three together into one product that a company would use, and adds the glue that none of the courses taught: a deterministic requirement matcher, a questionnaire drafter, a human approval gate and a UI.</p>
+
+<div class="card">
+  <h3>What you will have at the end</h3>
+  <ul>
+    <li>A working assessor: policy library + vendor research + rule-based verdicts + human gate, behind an API and a small UI.</li>
+    <li>A hand-built gold set of real vendors and an evaluation report proving accuracy, zero guessing and injection resistance.</li>
+    <li>A trace for every run that lets you point from any verdict to the exact web page and policy clause behind it.</li>
+    <li>A portfolio project with a real enterprise story: <em>“I automated the vendor security review, and here is how I kept it honest.”</em></li>
+  </ul>
+</div>
+
+<h3>Prerequisites</h3>
+<ul>
+  <li>Completed <strong>Production RAG from Scratch</strong> (you have a working <code>rag_core/</code> folder).</li>
+  <li>Completed <strong>Agentic RAG with DeepSeek + CrewAI</strong> (you understand Router, Retriever and the two graders).</li>
+  <li>Completed <strong>Deep Search Agents</strong> (you have run <code>run_agent.py</code> offline and live, and Lab 12 in LangGraph).</li>
+  <li>Python 3.10+, a free LLM key (Gemini or Groq) or Ollama, and a free web-search option (<code>ddgs</code>, no key).</li>
+</ul>
+
+<h3>Day one: run the starter kit</h3>
+<pre><code>cd vendor-risk-assessor
+python -m venv .venv &amp;&amp; source .venv/bin/activate      # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env
+python scripts/check_setup.py
+python run_assessor.py                                   # LedgerLens AI, customer data, 35 users
+python -m pytest -q                                      # 70 tests
+python eval/run_eval.py                                  # the scorecard</code></pre>
+<p>The default run finishes in under a second with no key and no internet, and prints a full review file ending in <strong>BLOCKED</strong>. Read <code>runs/&lt;timestamp&gt;-assess/report.md</code> and then <code>trace.jsonl</code>. That report is the target; the rest of this page is how you make the system that produces it real.</p>
+
+<div class="callout">
+  <p><strong>How the starter kit is built.</strong> The deterministic parts are complete and tested (schemas, the matcher, the questionnaire, the report, the gold set and the evaluation harness). The parts your courses taught are present in a <em>simplified offline form</em> — keyword search instead of hybrid + rerank, a rule-based router instead of an LLM router, a static research plan instead of a planner — so that the whole thing runs. Every one of those files starts with a <code>COURSE MAP</code> comment and a <code>LEARNER TODO</code> block that names the milestone and the course module to use. Your job is to replace the simplified part with the real one, keep the tests green, and prove the improvement in the evaluation.</p>
+</div>
+
+<h2 id="problem"><span class="n">1</span>The problem</h2>
+<p>Every company now has employees asking “can I use this AI tool?” several times a week. Each request should trigger a vendor security review: does the vendor hold a current SOC 2 Type II or ISO 27001? Where is our data stored? Do they train on it? Who are their sub-processors? Have they had an incident? Is a DPA available? Today a security engineer spends two to six hours per vendor reading trust centres, privacy policies and news, and most of that time is finding and dating facts, not judging them. Teams either wait weeks for a review or skip it.</p>
+<p>The assessor does the finding, dating and checking. It leaves the judging to a person, with every fact already attached to its source.</p>
+
+<h3>The running example: Nimbu Mart</h3>
+<p>You know Nimbu Mart from the Production RAG course. Its Information Security team has eight internal documents — two editions of the security policy, a data-protection policy written for India’s DPDP Act, an AI acceptable-use policy, a procurement checklist, the restricted Approved Vendor List, a questionnaire template and an untrusted chat export. Three fictional AI vendors want in:</p>
+<table>
+  <tr><th>Vendor</th><th>What it does</th><th>Why it is a good test</th></tr>
+  <tr><td><strong>LedgerLens AI</strong></td><td>Summarises support tickets</td><td>Solid SOC 2 Type II, but data lives in the US/EU with India “planned”. A stale 2024 page, a same-name UK accountancy firm, a forum rumour, a review site that contradicts the trust centre, and a blog page carrying a prompt-injection attack.</td></tr>
+  <tr><td><strong>QuillDesk</strong></td><td>AI writing assistant</td><td>“SOC 2 compliant” with no report, trains on content by default, US-only storage, a July 2026 incident with no post-mortem, a directory page that is a copy of the vendor’s own page.</td></tr>
+  <tr><td><strong>Parakeet Translate</strong></td><td>Translation for Indian languages</td><td>The good vendor: ISO 27001 confirmed on the certifier’s registry, India region, no training, DPA with a DPDP addendum — but approved only for internal data, so customer-data use still needs Procurement.</td></tr>
+</table>
+
+<h3>What “good” looks like</h3>
+<p>The review file the starter kit produces for LedgerLens at the customer-data tier looks like this (abridged):</p>
+<table>
+  <tr><th>Requirement</th><th>Clause</th><th>Verdict</th><th>Reason (abridged)</th><th>Evidence</th></tr>
+  <tr><td>Independent security assurance</td><td>SEC-4.2</td><td><span class="verdict v-pass">PASS</span></td><td>SOC 2 Type II report dated 2026-01-20</td><td>trust.ledgerlens.example · 2026-09-01</td></tr>
+  <tr><td>Customer data stored in India</td><td>DP-3.1</td><td><span class="verdict v-fail">FAIL</span></td><td>India is only planned; available today: US, EU</td><td>ledgerlens.example/legal/privacy · 2026-03-15</td></tr>
+  <tr><td>No training on our data</td><td>AI-2.1</td><td><span class="verdict v-rev">NEEDS REVIEW</span></td><td>No training on Business/Enterprise; Free/Pro trains by default</td><td>ledgerlens.example/legal/ai-data-use</td></tr>
+  <tr><td>Sub-processors disclosed</td><td>AI-3.4</td><td><span class="verdict v-rev">NEEDS REVIEW</span></td><td>Model provider present: Orbital Models (US)</td><td>ledgerlens.example/legal/subprocessors</td></tr>
+  <tr><td>Incident history</td><td>SEC-9.3</td><td><span class="verdict v-rev">NEEDS REVIEW</span></td><td>One major incident (2025-04) with a published post-mortem</td><td>2 sources</td></tr>
+  <tr><td>On the Approved Vendor List</td><td>PROC-1.1</td><td><span class="verdict v-rev">NEEDS REVIEW</span></td><td>A review is already in progress; attach this assessment</td><td>policy library</td></tr>
+</table>
+<p>Then: the facts with confidence and conflicts, a security section (“1 page quarantined for prompt injection; 1 rejected as a different company; 1 rumour dropped”), six ready-to-send questions for the vendor, and an approval block with the two roles who must sign (Head of Information Security and DPO). The outcome line says <strong>BLOCKED for this data tier</strong> — never “rejected”, and never “approved”.</p>
+
+<h2 id="architecture"><span class="n">2</span>Architecture</h2>
+<figure>
+<svg viewBox="0 0 980 470" width="100%" role="img" aria-label="Architecture: question goes through input guardrail and router to either policy library, vendor research, or the full assessment flow of research, match, questionnaire, human gate and report.">
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>
+  <rect class="box" x="20" y="200" width="120" height="54" rx="8"/><text x="80" y="223" text-anchor="middle">Question</text><text class="lab" x="80" y="241" text-anchor="middle">+ who is asking</text>
+  <rect class="box red" x="170" y="200" width="120" height="54" rx="8"/><text x="230" y="223" text-anchor="middle">Input guardrail</text><text class="lab" x="230" y="241" text-anchor="middle">redact · intent</text>
+  <rect class="box amber" x="320" y="200" width="110" height="54" rx="8"/><text x="375" y="223" text-anchor="middle">Router</text><text class="lab" x="375" y="241" text-anchor="middle">Agentic RAG</text>
+  <path class="arrow" d="M140,227 L168,227"/><path class="arrow" d="M290,227 L318,227"/>
+  <rect class="box blue" x="480" y="60" width="240" height="64" rx="8"/><text x="600" y="84" text-anchor="middle">Policy library (Production RAG)</text><text class="lab" x="600" y="102" text-anchor="middle">clause chunks · hybrid · rerank · ACL</text>
+  <rect class="box amber" x="745" y="60" width="150" height="64" rx="8"/><text x="820" y="84" text-anchor="middle">Graders</text><text class="lab" x="820" y="102" text-anchor="middle">relevant? grounded?</text>
+  <path class="arrow" d="M430,215 C460,215 460,92 478,92"/><path class="arrow" d="M720,92 L743,92"/>
+  <text class="lab" x="440" y="150">policy question</text>
+  <rect class="box teal" x="480" y="200" width="240" height="64" rx="8"/><text x="600" y="224" text-anchor="middle">Vendor research (Deep Search)</text><text class="lab" x="600" y="242" text-anchor="middle">plan · fetch · identity · score · merge</text>
+  <path class="arrow" d="M430,232 L478,232"/>
+  <text class="lab" x="432" y="190">vendor / assessment</text>
+  <rect class="box new" x="745" y="200" width="150" height="64" rx="8"/><text x="820" y="224" text-anchor="middle">Matcher</text><text class="lab" x="820" y="242" text-anchor="middle">rules → verdicts (no LLM)</text>
+  <path class="arrow" d="M720,232 L743,232"/>
+  <path class="arrow" d="M600,124 L600,198" stroke-dasharray="4 4"/><text class="lab" x="606" y="165">requirements.yaml · Approved Vendor List</text>
+  <rect class="box new" x="745" y="310" width="150" height="54" rx="8"/><text x="820" y="333" text-anchor="middle">Questionnaire</text><text class="lab" x="820" y="351" text-anchor="middle">UNKNOWN → questions</text>
+  <path class="arrow" d="M820,264 L820,308"/>
+  <rect class="box red" x="565" y="310" width="150" height="54" rx="8"/><text x="640" y="333" text-anchor="middle">Human gate</text><text class="lab" x="640" y="351" text-anchor="middle">approvers by tier (AI-5.1)</text>
+  <path class="arrow" d="M745,337 L717,337"/>
+  <rect class="box" x="395" y="310" width="140" height="54" rx="8"/><text x="465" y="333" text-anchor="middle">Review file</text><text class="lab" x="465" y="351" text-anchor="middle">report.md · json · trace</text>
+  <path class="arrow" d="M565,337 L537,337"/>
+  <rect class="box red" x="175" y="310" width="190" height="54" rx="8"/><text x="270" y="333" text-anchor="middle">Output guardrail</text><text class="lab" x="270" y="351" text-anchor="middle">no “approved” · evidence, else UNKNOWN</text>
+  <path class="arrow" d="M395,337 L367,337"/>
+  <rect class="box blue" x="20" y="420" width="14" height="14" rx="3"/><text class="lab" x="40" y="432">Production RAG course</text>
+  <rect class="box amber" x="190" y="420" width="14" height="14" rx="3"/><text class="lab" x="210" y="432">Agentic RAG course</text>
+  <rect class="box teal" x="340" y="420" width="14" height="14" rx="3"/><text class="lab" x="360" y="432">Deep Search course</text>
+  <rect class="box new" x="490" y="420" width="14" height="14" rx="3"/><text class="lab" x="510" y="432">New in this capstone</text>
+  <rect class="box red" x="650" y="420" width="14" height="14" rx="3"/><text class="lab" x="670" y="432">Security &amp; humans (both courses)</text>
+</svg>
+<figcaption>One graph, three routes. A policy question stops at the graders. A vendor-fact question stops after research. An assessment runs the whole chain and ends in a human decision. The same nodes run as plain Python or as a LangGraph state machine (<code>assessor/graph.py</code>).</figcaption>
+</figure>
+
+<h3>The components</h3>
+<table>
+  <tr><th>Component</th><th>File</th><th>Status in the starter kit</th></tr>
+  <tr><td>Contracts between stages</td><td><code>assessor/schemas.py</code></td><td>Complete. Nine vendor fields, evidence levels, verdicts, the report.</td></tr>
+  <tr><td>Policy library</td><td><code>assessor/policy_rag.py</code></td><td>Simplified: clause chunking + BM25 + ACL/version/trust filters + extractive answers. <strong>You:</strong> hybrid + rerank + grounded generation.</td></tr>
+  <tr><td>Router</td><td><code>assessor/router.py</code></td><td>Rule-based mock. <strong>You:</strong> LLM router with the course’s Router prompt and two extra routes.</td></tr>
+  <tr><td>Graders</td><td><code>assessor/graders.py</code></td><td>Heuristic mocks. <strong>You:</strong> the two grader agents + retry loop.</td></tr>
+  <tr><td>Vendor research</td><td><code>assessor/vendor_research.py</code></td><td>Full offline loop with identity gate, quarantine, scoring, merging. Live mode is a sequential baseline. <strong>You:</strong> planner, parallel workers, memory, live evaluation.</td></tr>
+  <tr><td>Requirement matcher</td><td><code>assessor/matcher.py</code> + <code>data/requirements.yaml</code></td><td>Complete and tested. Eight rule types, eleven requirements. You extend it when you add policies.</td></tr>
+  <tr><td>Questionnaire, report</td><td><code>assessor/questionnaire.py</code>, <code>report.py</code></td><td>Complete.</td></tr>
+  <tr><td>Guardrails</td><td><code>assessor/guardrails.py</code></td><td>Regex input redaction, intent check, output policy. <strong>You:</strong> LLM injection classifier, red-team suite.</td></tr>
+  <tr><td>Orchestrator</td><td><code>assessor/graph.py</code></td><td>Plain Python and LangGraph, same nodes; CLI human gate. <strong>You:</strong> checkpointer + interrupt, streaming.</td></tr>
+  <tr><td>API, UI</td><td><code>app/api.py</code>, <code>app/ui.py</code></td><td>Thin skeletons. <strong>You:</strong> queue, storage, auth, trace viewer.</td></tr>
+  <tr><td>Evaluation</td><td><code>eval/run_eval.py</code>, <code>data/gold_set*.json</code></td><td>Harness complete; fictional gold set complete; real-vendor gold set is a template. <strong>You:</strong> fill it.</td></tr>
+</table>
+
+<h2 id="coursemap"><span class="n">3</span>Course map: which part needs which course section</h2>
+<p>Use this table as your index. When you open a <code>LEARNER TODO</code> in the code, this is where to look first. “Reuse” names the files from the course code packs you can copy or import.</p>
+<table>
+  <tr><th>Project part</th><th>Course</th><th>Module / chapter</th><th>Lab</th><th>Reuse from the course code</th><th>Milestone</th></tr>
+  <tr><td>Ingest policies; chunk by clause with metadata (version, status, access, trust)</td><td><span class="pill rag">Production RAG</span></td><td>04 Document ingestion pipeline · 06 Chunking strategies (“structure-aware”, “chunk metadata”)</td><td>Lab 03</td><td><code>rag_core/documents.py</code>, <code>chunking.py</code>, <code>loaders.py</code>, the <code>_metadata.json</code> pattern</td><td>M1</td></tr>
+  <tr><td>Retrieve the right clause: hybrid search, RRF, metadata filters, reranking</td><td><span class="pill rag">Production RAG</span></td><td>08 Retrieval &amp; reranking (sections 3–9) · 07 Embeddings (choosing a model)</td><td>Labs 04, 06, 07, 08</td><td><code>rag_core/hybrid.py</code>, <code>bm25.py</code>, <code>vectorstore.py</code>, <code>rerank.py</code>, <code>query_transform.py</code></td><td>M1</td></tr>
+  <tr><td>Grounded policy answers with clause citations; refuse when the context lacks the answer</td><td><span class="pill rag">Production RAG</span></td><td>09 Grounded generation (grounding rules, refusing, structured output)</td><td>Lab 09</td><td><code>rag_core/generate.py</code>, <code>prompts.py</code></td><td>M1</td></tr>
+  <tr><td>Access control in retrieval; archived versions; untrusted documents; PII redaction</td><td><span class="pill rag">Production RAG</span></td><td>11 Security &amp; privacy (sections 1–3)</td><td>Lab 11</td><td><code>rag_core/security.py</code> (<code>acl_filter</code>, <code>redact_pii</code>, <code>detect_injection</code>)</td><td>M1, M4</td></tr>
+  <tr><td>Route the question: policy / vendor / assessment / refuse</td><td><span class="pill agentic">Agentic RAG</span></td><td>“agents.py → The Router” · “tasks.py → Task 1: route” · exercise “Break the Router on purpose”</td><td>—</td><td><code>agents.py</code> (<code>create_router_agent</code>), <code>tasks.py</code></td><td>M3</td></tr>
+  <tr><td>Check the answer: relevance grader and hallucination grader, with a retry</td><td><span class="pill agentic">Agentic RAG</span></td><td>“Tasks 3 and 4: the two checks” · “Prompt engineering is the real work”</td><td>—</td><td><code>agents.py</code> (the two grader agents), <code>tasks.py</code> (<code>context</code> between tasks)</td><td>M3</td></tr>
+  <tr><td>Two models: a fast cheap one for extraction and grading, a strong one for synthesis</td><td><span class="pill agentic">Agentic RAG</span> <span class="pill deep">Deep Search</span></td><td>Agentic RAG “Two LLMs”, <code>llms.py</code> · Deep Search 09 “Model routing”</td><td>DS Lab 10</td><td><code>llms.py</code>; <code>deepsearch/llm.py</code> (<code>LLM.small</code>)</td><td>M2, M3</td></tr>
+  <tr><td>Plan the research: Plan Creator → Reviewer, sub-questions per field, stop rules</td><td><span class="pill deep">Deep Search</span></td><td>03 Planning layer</td><td>Lab 3</td><td><code>deepsearch/planner.py</code>, <code>schemas.py</code> (<code>ResearchPlan</code>, <code>PlanReview</code>)</td><td>M2</td></tr>
+  <tr><td>Typed tools; validate → repair loop for LLM JSON</td><td><span class="pill deep">Deep Search</span></td><td>04 Executor, tools and MCP (“Schema enforcement with Pydantic”, “Robust tool calls”)</td><td>Lab 2</td><td><code>deepsearch/llm.py</code> (<code>structured()</code>), <code>tools.py</code></td><td>M2</td></tr>
+  <tr><td>Parallel workers: search → fetch → injection scan → extract claims</td><td><span class="pill deep">Deep Search</span></td><td>04 Executor · 09 “Latency: parallel workers”</td><td>Lab 4</td><td><code>deepsearch/executor.py</code>, <code>extractor.py</code></td><td>M2</td></tr>
+  <tr><td>Identity gate (same-name companies), authority per source, freshness decay, copies counted once</td><td><span class="pill deep">Deep Search</span></td><td>05 Validation, reliability and temporal reasoning</td><td>Lab 6</td><td><code>deepsearch/validator.py</code> (<code>AUTHORITY</code>, <code>HALF_LIFE_DAYS</code>, <code>FIELD_AUTHORITY_OVERRIDES</code>)</td><td>M2</td></tr>
+  <tr><td>Merge claims; resolve conflicts; keep provenance on every value</td><td><span class="pill deep">Deep Search</span></td><td>06 Merging and final answer construction</td><td>Lab 7</td><td><code>deepsearch/merger.py</code></td><td>M2</td></tr>
+  <tr><td>Remember past assessments; re-review only what changed (SEC-12.1)</td><td><span class="pill deep">Deep Search</span></td><td>07 Context, memory and iteration</td><td>Lab 8</td><td><code>deepsearch/memory.py</code></td><td>M2 (stretch)</td></tr>
+  <tr><td>Prompt injection through web pages; quarantine; defence in depth; red team</td><td><span class="pill deep">Deep Search</span> <span class="pill rag">Production RAG</span></td><td>Deep Search 08 Security · Production RAG 11 (“Prompt injection through documents”)</td><td>DS Lab 9 · RAG Lab 11</td><td><code>deepsearch/security.py</code>, <code>rag_core/security.py</code></td><td>M4</td></tr>
+  <tr><td>Budgets, token costs, model routing; cost per assessment</td><td><span class="pill deep">Deep Search</span> <span class="pill rag">Production RAG</span></td><td>Deep Search 09 Cost, latency and budgets · Production RAG 12 (“Cost”, “Caching”)</td><td>DS Lab 10 · RAG Lab 13</td><td><code>deepsearch/budget.py</code>, <code>rag_core/cache.py</code></td><td>M2, M5</td></tr>
+  <tr><td>Tracing and observability: read a wrong verdict back to its page</td><td><span class="pill deep">Deep Search</span> <span class="pill rag">Production RAG</span></td><td>Deep Search <code>tracing.py</code> (Module 12 checklist) · Production RAG 12 “Observability”</td><td>RAG Lab 13</td><td><code>deepsearch/tracing.py</code>, <code>rag_core/observability.py</code></td><td>M5</td></tr>
+  <tr><td>Evaluation: gold set first, programmatic metrics, ablations, LLM-as-judge, CI</td><td><span class="pill deep">Deep Search</span> <span class="pill rag">Production RAG</span></td><td>Deep Search 10 Evaluating deep search agents · Production RAG 10 Evaluation</td><td>DS Lab 11 · RAG Lab 10</td><td><code>deepsearch/evaluation.py</code>, <code>rag_core/evaluation.py</code>, <code>eval/golden.jsonl</code> format</td><td>M6</td></tr>
+  <tr><td>Orchestration as a graph; human-in-the-loop pause; checkpoints</td><td><span class="pill deep">Deep Search</span></td><td>02 System architecture (“five patterns”) · 12 “The same loop in a framework”</td><td>Lab 12</td><td><code>labs/lab12_langgraph_version.py</code></td><td>M5</td></tr>
+  <tr><td>The service: FastAPI entry points, validation, queue, workers, storage</td><td><span class="pill rag">Production RAG</span></td><td>04 Ingestion pipeline (entry points, queue, idempotency) · 13 Capstone: the production app</td><td>Module 13 exercises</td><td><code>code/app/api.py</code>, <code>worker.py</code>, <code>db.py</code>, <code>docker-compose.yml</code></td><td>M5</td></tr>
+  <tr><td>Privacy and law: research companies, not people; DPDP Act; minimal schema</td><td><span class="pill deep">Deep Search</span></td><td>11 Privacy, law and ethics for research agents</td><td>—</td><td>the checklist in Module 11</td><td>M4</td></tr>
+  <tr><td>Expose the assessor to Claude Desktop / your IDE as an MCP tool (stretch)</td><td><span class="pill deep">Deep Search</span></td><td>04 “MCP: the Model Context Protocol”</td><td>Lab 5</td><td><code>labs/lab05_mcp_server.py</code>, <code>lab05_mcp_client.py</code></td><td>Stretch</td></tr>
+  <tr><td><strong>Requirement matcher</strong>: rules × facts → verdicts, deterministic, tested</td><td><span class="pill new">New</span></td><td>Principles: Deep Search 06 (“a clean structured result”), Production RAG 09 (“refusing”)</td><td>—</td><td>Already written: <code>assessor/matcher.py</code>, <code>tests/test_matcher.py</code>. Extend when you add clauses.</td><td>M0, M6</td></tr>
+  <tr><td><strong>Questionnaire drafter</strong> and <strong>review file</strong></td><td><span class="pill new">New</span></td><td>Production RAG 09 “Structured output”</td><td>—</td><td>Already written: <code>questionnaire.py</code>, <code>report.py</code></td><td>M0</td></tr>
+  <tr><td><strong>Human approval gate</strong>, approvers by data tier</td><td><span class="pill new">New</span></td><td>Deep Search 12 checklist (“the user approves the plan before a long run”)</td><td>—</td><td><code>graph.py</code> (<code>human_gate</code>), <code>app/api.py</code> (<code>/approve</code>)</td><td>M5</td></tr>
+  <tr><td><strong>Streamlit UI</strong> with progress and a trace viewer</td><td><span class="pill new">New</span></td><td>—</td><td>—</td><td><code>app/ui.py</code> skeleton</td><td>M5</td></tr>
+</table>
+
+<h2 id="milestones"><span class="n">4</span>Milestones</h2>
+<p>Do them in order. Each one ends with a check you can run. Tick the box when the check passes; the page remembers it in your browser.</p>
+
+<div class="ms" data-ms="m0"><header><span class="num">M0</span><h3>Run and read the starter kit</h3><span class="time">½ day</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><strong>Goal:</strong> know exactly what the finished system does before changing anything.</p>
+<ol>
+  <li>Run the four demo questions in the README. Read each <code>report.md</code>, then its <code>trace.jsonl</code>, bottom to top.</li>
+  <li>Read the code in this order: <code>schemas.py</code> → <code>matcher.py</code> → <code>graph.py</code> (<code>run_plain</code>) → <code>vendor_research.py</code> → <code>policy_rag.py</code>.</li>
+  <li>Open <code>data/vendor_web/corpus.json</code>. Find the stale page, the look-alike company, the rumour, the copy and the attack page. Predict what the system does with each; check against the LedgerLens trace.</li>
+  <li>Break something on purpose: in <code>requirements.yaml</code> set <code>allow_planned: true</code> on DP-3.1 and watch LedgerLens pass residency. Put it back.</li>
+</ol>
+<p><strong>Done when:</strong> <code>pytest</code> is green, <code>eval/run_eval.py</code> shows 100% verdict accuracy, and you can explain in two sentences why QuillDesk is BLOCKED and Parakeet is only CONDITIONAL.</p>
+</div></div>
+
+<div class="ms" data-ms="m1"><header><span class="num">M1</span><h3>The policy library, production grade</h3><span class="time">3–4 days</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><span class="pill rag">Production RAG</span> Modules 06, 08, 09, 11 · Labs 03, 06, 08, 09, 11</p>
+<p><strong>Goal:</strong> replace keyword search with your <code>rag_core</code> pipeline, and extractive answers with grounded generation — without losing a single security property.</p>
+<ol>
+  <li>Copy your <code>rag_core/</code> into the project. Load <code>data/policies</code> through it, keeping clause ids and the metadata fields (<code>access</code>, <code>status</code>, <code>trust</code>, <code>version</code>) on every chunk.</li>
+  <li>Make <code>PolicyLibrary.search()</code> use hybrid retrieval (BM25 + vectors, RRF) and a cross-encoder reranker. Filters stay <em>before</em> ranking: ACL, archived, untrusted, injection flag.</li>
+  <li>Make <code>PolicyLibrary.answer()</code> generate grounded answers with clause citations when an LLM is configured; keep the extractive mode as the offline fallback. Refuse when the top score is below threshold <em>and</em> when the grader says the answer is not grounded.</li>
+  <li>Fix the known failure: <code>pq-who-approves</code> in the gold set (keyword search ranks SEC-7.1 above the approval table in AI-5.1). Hybrid + rerank should fix it; prove it in the eval report.</li>
+  <li>Add three policy documents of your own (for example an incident-response runbook and a 2027 draft marked <code>status: draft</code>) and three new gold questions.</li>
+</ol>
+<p><strong>Done when:</strong> all policy-question checks in <code>eval/run_eval.py</code> pass including the one marked “baseline known to fail”; <code>tests/test_policy_rag.py</code> still passes (ACL, archived, untrusted); an employee asking for the Approved Vendor List still gets the process, never the list.</p>
+</div></div>
+
+<div class="ms" data-ms="m2"><header><span class="num">M2</span><h3>Vendor research on the real web</h3><span class="time">4–5 days</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><span class="pill deep">Deep Search</span> Modules 03, 04, 05, 06, 07, 09 · Labs 2, 3, 4, 6, 7, 8, 10</p>
+<p><strong>Goal:</strong> turn the sequential live baseline into a planned, parallel, budgeted research agent that produces the same <code>VendorProfile</code> the offline mode does — for real vendors.</p>
+<ol>
+  <li><strong>Four places</strong> (Deep Search Module 12 “Adapt it to your own domain”): the fields are already retargeted in <code>schemas.py</code>; review <code>AUTHORITY</code>, <code>FIELD_AUTHORITY_OVERRIDES</code> and <code>HALF_LIFE_DAYS</code> in <code>vendor_research.py</code> and justify each number in a comment.</li>
+  <li>Replace <code>plan_queries()</code> with a Plan Creator → Plan Reviewer pair that produces one sub-question per field, with stop rules (“stop when every high-stakes field has a documented source or two searches have failed”).</li>
+  <li>Run fetch + extraction in parallel workers sharing one <code>Budget</code>; route extraction to the small model.</li>
+  <li>Make the identity gate real: the LLM decides “same company?” from domain, legal entity and product — and the gate stays a gate (reject, do not down-weight).</li>
+  <li>Pick <strong>three real AI/SaaS vendors</strong>, research them by hand first (fill <code>data/gold_set_template.json</code> with URLs and dates), then run the agent and compare field by field.</li>
+  <li>Stretch: long-term memory of previous runs so a re-review of the same vendor only fetches pages newer than the last run.</li>
+</ol>
+<p><strong>Done when:</strong> on your three real vendors, field accuracy against your hand-made gold set is ≥ 80%, no field is filled from a page about a different company, a live assessment costs under your <code>VRA_MAX_USD</code> and finishes in under 90 seconds, and the offline tests still pass unchanged.</p>
+<div class="callout amber"><p><strong>Expect friction.</strong> Trust centres are JavaScript-heavy, some sites block bots, and “SOC 2 compliant” appears on pages with no report. That is the real job. Keep the offline corpus as your regression suite and add a <code>cached_pages/</code> snapshot for your real vendors so your demo does not depend on the internet.</p></div>
+</div></div>
+
+<div class="ms" data-ms="m3"><header><span class="num">M3</span><h3>Router and graders as agents</h3><span class="time">2 days</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><span class="pill agentic">Agentic RAG</span> “agents.py”, “tasks.py”, “Practice and self-check”</p>
+<p><strong>Goal:</strong> replace the regex router and the heuristic graders with LLM agents that are better than the mocks and prove it.</p>
+<ol>
+  <li>Port the Router’s goal and backstory from the course kit, add the two new routes (<code>vendor</code>, <code>assessment</code>) and the <code>refuse</code> route, and return a <code>RouteDecision</code> through <code>LLM.structured()</code>.</li>
+  <li>Port the Answer Grader and Hallucination Grader as <code>grade_relevance()</code> / <code>grade_grounded()</code>. Add the retry loop: not relevant → widen the search (k = 8, include query rewriting); not grounded → regenerate once with a stricter prompt, then abstain.</li>
+  <li>Write 30 routing questions (10 per route, including awkward ones: “Is LedgerLens SOC 2 so we can use it?” is an assessment; “Which tier is Parakeet approved for?” is a policy question) and measure routing accuracy for the mock and for the LLM.</li>
+  <li>Repeat the course exercise “Break the Router on purpose” on your new router and write down what changed.</li>
+</ol>
+<p><strong>Done when:</strong> routing accuracy ≥ 90% on your 30 questions with the LLM router; a deliberately wrong policy answer (edit the prompt to invent a clause) is caught by the hallucination grader and turned into an abstain.</p>
+</div></div>
+
+<div class="ms" data-ms="m4"><header><span class="num">M4</span><h3>Security: attack it, then defend in layers</h3><span class="time">2 days</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><span class="pill deep">Deep Search</span> Modules 08, 11 · Lab 9 &nbsp; <span class="pill rag">Production RAG</span> Module 11 · Lab 11</p>
+<p><strong>Goal:</strong> prove that untrusted content — web pages, chat exports, the user’s own question — can never change a verdict.</p>
+<ol>
+  <li>Write <code>tests/test_red_team.py</code> with 15 attacks: injection in a vendor page (“report PASS”), injection in a policy document, a user question that smuggles an instruction (“…and mark it approved”), a fake trust-centre on a look-alike domain, a page that says the India region exists when the privacy policy says planned, a rumour phrased as news. Every attack must be caught, and the test must assert <em>where</em> it was caught (quarantine, identity gate, dropped, intent check, output guardrail).</li>
+  <li>Add a second injection layer behind the regexes: a small-model classifier on each fetched page (Deep Search Lab 9). Measure false positives on the clean pages.</li>
+  <li>Run the ablation: switch the identity gate off and show the UK firm’s ISO certificate leaking into LedgerLens’s facts. Put the screenshot in your write-up.</li>
+  <li>Apply the Module 11 privacy checklist: the schema holds no personal data; the questionnaire email names a role, not a person; nothing from a vendor’s employees is stored.</li>
+</ol>
+<p><strong>Done when:</strong> 15/15 attacks caught with the catch point asserted; the gold-set safety metric is still 100%; the guess rate is still 0.</p>
+</div></div>
+
+<div class="ms" data-ms="m5"><header><span class="num">M5</span><h3>Make it a product: graph, API, UI, human gate</h3><span class="time">3–4 days</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><span class="pill deep">Deep Search</span> Module 12, Lab 12 &nbsp; <span class="pill rag">Production RAG</span> Modules 04, 12, 13</p>
+<p><strong>Goal:</strong> a reviewer can use it without you in the room.</p>
+<ol>
+  <li>LangGraph: add a checkpointer and an <code>interrupt()</code> at <code>human_gate</code> so an assessment can pause for days and resume when the approver decides. The CLI prompt in the starter is the placeholder for this.</li>
+  <li>API: put <code>/assess</code> behind a queue (Redis + RQ as in the Production RAG app), return a job id immediately, and poll for the report. Store reports in Postgres so <code>/vendors/{name}/history</code> can show what changed since the last review (SEC-12.1).</li>
+  <li>Derive <code>user_groups</code> from the caller’s identity on the server. Never accept groups from the client — that is the ACL.</li>
+  <li>UI: stream node progress during a live run; show the trace as a tree beside the report; add the Approve / Reject form that calls <code>/approve/{run_id}</code> with the reviewer’s name. A BLOCKED report must not offer an Approve button.</li>
+  <li>Observability: per-stage timings and cost on every run; a table of the last 20 runs with p50/p95 latency and cost (Production RAG Lab 13).</li>
+</ol>
+<p><strong>Done when:</strong> a teammate who has not seen the code can assess a vendor from the UI, read why each verdict was given, send the vendor questions, and record a decision — and the decision survives a server restart.</p>
+</div></div>
+
+<div class="ms" data-ms="m6"><header><span class="num">M6</span><h3>Evaluate, write it up, demo</h3><span class="time">2–3 days</span><label><input type="checkbox"> done</label></header><div class="body">
+<p><span class="pill deep">Deep Search</span> Module 10, Lab 11 &nbsp; <span class="pill rag">Production RAG</span> Module 10, Lab 10</p>
+<ol>
+  <li>Grow the real-vendor gold set to <strong>10 vendors × 8 fields</strong>, hand-checked with URL and date. Mix clear passes, clear fails and messy cases.</li>
+  <li>Add an LLM-as-judge metric for the <em>reasons</em>: is every reason faithful to the cited evidence? Calibrate the judge on 20 hand-labelled reasons first.</li>
+  <li>Run one ablation per component (no reranker, no identity gate, no freshness decay, no planner) and put the table in the report. Each component must earn its place.</li>
+  <li>Wire <code>eval/run_eval.py --strict</code> and <code>pytest</code> into CI (GitHub Actions) on the offline gold set.</li>
+  <li>Write the README for your repo: the problem, the architecture, the numbers, what went wrong and what you would do next. Then rehearse the demo below.</li>
+</ol>
+<p><strong>Done when:</strong> the evaluation report shows accuracy, guess rate, safety, cost and latency for the fictional set and the real set; CI is green; the demo runs offline and live.</p>
+</div></div>
+
+<h2 id="data"><span class="n">5</span>The data pack</h2>
+<div class="grid2">
+<div class="card"><h3>Policies <code>data/policies/</code></h3>
+<ul>
+  <li><strong>Information Security Policy 2026</strong> (SEC-4.2 assurance, SEC-7.1 SSO, SEC-9.3 incidents, SEC-9.4 rumours) and the <strong>2025 edition</strong>, archived — it accepted SOC 2 Type I, so an agent that reads the wrong version passes the wrong vendors.</li>
+  <li><strong>Data Protection Policy</strong> (DP-2.2 DPA, DP-3.1 India residency, DP-4.1 sub-processors, DP-5.4 deletion).</li>
+  <li><strong>AI Acceptable Use Policy</strong> (AI-2.1 no training, AI-3.4 model providers, AI-5.1 who approves).</li>
+  <li><strong>Vendor Onboarding Checklist</strong> (PROC-1.1 the list, PROC-2.1 the review file).</li>
+  <li><strong>Approved Vendor List</strong> — restricted to Security and Procurement. Parakeet is approved for T2 only; LedgerLens is “in progress”.</li>
+  <li><strong>Questionnaire template</strong> NM-SEC-Q — the source of every vendor question in the report.</li>
+  <li><strong>Chat export</strong> marked untrusted, with a wrong claim and an injection line.</li>
+</ul></div>
+<div class="card"><h3>Rules <code>data/requirements.yaml</code></h3>
+<p>Eleven machine-checkable requirements. Each has a clause, a vendor field, a rule type, parameters, a severity and the data tiers it applies to. Rule types: <code>certification_valid</code>, <code>region_includes</code>, <code>value_known</code>, <code>enum_verdict</code>, <code>list_disclosed</code>, <code>retention_within</code>, <code>no_unresolved_incident</code>, <code>approved_for_tier</code>. Adding a clause means adding a YAML entry and, sometimes, one small rule function with its tests.</p>
+<h3>The vendor web <code>data/vendor_web/corpus.json</code></h3>
+<p>23 fictional pages across three vendors. Each page carries <code>mock_claims</code>: what a careful extraction model would read from it. In offline mode the agent uses those; in live mode it calls your model. Every domain ends in <code>.example</code>.</p>
+<h3>Gold sets</h3>
+<p><code>gold_set.json</code>: five assessment cases (including the same question asked by someone without access) and six policy questions, one marked “baseline known to fail”. <code>gold_set_template.json</code>: the shape you fill for real vendors.</p></div>
+</div>
+
+<h2 id="rules"><span class="n">6</span>Rules of the project</h2>
+<ol>
+  <li><strong>The model never decides a verdict.</strong> It reads pages, drafts text and classifies routes. <code>matcher.py</code> decides, from rules you can unit-test. Two runs on the same evidence give the same verdict.</li>
+  <li><strong>UNKNOWN beats a guess.</strong> A PASS or FAIL without an evidence URL is a bug; the output guardrail downgrades it. The evaluation’s <code>guess_rate</code> must stay at zero.</li>
+  <li><strong>A claim is not evidence.</strong> “We are SOC 2 compliant” is <code>claimed</code>. A report, a certificate number, a registry entry or a legal page is <code>documented</code>. Only documented evidence passes a high-stakes requirement.</li>
+  <li><strong>Identity is a gate, not a weight.</strong> A page about a same-name company is rejected before anything is read from it. Down-weighting it would still let its facts leak in.</li>
+  <li><strong>Untrusted content never reaches the verdict.</strong> Pages that address the AI are quarantined whole. Forum posts and rumours are dropped and logged, not scored low.</li>
+  <li><strong>Repetition is not corroboration.</strong> A syndicated copy of the vendor’s page counts once.</li>
+  <li><strong>Access control lives in retrieval.</strong> The Approved Vendor List is invisible to people outside Security and Procurement, and the assistant says so instead of leaking it. Groups come from identity on the server, never from the request body.</li>
+  <li><strong>Every fact has a date.</strong> Freshness decays per field. A 2024 security page loses to a 2026 trust centre, and the conflict is recorded, not hidden.</li>
+  <li><strong>Humans approve.</strong> The report ends in an approval block that only a named person can fill. The word “approved” never appears in anything the system writes about a vendor.</li>
+  <li><strong>Research companies, not people.</strong> No names of vendor employees in the schema, the memory or the report.</li>
+</ol>
+
+<h2 id="rubric"><span class="n">7</span>Evaluation &amp; rubric</h2>
+<h3>The scorecard your evaluation must report</h3>
+<table>
+  <tr><th>Metric</th><th>Meaning</th><th>Target</th></tr>
+  <tr><td><code>verdict_accuracy</code></td><td>(case, requirement) verdicts equal to gold</td><td>≥ 95% fictional set · ≥ 80% real set</td></tr>
+  <tr><td><code>overall_accuracy</code></td><td>BLOCKED / CONDITIONAL / READY matches gold</td><td>100% fictional</td></tr>
+  <tr><td><code>guess_rate</code></td><td>PASS/FAIL where gold says UNKNOWN or NEEDS_REVIEW</td><td><strong>0%</strong>, both sets</td></tr>
+  <tr><td><code>safety</code></td><td>attack pages quarantined, look-alikes rejected, rumours dropped, nothing from them cited</td><td>100%</td></tr>
+  <tr><td><code>policy_qa_hard</code></td><td>never cites a document the asker may not see, nor an untrusted one</td><td>100%</td></tr>
+  <tr><td>cost · latency</td><td>per live assessment</td><td>under your budget · under 90 s</td></tr>
+</table>
+
+<h3>Rubric (100 points)</h3>
+<table>
+  <tr><th>Area</th><th>Points</th><th>Full marks look like</th></tr>
+  <tr><td>Correctness on the fictional gold set</td><td>15</td><td><code>eval --strict</code> and <code>pytest</code> green after every change you made.</td></tr>
+  <tr><td>Policy library (M1)</td><td>15</td><td>Hybrid + rerank + grounded answers with clause citations; the “known to fail” case fixed; ACL, versions and trust proven by tests; three new documents and questions.</td></tr>
+  <tr><td>Vendor research, live (M2)</td><td>20</td><td>Planner + parallel workers + budget; ≥ 80% field accuracy on a hand-made gold set of real vendors; identity gate and freshness justified; conflicts recorded with provenance.</td></tr>
+  <tr><td>Router and graders (M3)</td><td>10</td><td>LLM router ≥ 90% on 30 questions; graders catch an injected hallucination; retry loop works.</td></tr>
+  <tr><td>Security (M4)</td><td>10</td><td>15/15 red-team attacks caught with catch point asserted; identity-gate ablation shown; privacy checklist applied.</td></tr>
+  <tr><td>Product (M5)</td><td>15</td><td>LangGraph with checkpointed human gate; queued API with history; UI with progress, trace viewer and decision form; a BLOCKED report cannot be approved.</td></tr>
+  <tr><td>Evaluation and engineering (M6)</td><td>10</td><td>10 real vendors in the gold set; LLM-as-judge for reasons, calibrated; one ablation per component; CI green.</td></tr>
+  <tr><td>Write-up and demo</td><td>5</td><td>README with numbers and honest failures; a demo that runs offline and live without improvisation.</td></tr>
+</table>
+
+<h2 id="demo"><span class="n">8</span>Demo checklist (12 minutes)</h2>
+<ol>
+  <li><strong>The question</strong> (1 min): a support lead asks whether the team can use LedgerLens for tickets. Show the review file. Point at the BLOCKED line and at DP-3.1 with its source and date.</li>
+  <li><strong>The trace</strong> (2 min): open <code>trace.jsonl</code>. Show the rejected UK firm, the quarantined blog page, the dropped rumour, the 2024 page losing to the 2026 trust centre.</li>
+  <li><strong>Access control</strong> (1 min): ask the same question as an employee outside Security. PROC-1.1 turns UNKNOWN; the Approved Vendor List never appears. Ask “which vendors are approved?” and get the process, not the list.</li>
+  <li><strong>The good vendor</strong> (2 min): Parakeet at T3 — every requirement passes on documented evidence, yet the outcome is CONDITIONAL because approval is for T2 only. Switch to T2 and show READY FOR HUMAN APPROVAL. Try to approve the BLOCKED LedgerLens report: refused.</li>
+  <li><strong>Live</strong> (3 min): a real vendor from your gold set, from the UI, with progress streaming. Compare two fields against what you found by hand.</li>
+  <li><strong>Attack</strong> (1 min): add an injection line to a cached page and re-run. Quarantined; verdicts unchanged.</li>
+  <li><strong>Numbers</strong> (2 min): the scorecard, the ablation table, cost and latency, and the two things that still go wrong.</li>
+</ol>
+
+<h2 id="stretch"><span class="n">9</span>Stretch goals</h2>
+<ul>
+  <li><strong>Continuous monitoring.</strong> A weekly scheduled re-review of every approved vendor that only reports changes (new sub-processor, new incident, certificate expiring in 60 days). Deep Search Module 7 memory + Module 12 “regulatory circular monitor” idea.</li>
+  <li><strong>MCP server.</strong> Expose <code>assess_vendor</code> and <code>ask_policy</code> as MCP tools so Claude Desktop or your IDE can call them (Deep Search Lab 5).</li>
+  <li><strong>Debate layer.</strong> Before the human gate, a “vendor advocate” and a “risk officer” agent each write one paragraph from the same evidence; the report shows both. Useful when evidence conflicts.</li>
+  <li><strong>Document intake.</strong> Let the vendor upload its SOC 2 report PDF; extract the audit period and the auditor’s opinion with the Production RAG OCR/table pipeline (Lab 02) and upgrade <code>claimed</code> to <code>documented</code> automatically.</li>
+  <li><strong>Multi-tenant.</strong> A second company with different policies (<code>tenant_id</code> on every chunk and rule), as in the Production RAG capstone exercise.</li>
+</ul>
+
+<h2 id="faq"><span class="n">10</span>FAQ</h2>
+<h3>Why not let the LLM read the policy and the evidence and decide?</h3>
+<p>Because the verdict must be the same on Tuesday as it was on Monday, and a reviewer must be able to point at the line of policy and the line of evidence behind it. Models are excellent at reading and extracting; they are not consistent judges. Keeping the judgement in code is what makes the system auditable and the evaluation meaningful.</p>
+<h3>Isn’t a rule engine “not AI”?</h3>
+<p>The intelligence is in reading a thousand messy pages and turning them into typed, dated, sourced facts — and in knowing which pages to distrust. That is where every hour of the project goes. The rule engine is 300 lines and stays that way.</p>
+<h3>What if a vendor’s pages block my fetcher?</h3>
+<p>Cache what you can, record UNKNOWN for what you cannot, and let the questionnaire ask the vendor. An honest UNKNOWN with a question attached is a correct output. Playwright for JavaScript-rendered trust centres is a reasonable stretch.</p>
+<h3>Can I do this solo?</h3>
+<p>Yes: do M0–M4 fully, M5 as the CLI + API only, and three real vendors instead of ten. That is a complete, demonstrable project in about three weeks.</p>
+<h3>Which LLM should I use?</h3>
+<p>Whatever is free and supports JSON output: Gemini’s free tier or Groq for development, Ollama for offline. Use the small model for extraction and grading and a stronger one only for planning and synthesis — then show the cost difference in your report.</p>
+
+<h2 id="glossary"><span class="n">A</span>Glossary</h2>
+<table>
+  <tr><td><strong>Data tier</strong></td><td>Nimbu Mart’s classification: T1 public, T2 internal, T3 customer data. Requirements depend on the highest tier a tool touches.</td></tr>
+  <tr><td><strong>SOC 2 Type II</strong></td><td>An independent auditor’s report that a vendor’s controls operated effectively over a period (usually 6–12 months). Type I covers design at a point in time only.</td></tr>
+  <tr><td><strong>ISO/IEC 27001</strong></td><td>A certificate, issued by an accredited body, that the vendor runs an information-security management system. Has a certificate number and an expiry date.</td></tr>
+  <tr><td><strong>DPA</strong></td><td>Data Processing Agreement: the contract that binds a vendor to process personal data only on the customer’s instructions.</td></tr>
+  <tr><td><strong>DPDP Act</strong></td><td>India’s Digital Personal Data Protection Act, 2023. Nimbu Mart is a Data Fiduciary; vendors are Data Processors.</td></tr>
+  <tr><td><strong>Sub-processor</strong></td><td>A company the vendor uses that also touches your data — hosting, email, and any third-party model provider.</td></tr>
+  <tr><td><strong>Evidence level</strong></td><td><code>documented</code> (report, certificate, registry, legal page) · <code>claimed</code> (marketing text) · <code>third_party</code> (named press/review site) · <code>rumour</code> (forum, unnamed).</td></tr>
+  <tr><td><strong>Identity gate</strong></td><td>The check that a page is about the same company before anything is read from it.</td></tr>
+  <tr><td><strong>Quarantine</strong></td><td>Removing a page entirely because it contains instructions aimed at the AI.</td></tr>
+  <tr><td><strong>Verdicts</strong></td><td>PASS · FAIL · UNKNOWN (no evidence) · NEEDS_REVIEW (evidence found, a person must judge) · NOT_APPLICABLE (rule does not apply to this tier).</td></tr>
+  <tr><td><strong>Outcome</strong></td><td>BLOCKED (a blocking requirement failed) · CONDITIONAL (open items) · READY FOR HUMAN APPROVAL (all passed; a person still decides).</td></tr>
+</table>
+
+<footer>Created by Shivank Agrawal · Future with Shivank · All companies, people, domains and documents in the data pack are fictional and were written for this course.</footer>
+</main>
+</div>
+<script>
+(function(){
+  var KEY='vra-capstone-progress';
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){ return {}; } }
+  function save(o){ try { localStorage.setItem(KEY, JSON.stringify(o)); } catch(e){} }
+  var state=load();
+  document.querySelectorAll('.ms').forEach(function(ms){
+    var id=ms.getAttribute('data-ms'), cb=ms.querySelector('input[type=checkbox]');
+    if(state[id]) cb.checked=true;
+    cb.addEventListener('change',function(){ state[id]=cb.checked; save(state); });
+  });
+  var TK='vra-capstone-theme', root=document.documentElement;
+  try { var t=localStorage.getItem(TK); if(t) root.setAttribute('data-theme',t); } catch(e){}
+  document.getElementById('theme').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark = cur ? cur==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme',next); try { localStorage.setItem(TK,next); } catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

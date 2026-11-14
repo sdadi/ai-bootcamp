@@ -1,0 +1,1913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic RAG Guide</title>
+<meta name="author" content="Shivank Agrawal">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F5F4; --panel:#FFFFFF; --ink:#18222D; --ink-2:#4A5866; --rule:#D5DCDA;
+  --lib:#6A3D9A; --lib-soft:#EEE7F6; --web:#16865A; --web-soft:#E2F3EA;
+  --amber:#C98A00; --amber-soft:#FBF1D6; --stop:#B93A2B; --stop-soft:#F8E4E0;
+  --code-bg:#1C2631; --code-ink:#E6EDF3; --code-dim:#8FA1B3;
+  --tok-kw:#C9A7F5; --tok-str:#9DE0B8; --tok-com:#7F93A6; --tok-num:#F5C26B; --tok-fn:#8CC8FF;
+  --focus:#2F6FDB;
+  --serif-ish:"Atkinson Hyperlegible", system-ui, sans-serif;
+  --display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#121A21; --panel:#18232D; --ink:#E7EDF1; --ink-2:#A7B5C2; --rule:#2B3946;
+    --lib:#B48BE8; --lib-soft:#2A2238; --web:#4CC38A; --web-soft:#16302A;
+    --amber:#F0B73A; --amber-soft:#3A2F14; --stop:#F07A68; --stop-soft:#3A1F1C;
+    --code-bg:#0E151C; --focus:#7FB0FF;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121A21; --panel:#18232D; --ink:#E7EDF1; --ink-2:#A7B5C2; --rule:#2B3946;
+  --lib:#B48BE8; --lib-soft:#2A2238; --web:#4CC38A; --web-soft:#16302A;
+  --amber:#F0B73A; --amber-soft:#3A2F14; --stop:#F07A68; --stop-soft:#3A1F1C;
+  --code-bg:#0E151C; --focus:#7FB0FF;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 18px/1.65 var(--serif-ish);-webkit-font-smoothing:antialiased}
+a{color:var(--lib);text-underline-offset:3px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.15;margin:0}
+h2{font-size:clamp(28px,4vw,38px);font-weight:800;letter-spacing:-.01em;margin:0 0 18px}
+h3{font-size:23px;font-weight:700;margin:40px 0 12px}
+h4{font-size:19px;font-weight:700;margin:26px 0 8px}
+p{margin:0 0 16px}
+strong{font-weight:700}
+code{font-family:var(--mono);font-size:.84em;background:var(--lib-soft);color:var(--ink);padding:1px 6px;border-radius:5px}
+.muted{color:var(--ink-2)}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 28px;border-bottom:1px solid var(--rule);background:var(--paper);position:sticky;top:0;z-index:20}
+.brand{font-family:var(--display);font-weight:700;font-size:17px}
+.brand span{color:var(--ink-2);font-weight:500}
+.theme-btn{font:600 14px var(--serif-ish);background:transparent;color:var(--ink);border:1.5px solid var(--rule);border-radius:999px;padding:6px 14px;cursor:pointer}
+.theme-btn:hover{border-color:var(--ink-2)}
+
+/* ---------- hero ---------- */
+.hero{max-width:1180px;margin:0 auto;padding:56px 28px 30px}
+.hero h1{font-size:clamp(40px,7vw,78px);font-weight:800;letter-spacing:-.025em;max-width:13ch}
+.hero .lede{font-size:21px;max-width:60ch;margin:22px 0 8px;color:var(--ink-2)}
+.byline{font-size:16px;color:var(--ink-2);margin-top:10px}
+.byline b{color:var(--ink)}
+.mapbox{margin-top:34px;background:var(--panel);border:1.5px solid var(--rule);border-radius:14px;padding:22px 22px 18px}
+.mapbox svg{width:100%;height:auto;display:block}
+.svgscroll,figure{overflow-x:auto}
+.map-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 14px}
+.map-controls .label{font-weight:700;margin-right:4px}
+.chip{font:400 15px var(--serif-ish);border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--ink-2)}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--paper)}
+.chip.lib-chip::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--lib);margin-right:8px;vertical-align:middle}
+.chip.web-chip::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--web);margin-right:8px;vertical-align:middle}
+.chip.stop-chip::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--stop);margin-right:8px;vertical-align:middle}
+.journey{margin:14px 0 0;padding:0;list-style:none;font-size:16px;min-height:60px}
+.journey li{display:grid;grid-template-columns:170px 1fr;gap:12px;padding:6px 0;border-top:1px dashed var(--rule)}
+.journey li:first-child{border-top:0}
+.journey .who{font-weight:700}
+.journey .what{color:var(--ink-2)}
+.journey .what b{color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:14px;color:var(--ink-2);margin-top:10px}
+.legend i{display:inline-block;width:22px;height:5px;border-radius:3px;vertical-align:middle;margin-right:6px}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:10px 28px 80px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px}
+nav.route{position:sticky;top:78px;align-self:start;max-height:calc(100vh - 100px);overflow:auto;padding:6px 0 20px}
+nav.route .t{font-family:var(--display);font-weight:700;font-size:15px;margin-bottom:10px}
+nav.route ol{list-style:none;margin:0;padding:0;position:relative}
+nav.route ol::before{content:"";position:absolute;left:8px;top:10px;bottom:10px;width:4px;border-radius:2px;background:var(--rule)}
+nav.route li{position:relative;padding:5px 0 5px 30px}
+nav.route li::before{content:"";position:absolute;left:3px;top:12px;width:14px;height:14px;border-radius:50%;background:var(--paper);border:3px solid var(--ink-2)}
+nav.route li.done::before{background:var(--lib);border-color:var(--lib)}
+nav.route li.here::before{background:var(--paper);border-color:var(--lib);box-shadow:0 0 0 4px var(--lib-soft)}
+nav.route a{color:var(--ink);text-decoration:none;font-size:15px;line-height:1.35;display:block}
+nav.route a:hover{text-decoration:underline}
+nav.route li.here a{font-weight:700}
+main{min-width:0}
+main > section{padding-top:28px;margin-bottom:56px;max-width:780px}
+main > section.wide{max-width:none}
+.station-no{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:4px solid var(--lib);font:800 17px var(--display);color:var(--ink);margin-bottom:14px;background:var(--panel)}
+.kicker{font-size:19px;color:var(--ink-2);margin-top:-6px;margin-bottom:22px}
+
+/* ---------- reusable blocks ---------- */
+.analogy{border-left:5px solid var(--amber);background:var(--amber-soft);padding:16px 20px;border-radius:0 10px 10px 0;margin:22px 0}
+.analogy .h{font-family:var(--display);font-weight:700;margin-bottom:4px}
+.note{border-left:5px solid var(--web);background:var(--web-soft);padding:14px 20px;border-radius:0 10px 10px 0;margin:22px 0}
+.warn{border-left:5px solid var(--stop);background:var(--stop-soft);padding:14px 20px;border-radius:0 10px 10px 0;margin:22px 0}
+.note p:last-child,.warn p:last-child,.analogy p:last-child{margin-bottom:0}
+ul.clean,ol.clean{padding-left:22px;margin:0 0 18px}
+ul.clean li,ol.clean li{margin:6px 0}
+table.t{width:100%;border-collapse:collapse;margin:18px 0 26px;font-size:16px;background:var(--panel);border:1.5px solid var(--rule);border-radius:10px;overflow:hidden}
+table.t th,table.t td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t th{font-family:var(--display);font-size:15px;background:var(--paper)}
+table.t tr:last-child td{border-bottom:0}
+.table-scroll{overflow-x:auto}
+figure{margin:24px 0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:15px;color:var(--ink-2);margin-top:8px}
+.panel{background:var(--panel);border:1.5px solid var(--rule);border-radius:12px;padding:20px}
+
+/* ---------- code ---------- */
+.code{position:relative;margin:18px 0 22px;border-radius:12px;background:var(--code-bg);color:var(--code-ink)}
+.code .file{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid #2C3A48;font:600 13px var(--mono);color:var(--code-dim)}
+.code .file .copy{font:600 12px var(--mono);background:#2A3846;color:var(--code-ink);border:0;border-radius:6px;padding:5px 10px;cursor:pointer}
+.code .file .copy:hover{background:#38495A}
+.code pre{margin:0;padding:16px 18px;overflow:auto;font:400 14px/1.6 var(--mono);tab-size:4}
+.code pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.k{color:var(--tok-kw)} .s{color:var(--tok-str)} .c{color:var(--tok-com);font-style:italic} .n{color:var(--tok-num)} .f{color:var(--tok-fn)}
+.shell .p{color:var(--code-dim);user-select:none}
+.explain{margin:-8px 0 26px;padding:0;list-style:none;counter-reset:ex}
+.explain li{position:relative;padding:8px 0 8px 40px;border-top:1px solid var(--rule)}
+.explain li:first-child{border-top:0}
+.explain li::before{counter-increment:ex;content:counter(ex);position:absolute;left:0;top:9px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--paper);font:700 13px/26px var(--display);text-align:center}
+details.more{margin:12px 0 24px;border:1.5px solid var(--rule);border-radius:10px;background:var(--panel)}
+details.more > summary{cursor:pointer;padding:12px 16px;font-weight:700;list-style:none}
+details.more > summary::-webkit-details-marker{display:none}
+details.more > summary::before{content:"+";display:inline-block;width:22px;font-family:var(--mono)}
+details.more[open] > summary::before{content:"−"}
+details.more > .inner{padding:0 16px 8px}
+details.more .code{margin-top:0}
+
+/* ---------- interactive labs ---------- */
+.lab{background:var(--panel);border:1.5px solid var(--rule);border-radius:14px;padding:20px 20px 16px;margin:26px 0}
+.lab .lab-title{font-family:var(--display);font-weight:700;font-size:19px;margin-bottom:4px}
+.lab .lab-sub{color:var(--ink-2);font-size:15px;margin-bottom:14px}
+.chunks{display:grid;gap:8px;font-size:15px;line-height:1.5}
+.chunk-row{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:start;padding:8px 10px;border-radius:8px}
+.chunk-row .cn{font-family:var(--display);font-weight:700;font-size:14px}
+.chunk-row mark{background:transparent;color:inherit;text-decoration:underline wavy var(--stop);text-underline-offset:4px}
+.chunk-key{font-size:14px;color:var(--ink-2);margin:10px 0 0}
+.chunk-key mark{background:transparent;color:inherit;text-decoration:underline wavy var(--stop);text-underline-offset:4px}
+.range-row{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:12px;font-size:15px}
+.range-row input{accent-color:var(--lib);width:180px}
+.stat{font-family:var(--mono);font-size:14px;color:var(--ink-2)}
+.sim-list{list-style:none;padding:0;margin:10px 0 0;font-size:15px}
+.sim-list li{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:4px 0}
+.sim-list .bar{height:8px;border-radius:4px;background:var(--lib);margin-top:9px}
+
+/* ---------- quiz ---------- */
+.q{border:1.5px solid var(--rule);border-radius:12px;padding:16px 18px;margin:16px 0;background:var(--panel)}
+.q .qt{font-weight:700;margin-bottom:10px}
+.q .opts{display:grid;gap:8px}
+.q button.opt{font:400 16px var(--serif-ish);text-align:left;padding:10px 14px;border-radius:8px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.q button.opt:hover{border-color:var(--ink-2)}
+.q button.opt.right{border-color:var(--web);background:var(--web-soft)}
+.q button.opt.wrong{border-color:var(--stop);background:var(--stop-soft)}
+.q .fb{margin-top:10px;font-size:15px;color:var(--ink-2);min-height:1px}
+
+.trace{list-style:none;margin:20px 0 26px;padding:0;position:relative}
+.trace::before{content:"";position:absolute;left:15px;top:8px;bottom:8px;width:4px;border-radius:2px;background:var(--rule)}
+.trace > li{position:relative;padding:0 0 18px 48px}
+.trace > li::before{content:"";position:absolute;left:6px;top:4px;width:22px;height:22px;border-radius:50%;background:var(--panel);border:4px solid var(--lib)}
+.trace > li.web::before{border-color:var(--web)}
+.trace > li.chk::before{border-color:var(--amber)}
+.trace > li.end::before{background:var(--ink);border-color:var(--ink)}
+.trace .who{font-family:var(--display);font-weight:700;font-size:18px}
+.trace .twin{font-size:15px;color:var(--ink-2);margin-left:6px}
+.io{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.io > div{background:var(--panel);border:1.5px solid var(--rule);border-radius:10px;padding:10px 12px;font-size:15px}
+.io b{display:block;font-family:var(--display);font-size:14px;color:var(--ink-2);margin-bottom:2px}
+.io code{white-space:pre-wrap}
+.cases{display:grid;gap:14px;margin:20px 0 26px}
+.case{background:var(--panel);border:1.5px solid var(--rule);border-radius:12px;padding:16px 18px}
+.case h4{margin:0 0 8px}
+.case dl{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:0;font-size:16px}
+.case dt{font-weight:700}
+.case dt.l{color:var(--lib)} .case dt.w{color:var(--web)} .case dt.x{color:var(--stop)}
+.case dd{margin:0}
+@media (max-width:640px){.io{grid-template-columns:1fr}.case dl{grid-template-columns:1fr;gap:2px}.case dd{margin-bottom:8px}}
+footer{border-top:1px solid var(--rule);padding:30px 28px 50px;text-align:center;color:var(--ink-2);font-size:15px}
+footer b{color:var(--ink)}
+
+@media (max-width: 960px){
+  .wrap{grid-template-columns:1fr;gap:0}
+  nav.route{position:static;max-height:none;border-bottom:1px solid var(--rule);margin-bottom:10px}
+  nav.route ol{columns:2;column-gap:24px}
+  nav.route ol::before{display:none}
+  nav.route li{break-inside:avoid}
+}
+@media (max-width: 640px){
+  body{font-size:17px}
+  .topbar{padding:12px 16px}
+  .hero{padding:36px 16px 20px}
+  .wrap{padding:10px 16px 60px}
+  .mapbox{padding:14px 12px}
+  .journey li{grid-template-columns:1fr;gap:0}
+  nav.route ol{columns:1}
+  .code pre{font-size:13px}
+  footer{padding:24px 16px 40px}
+  .mapbox svg{min-width:760px}
+  figure svg{min-width:640px}
+  #embSvg{min-width:520px}
+  #embLab{overflow-x:auto}
+}
+@media print{
+  .topbar,nav.route,.theme-btn,.copy,.map-controls{display:none}
+  .wrap{display:block}
+  details.more{border:0} details.more > .inner{display:block}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">Agentic RAG <span>study guide</span></div>
+  <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch colour theme">Dark mode</button>
+</header>
+
+<div class="hero">
+  <h1>Agentic RAG, one station at a time</h1>
+  <p class="lede">Build an AI team that answers questions from your own PDF, goes to the internet when the PDF has no answer, and checks its own work before it replies. Explained from zero, with everyday analogies, real business use cases, and every line of code walked through.</p>
+  <p class="byline">Created by <b>Shivank Agrawal</b></p>
+
+  <div class="mapbox" id="hero-map">
+    <div class="map-controls" role="group" aria-label="Send a sample question through the system">
+      <span class="label">Send a question:</span>
+      <button class="chip lib-chip" type="button" data-route="lib" aria-pressed="false">What is self-attention?</button>
+      <button class="chip web-chip" type="button" data-route="web" aria-pressed="false">What is the weather in Bengaluru today?</button>
+      <button class="chip stop-chip" type="button" data-route="fail" aria-pressed="false">The PDF answer has a made-up fact</button>
+    </div>
+    <div class="svgscroll"><svg viewBox="0 0 960 335" role="img" aria-labelledby="mapTitle mapDesc">
+      <title id="mapTitle">Agentic RAG route map</title>
+      <desc id="mapDesc">A question enters the Router junction. It goes either along the purple library line to the PDF RAG tool, or along the green web line to the web search tool. Both lines join and pass the Answer Grader and the Hallucination Grader before reaching the Answer Generator and the final answer. If a grader says no, the Answer Generator takes a red fallback line to web search.</desc>
+      <!-- lines -->
+      <path id="pLib" d="M60 165 H190 L250 90 H470 L540 165 H900" fill="none" stroke="var(--lib)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="pWeb" d="M190 165 L250 240 H470 L540 165" fill="none" stroke="var(--web)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="pFail" d="M790 165 V300 H290 V240" fill="none" stroke="var(--stop)" stroke-width="5" stroke-dasharray="10 9" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- hidden motion paths -->
+      <path id="routeLib" d="M60 165 H190 L250 90 H470 L540 165 H900" fill="none" stroke="none"/>
+      <path id="routeWeb" d="M60 165 H190 L250 240 H470 L540 165 H900" fill="none" stroke="none"/>
+      <path id="routeFail" d="M60 165 H190 L250 90 H470 L540 165 H790 V300 H290 V240 H360 H290 V300 H790 V165 H900" fill="none" stroke="none"/>
+      <!-- stations -->
+      <g font-family="Atkinson Hyperlegible, sans-serif" font-size="15" fill="var(--ink)">
+        <circle cx="60" cy="165" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="5"/>
+        <text x="60" y="205" text-anchor="middle" font-weight="700">Question</text>
+
+        <rect x="172" y="147" width="36" height="36" transform="rotate(45 190 165)" fill="var(--panel)" stroke="var(--amber)" stroke-width="6"/>
+        <text x="174" y="118" text-anchor="end" font-weight="700">Router</text>
+        <text x="174" y="136" text-anchor="end" fill="var(--ink-2)" font-size="13">PDF or web?</text>
+
+        <circle cx="360" cy="90" r="13" fill="var(--panel)" stroke="var(--lib)" stroke-width="6"/>
+        <text x="360" y="58" text-anchor="middle" font-weight="700">RAG tool</text>
+        <text x="360" y="124" text-anchor="middle" fill="var(--ink-2)" font-size="13">search our PDF</text>
+
+        <circle cx="360" cy="240" r="13" fill="var(--panel)" stroke="var(--web)" stroke-width="6"/>
+        <text x="360" y="212" text-anchor="middle" font-weight="700">Web search tool</text>
+        <text x="360" y="274" text-anchor="middle" fill="var(--ink-2)" font-size="13">search the internet</text>
+
+        <text x="420" y="168" text-anchor="middle" fill="var(--ink-2)" font-size="13" font-style="italic">Retriever agent</text>
+        <text x="420" y="185" text-anchor="middle" fill="var(--ink-2)" font-size="13" font-style="italic">rides the chosen line</text>
+
+        <circle cx="610" cy="165" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="5"/>
+        <text x="610" y="130" text-anchor="middle" font-weight="700">Answer</text>
+        <text x="610" y="146" text-anchor="middle" font-weight="700">Grader</text>
+        <text x="610" y="200" text-anchor="middle" fill="var(--ink-2)" font-size="13">relevant?</text>
+
+        <circle cx="690" cy="165" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="5"/>
+        <text x="700" y="112" text-anchor="middle" font-weight="700">Hallucination</text>
+        <text x="700" y="128" text-anchor="middle" font-weight="700">Grader</text>
+        <text x="690" y="200" text-anchor="middle" fill="var(--ink-2)" font-size="13">grounded?</text>
+
+        <circle cx="790" cy="165" r="13" fill="var(--panel)" stroke="var(--ink)" stroke-width="5"/>
+        <text x="790" y="130" text-anchor="middle" font-weight="700">Answer</text>
+        <text x="790" y="146" text-anchor="middle" font-weight="700">Generator</text>
+
+        <circle cx="900" cy="165" r="16" fill="var(--ink)"/>
+        <circle cx="900" cy="165" r="6" fill="var(--panel)"/>
+        <text x="900" y="207" text-anchor="middle" font-weight="700">Answer</text>
+
+        <text x="540" y="320" text-anchor="middle" fill="var(--stop)" font-size="13">a grader said "no": the Answer Generator searches the web instead</text>
+      </g>
+      <circle id="train" cx="60" cy="165" r="10" fill="var(--amber)" stroke="var(--panel)" stroke-width="3" opacity="0"/>
+    </svg></div>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:var(--lib)"></i>Library line: our private PDF</span>
+      <span><i style="background:var(--web)"></i>Web line: the internet</span>
+      <span><i style="background:var(--stop)"></i>Fallback when a check fails</span>
+    </div>
+    <ol class="journey" id="journey" aria-live="polite">
+      <li><span class="who">How to use this</span><span class="what">Click a question above and watch it travel. Each stop prints what that agent decided.</span></li>
+    </ol>
+  </div>
+</div>
+
+<div class="wrap">
+<nav class="route" aria-label="Chapters">
+  <div class="t">Your route</div>
+  <ol id="toc">
+    <li><a href="#s1">Why RAG exists</a></li>
+    <li><a href="#s2">Traditional RAG, step by step</a></li>
+    <li><a href="#s3">Where plain RAG struggles</a></li>
+    <li><a href="#s4">Agentic RAG: the big idea</a></li>
+    <li><a href="#trace">Follow one question</a></li>
+    <li><a href="#cases">Real-world use cases</a></li>
+    <li><a href="#s5">The toolbox we use</a></li>
+    <li><a href="#s6">Agent, Task, Tool, Crew</a></li>
+    <li><a href="#s7">Set up the project</a></li>
+    <li><a href="#plain">Plain RAG first</a></li>
+    <li><a href="#s8">config.py and llms.py</a></li>
+    <li><a href="#s9">tools.py</a></li>
+    <li><a href="#s10">agents.py</a></li>
+    <li><a href="#s11">tasks.py</a></li>
+    <li><a href="#s12">main.py</a></li>
+    <li><a href="#s13">Run it and read the output</a></li>
+    <li><a href="#s14">Run DeepSeek on your laptop</a></li>
+    <li><a href="#s15">When things break</a></li>
+    <li><a href="#s16">Questions learners ask</a></li>
+    <li><a href="#s17">Practice and self-check</a></li>
+    <li><a href="#s18">Glossary</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============================================================ 1 -->
+<section id="s1">
+  <div class="station-no">1</div>
+  <h2>Why RAG exists</h2>
+  <p class="kicker">A smart model that has never seen your documents is still guessing about them.</p>
+
+  <p>A Large Language Model (LLM) like DeepSeek learned from a huge amount of public text. So it knows a lot of general things: what finance is, how Python works, what a Transformer is.</p>
+  <p>But it has <strong>never seen your private documents</strong>: your company's internal financial report, your HR policy, your client contracts, your class notes. Those were not in its training data. If you ask about them, it either says "I don't know" or, worse, confidently makes something up.</p>
+
+  <div class="analogy">
+    <div class="h">Think of an open-book exam</div>
+    <p>The student (the LLM) is intelligent and knows the subject in general. But for questions about one specific textbook, they do much better if they can open the book, find the right page, and answer from it. <strong>RAG is how we give the LLM that open book.</strong></p>
+  </div>
+
+  <p><strong>RAG</strong> stands for <strong>Retrieval-Augmented Generation</strong>. Read the three words backwards and you have the whole idea:</p>
+  <ul class="clean">
+    <li><strong>Generation</strong>: the LLM writes an answer…</li>
+    <li><strong>Augmented</strong>: …but we first add extra information to its prompt…</li>
+    <li><strong>Retrieval</strong>: …which we fetched (retrieved) from our own documents.</li>
+  </ul>
+  <p>No retraining, no fine-tuning. We simply hand the model the right pages at the moment it needs them.</p>
+
+  <div class="note"><p><strong>You have already used RAG.</strong> When a bank's chatbot answers "What is the penalty for closing my FD early?" from the bank's own FD rules, or a company's HR bot answers "How many casual leaves do I get?" from the HR policy, that's RAG. The model didn't memorise those rules; it looked them up a second before answering.</p></div>
+
+  <div class="note"><p><strong>Why not just paste the whole document into the prompt?</strong> A long PDF can be hundreds of pages. That is slow, costly, and often more than the model can take in at once. RAG sends only the few most useful pieces.</p></div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="s2">
+  <div class="station-no">2</div>
+  <h2>Traditional RAG, step by step</h2>
+  <p class="kicker">Two phases: prepare the library once, then answer questions from it many times.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 330" role="img" aria-labelledby="ragT ragD">
+      <title id="ragT">Traditional RAG pipeline</title>
+      <desc id="ragD">Phase one, indexing: documents are loaded, split into chunks, turned into vector embeddings and stored in a vector database. Phase two: the user question is embedded, the most similar top-k chunks are retrieved, and they go to the LLM with the question to generate the response.</desc>
+      <g font-family="Atkinson Hyperlegible, sans-serif" font-size="14" fill="var(--ink)">
+        <text x="10" y="24" font-weight="700" font-size="16">Phase 1: Indexing (done once)</text>
+        <g>
+          <rect x="10" y="40" width="130" height="62" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/>
+          <text x="75" y="68" text-anchor="middle" font-weight="700">1. Load</text>
+          <text x="75" y="87" text-anchor="middle" fill="var(--ink-2)">read the PDF</text>
+          <rect x="200" y="40" width="130" height="62" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/>
+          <text x="265" y="68" text-anchor="middle" font-weight="700">2. Split</text>
+          <text x="265" y="87" text-anchor="middle" fill="var(--ink-2)">into chunks</text>
+          <rect x="390" y="40" width="130" height="62" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/>
+          <text x="455" y="68" text-anchor="middle" font-weight="700">3. Embed</text>
+          <text x="455" y="87" text-anchor="middle" fill="var(--ink-2)">text to numbers</text>
+          <rect x="580" y="40" width="160" height="62" rx="8" fill="var(--lib-soft)" stroke="var(--lib)" stroke-width="2"/>
+          <text x="660" y="68" text-anchor="middle" font-weight="700">4. Store</text>
+          <text x="660" y="87" text-anchor="middle" fill="var(--ink-2)">vector database</text>
+          <path d="M140 71 H192 M330 71 H382 M520 71 H572" stroke="var(--ink-2)" stroke-width="2.5" marker-end="url(#arr)"/>
+        </g>
+        <text x="10" y="164" font-weight="700" font-size="16">Phase 2: Retrieval and generation (every question)</text>
+        <g>
+          <rect x="10" y="180" width="130" height="62" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/>
+          <text x="75" y="208" text-anchor="middle" font-weight="700">Question</text>
+          <text x="75" y="227" text-anchor="middle" fill="var(--ink-2)">from the user</text>
+          <rect x="200" y="180" width="130" height="62" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/>
+          <text x="265" y="208" text-anchor="middle" font-weight="700">Embed it</text>
+          <text x="265" y="227" text-anchor="middle" fill="var(--ink-2)">same model</text>
+          <rect x="390" y="180" width="130" height="62" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/>
+          <text x="455" y="208" text-anchor="middle" font-weight="700">Top-k chunks</text>
+          <text x="455" y="227" text-anchor="middle" fill="var(--ink-2)">most similar</text>
+          <rect x="580" y="180" width="160" height="62" rx="8" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="2"/>
+          <text x="660" y="208" text-anchor="middle" font-weight="700">LLM</text>
+          <text x="660" y="227" text-anchor="middle" fill="var(--ink-2)">question + chunks</text>
+          <path d="M140 211 H192 M330 211 H382 M520 211 H572" stroke="var(--ink-2)" stroke-width="2.5" marker-end="url(#arr)"/>
+          <path d="M660 102 V125 H455 V172" fill="none" stroke="var(--lib)" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#arrL)"/>
+          <text x="560" y="140" text-anchor="middle" fill="var(--lib)" font-size="13">search</text>
+          <path d="M660 242 V280" stroke="var(--ink-2)" stroke-width="2.5" marker-end="url(#arr)"/>
+          <rect x="580" y="285" width="160" height="38" rx="8" fill="var(--ink)"/>
+          <text x="660" y="309" text-anchor="middle" fill="var(--paper)" font-weight="700">Answer</text>
+        </g>
+      </g>
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink-2)"/></marker>
+        <marker id="arrL" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--lib)"/></marker>
+      </defs>
+    </svg>
+    <figcaption>The classic RAG pipeline. Our agentic version wraps this whole thing inside one tool.</figcaption>
+  </figure>
+
+  <h3>Step 1: Load</h3>
+  <p>Read the documents. They can be PDFs, Word files, web pages, text files. In this project we use one PDF: the research paper that introduced the Transformer architecture (the "T" in GPT).</p>
+
+  <h3>Step 2: Split into chunks</h3>
+  <div class="analogy">
+    <div class="h">Think of notes before an exam</div>
+    <p>You don't re-read the whole 400-page textbook for one question. You've marked it with sticky notes, one per topic, so you can flip straight to the right page. Chunks are those sticky-noted pages.</p>
+  </div>
+  <p>We cut the long text into small pieces called <strong>chunks</strong>, for example 1,000–2,000 characters each. Small pieces let us later pick only the parts that matter. There are different splitting techniques: by fixed size, by paragraph, by heading, and so on. Often consecutive chunks <strong>overlap</strong> a little so a sentence cut at the edge is not lost.</p>
+
+  <div class="lab" id="chunkLab">
+    <div class="lab-title">Try it: chunking</div>
+    <div class="lab-sub">Move the sliders. Each colour is one chunk. Smaller chunks are more precise but carry less context; bigger chunks carry more context but more noise.</div>
+    <div class="range-row">
+      <label>Chunk size <input type="range" id="csize" min="60" max="320" step="10" value="160"></label>
+      <label>Overlap <input type="range" id="cover" min="0" max="60" step="10" value="20"></label>
+      <span class="stat" id="cstat"></span>
+    </div>
+    <div class="chunks" id="chunkOut"></div>
+    <p class="chunk-key"><mark>Wavy underline</mark> = overlap: text repeated from the end of the previous chunk, so nothing is lost at the cut.</p>
+  </div>
+
+  <h3>Step 3: Embed (turn text into numbers)</h3>
+  <p>Computers can't compare meanings directly, but they are excellent at comparing numbers. An <strong>embedding model</strong> converts each chunk into a list of numbers called a <strong>vector</strong>. The model we use, <code>BAAI/bge-small-en-v1.5</code>, turns every chunk into 384 numbers.</p>
+  <p>The magic: texts with <strong>similar meaning get similar numbers</strong>, even if they use different words. "How do I cancel my order?" and "Steps to stop a purchase" land close together.</p>
+
+  <div class="analogy">
+    <div class="h">Think of a city map</div>
+    <p>Every chunk gets an address (coordinates) on a giant map. Chunks about the same topic live in the same neighbourhood. When a question comes, we find its address and look at the nearest neighbours. Real maps have 2 coordinates; embeddings have hundreds.</p>
+  </div>
+
+  <p>You see this idea every day: a music app puts songs that "feel" alike next to each other, so when you like one romantic Hindi song it suggests ten more like it. It isn't matching song titles; it's matching how close they are in its number-space. Embeddings do the same for text.</p>
+
+  <div class="lab" id="embLab">
+    <div class="lab-title">Try it: semantic search on a meaning map</div>
+    <div class="lab-sub">Each dot is a chunk placed by meaning (squeezed into 2D so we can see it). The gold diamond is your question. Pick one; the 3 nearest chunks are retrieved. Scores here are illustrative.</div>
+    <div class="map-controls" role="group" aria-label="Pick a question">
+      <button class="chip" type="button" data-q="0" aria-pressed="true">How does a word decide what to focus on?</button>
+      <button class="chip" type="button" data-q="1">How does the model know word order?</button>
+      <button class="chip" type="button" data-q="2">How long did training take?</button>
+    </div>
+    <svg id="embSvg" viewBox="0 0 640 330" role="img" aria-label="Two-dimensional meaning map of chunks with the question and its nearest chunks"></svg>
+    <ul class="sim-list" id="simList"></ul>
+  </div>
+
+  <h3>Step 4: Store in a vector database</h3>
+  <p>We save every vector (plus its original text) in a <strong>vector database</strong>. It is built for one job: given a new vector, quickly find the most similar stored vectors. We use <strong>ChromaDB</strong>, which runs on your laptop and saves to disk, so indexing happens only once.</p>
+
+  <h3>Then, for every question: retrieve and generate</h3>
+  <div class="analogy">
+    <div class="h">Top-k is "restaurants near me"</div>
+    <p>A maps app doesn't show you every restaurant in the city. It shows the nearest few. Top-k is the same: "show me the k chunks nearest to my question". k = 4 means the 4 closest.</p>
+  </div>
+  <ol class="clean">
+    <li>Embed the user's question with the <strong>same</strong> embedding model.</li>
+    <li>Ask the vector database for the <strong>top-k</strong> most similar chunks (k = 4 in our code).</li>
+    <li>Put the question and those chunks into a prompt and send it to the LLM.</li>
+    <li>The LLM writes an answer using those chunks.</li>
+  </ol>
+  <div class="warn"><p><strong>Rule you must not break:</strong> the question and the documents must be embedded with the same embedding model. Different models create different "maps", and distances between them mean nothing.</p></div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="s3">
+  <div class="station-no">3</div>
+  <h2>Where plain RAG struggles</h2>
+  <p class="kicker">It follows the same fixed path every time, even when that path is wrong.</p>
+  <ul class="clean">
+    <li><strong>Retrieval can miss.</strong> The top-k chunks may be only loosely related. The LLM then answers from the wrong material.</li>
+    <li><strong>It always searches the documents.</strong> Ask "What's the weather today?" and it still digs through your PDF, finds nothing useful, and answers badly.</li>
+    <li><strong>It can still hallucinate.</strong> RAG reduces made-up answers a lot, but the LLM can still add facts that are not in the chunks.</li>
+    <li><strong>Nobody checks the work.</strong> Whatever comes out goes straight to the user.</li>
+  </ul>
+  <div class="analogy">
+    <div class="h">A bus with one fixed route</div>
+    <p>Plain RAG is a bus that always takes the same road, even when the passenger needs a different destination. Agentic RAG is a metro network with a smart station controller who picks the right line and inspectors who check the train before it reaches the final station.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="s4">
+  <div class="station-no">4</div>
+  <h2>Agentic RAG: the big idea</h2>
+  <p class="kicker">Replace the fixed pipeline with a small team of AI agents that decide, fetch, and double-check.</p>
+
+  <p>An <strong>agent</strong> is an LLM given a role, a goal, and permission to use tools. Instead of one model doing everything blindly, we split the work across five specialists. Each is powered by an LLM, and each does one narrow job well.</p>
+
+  <div class="table-scroll">
+  <table class="t">
+    <thead><tr><th>Agent</th><th>Its one job</th><th>Real-life twin</th><th>Says</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Router</strong></td><td>Reads the question and decides where the answer lives: in our PDF, or on the internet.</td><td>Hospital reception desk that sends you to the right department</td><td><code>vectorstore</code> or <code>websearch</code></td></tr>
+      <tr><td><strong>2. Retriever</strong></td><td>Calls the tool the Router picked and brings back the information.</td><td>Librarian who fetches the right book, or looks it up online</td><td>The retrieved answer + evidence</td></tr>
+      <tr><td><strong>3. Answer Grader</strong></td><td>Checks: does this answer actually address the question? Filters out wrong retrievals.</td><td>Teacher asking "did you answer what was asked?"</td><td><code>yes</code> or <code>no</code></td></tr>
+      <tr><td><strong>4. Hallucination Grader</strong></td><td>Checks: is every claim supported by the source text, or did the model invent something?</td><td>Auditor asking "show me the receipt for every expense"</td><td><code>yes</code> (grounded) or <code>no</code></td></tr>
+      <tr><td><strong>5. Answer Generator</strong></td><td>If both checks pass, polishes the answer. If either fails, searches the web and answers from that.</td><td>News anchor who reads out only the checked story</td><td>The final answer</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Two tools</h3>
+  <ul class="clean">
+    <li><strong>RAG tool</strong>: the whole traditional RAG pipeline from chapter 2, packed into one function the agents can call.</li>
+    <li><strong>Web search tool</strong>: searches the internet and returns the top 3 results.</li>
+  </ul>
+  <p>Because tools are just functions, you can keep adding more later: a SQL database tool, a graph database tool for customer relationships, a calculator, a company API. That is what makes this design powerful and easy to extend.</p>
+
+  <h3>Two LLMs</h3>
+  <p>The system uses two models with different jobs:</p>
+  <ul class="clean">
+    <li><strong>Main LLM (DeepSeek, through OpenRouter)</strong>: the brain of all five agents. It orchestrates the whole workflow.</li>
+    <li><strong>RAG LLM (fast model on Groq)</strong>: sits inside the RAG tool and turns the retrieved chunks into a short answer. Speed matters here, so we use Groq, which is famous for very fast responses.</li>
+  </ul>
+
+  <div class="analogy">
+    <div class="h">A newsroom</div>
+    <p>The editor (main LLM) decides what to cover and approves the final story. A quick junior reporter (RAG LLM) runs to the archive, reads the files, and hands back a short summary. Two fact-checkers (the graders) review it before it goes to print.</p>
+  </div>
+
+  <div class="note"><p><strong>The key shift:</strong> in plain RAG, the path is hard-coded. In agentic RAG, an LLM <em>decides</em> the path at run time, and other LLMs <em>verify</em> the result. You trade some speed and cost for better routing and fewer wrong answers.</p></div>
+</section>
+
+<!-- ============================================================ trace -->
+<section id="trace">
+  <div class="station-no">5</div>
+  <h2>Follow one question, end to end</h2>
+  <p class="kicker">Like a relay race: each runner does one lap and passes the baton.</p>
+  <p>Here is exactly what each agent <strong>receives</strong> and <strong>hands over</strong> for the question <em>"What is self-attention?"</em>. The texts are shortened, but this is the real shape of what you'll see in your terminal.</p>
+
+  <ol class="trace">
+    <li class="chk"><span class="who">Router</span><span class="twin">the reception desk</span>
+      <div class="io"><div><b>Receives</b>The question + a one-line note: "our database holds a paper about Transformers, attention, positional encoding…"</div><div><b>Hands over</b><code>vectorstore</code><br>Self-attention is a Transformer topic, so the PDF should know.</div></div></li>
+    <li><span class="who">Retriever + RAG tool</span><span class="twin">the librarian</span>
+      <div class="io"><div><b>Receives</b>The word <code>vectorstore</code> + the question. Calls <code>rag_tool("What is self-attention?")</code>.</div><div><b>Hands over</b>SOURCE: document. "Self-attention relates different positions of one sentence to build its meaning…" + the 4 chunks it came from.</div></div></li>
+    <li class="chk"><span class="who">Answer Grader</span><span class="twin">the teacher</span>
+      <div class="io"><div><b>Receives</b>The question + the retrieved answer.</div><div><b>Hands over</b><code>yes</code><br>The answer talks about self-attention, which is what was asked.</div></div></li>
+    <li class="chk"><span class="who">Hallucination Grader</span><span class="twin">the auditor</span>
+      <div class="io"><div><b>Receives</b>The answer + the 4 source chunks + the relevance grade.</div><div><b>Hands over</b><code>yes</code><br>Every sentence in the answer can be traced to a chunk.</div></div></li>
+    <li class="end"><span class="who">Answer Generator</span><span class="twin">the news anchor</span>
+      <div class="io"><div><b>Receives</b>The answer + both grades (<code>yes</code>, <code>yes</code>).</div><div><b>Hands over</b>A clean, short final answer for the user. No mention of routing or grading.</div></div></li>
+  </ol>
+
+  <h3>Same team, different question</h3>
+  <p>Ask <em>"Who won yesterday's cricket match?"</em> and the baton takes the other track:</p>
+  <ol class="trace">
+    <li class="chk"><span class="who">Router</span><div class="io"><div><b>Receives</b>The question + the note about the PDF.</div><div><b>Hands over</b><code>websearch</code>. A research paper can't know yesterday's score.</div></div></li>
+    <li class="web"><span class="who">Retriever + web tool</span><div class="io"><div><b>Receives</b><code>websearch</code>. Calls <code>web_search_tool(...)</code>.</div><div><b>Hands over</b>SOURCE: web. Top 3 results with titles, links and text.</div></div></li>
+    <li class="end"><span class="who">Graders, then Answer Generator</span><div class="io"><div><b>Receives</b>The web answer + the snippets.</div><div><b>Hands over</b>Both checks pass → a short answer built from the search results.</div></div></li>
+  </ol>
+
+  <h3>What one question costs</h3>
+  <div class="table-scroll"><table class="t">
+    <thead><tr><th></th><th>Plain RAG</th><th>Agentic RAG (this project)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>LLM calls</strong></td><td>1</td><td>About 7–8</td></tr>
+      <tr><td><strong>Time</strong></td><td>A few seconds</td><td>Usually 15 seconds to a few minutes, depending on the model and provider</td></tr>
+      <tr><td><strong>Money</strong> (DeepSeek V4 Flash, at the time of writing)</td><td>Practically zero</td><td>Well under one rupee per question</td></tr>
+      <tr><td><strong>Can answer live questions?</strong></td><td>No</td><td>Yes, through web search</td></tr>
+      <tr><td><strong>Checks its own answer?</strong></td><td>No</td><td>Yes, twice</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================================================ use cases -->
+<section id="cases">
+  <div class="station-no">6</div>
+  <h2>Real-world use cases</h2>
+  <p class="kicker">Same pattern everywhere: private documents for the library line, live data for the web line, checks because mistakes are costly.</p>
+
+  <div class="cases">
+    <div class="case"><h4>Bank customer support</h4><dl>
+      <dt class="l">Library line</dt><dd>Loan, FD and credit card policy PDFs, fee schedules.</dd>
+      <dt class="w">Live line</dt><dd>Today's repo rate news, current offers (web or the bank's own API as a tool).</dd>
+      <dt class="x">Why the checks</dt><dd>Telling a customer the wrong foreclosure charge leads to complaints and penalties.</dd>
+      <dt>Example question</dt><dd>"If I close my 2-year FD after 8 months, what penalty do I pay?"</dd></dl></div>
+    <div class="case"><h4>Hospital help desk</h4><dl>
+      <dt class="l">Library line</dt><dd>Visiting rules, admission checklist, insurance and cashless process documents.</dd>
+      <dt class="w">Live line</dt><dd>Doctor availability from the hospital's appointment system (a tool).</dd>
+      <dt class="x">Why the checks</dt><dd>A made-up instruction about fasting before a test can hurt a patient.</dd>
+      <dt>Example question</dt><dd>"What documents do I need for cashless admission?"</dd></dl></div>
+    <div class="case"><h4>HR assistant inside a company</h4><dl>
+      <dt class="l">Library line</dt><dd>Leave policy, travel policy, reimbursement rules.</dd>
+      <dt class="w">Live line</dt><dd>This year's public holiday list for your state.</dd>
+      <dt class="x">Why the checks</dt><dd>Wrong leave rules create payroll and trust problems.</dd>
+      <dt>Example question</dt><dd>"Can I carry forward unused casual leave to next year?"</dd></dl></div>
+    <div class="case"><h4>Food delivery or e-commerce support</h4><dl>
+      <dt class="l">Library line</dt><dd>Refund and cancellation policy, delivery partner guidelines.</dd>
+      <dt class="w">Live line</dt><dd>Order status from the order system (a tool that calls an internal API).</dd>
+      <dt class="x">Why the checks</dt><dd>Promising a refund the policy doesn't allow costs real money.</dd>
+      <dt>Example question</dt><dd>"My order is 40 minutes late, can I cancel for a full refund?"</dd></dl></div>
+    <div class="case"><h4>College study assistant</h4><dl>
+      <dt class="l">Library line</dt><dd>Lecture notes, syllabus, previous year papers.</dd>
+      <dt class="w">Live line</dt><dd>The latest version of a library or tool mentioned in class.</dd>
+      <dt class="x">Why the checks</dt><dd>A confident wrong answer the night before an exam is the worst kind.</dd>
+      <dt>Example question</dt><dd>"Explain unit 3's normalisation forms with an example from the notes."</dd></dl></div>
+    <div class="case"><h4>Legal and contracts team</h4><dl>
+      <dt class="l">Library line</dt><dd>Signed contracts, internal compliance guidelines.</dd>
+      <dt class="w">Live line</dt><dd>Recent changes in a law or regulation.</dd>
+      <dt class="x">Why the checks</dt><dd>Every claim must point to a clause. The hallucination grader acts like a junior lawyer checking citations.</dd>
+      <dt>Example question</dt><dd>"What is our notice period for ending the vendor contract with this supplier?"</dd></dl></div>
+  </div>
+
+  <h3>Plain RAG or agentic RAG? How to choose</h3>
+  <div class="table-scroll"><table class="t">
+    <thead><tr><th>Choose plain RAG when…</th><th>Choose agentic RAG when…</th></tr></thead>
+    <tbody>
+      <tr><td>All answers live in your documents.</td><td>Some questions need live data, an API, or the web.</td></tr>
+      <tr><td>You need an answer in 1–2 seconds.</td><td>A few extra seconds are fine in exchange for accuracy.</td></tr>
+      <tr><td>Mistakes are cheap (a casual FAQ bot).</td><td>Mistakes are costly (money, health, legal).</td></tr>
+      <tr><td>Budget per question must be near zero.</td><td>You can afford several LLM calls per question.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><p><strong>Start simple.</strong> Many real teams build plain RAG first, measure where it fails, and only then add a router or graders for those failures. This project shows the full version so you understand every piece.</p></div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="s5">
+  <div class="station-no">7</div>
+  <h2>The toolbox we use</h2>
+  <p class="kicker">Every name you will see in the code, in one line each.</p>
+  <div class="table-scroll">
+  <table class="t">
+    <thead><tr><th>Name</th><th>What it is</th><th>Our use</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CrewAI</strong></td><td>A Python framework for building teams of AI agents ("crews").</td><td>Agents, tasks, tools, running the team</td></tr>
+      <tr><td><strong>DeepSeek</strong></td><td>A family of open LLMs from a Chinese AI lab. Strong at reasoning and agent work, and cheap to use. We use DeepSeek V4 Flash in the cloud and DeepSeek-R1 on your laptop.</td><td>The main brain of every agent</td></tr>
+      <tr><td><strong>OpenRouter</strong></td><td>One API key that gives access to hundreds of models from many providers. Like a mobile recharge that works for every network.</td><td>Calling DeepSeek in the cloud</td></tr>
+      <tr><td><strong>Groq</strong></td><td>A cloud provider running models on its own LPU chips, built for very fast inference.</td><td>The fast LLM inside the RAG tool</td></tr>
+      <tr><td><strong>Ollama</strong></td><td>A free app to download and run LLMs on your own laptop.</td><td>Optional: DeepSeek fully local</td></tr>
+      <tr><td><strong>Tavily</strong></td><td>A search API made for AI agents. Returns clean text, not messy web pages.</td><td>The web search tool</td></tr>
+      <tr><td><strong>Hugging Face</strong></td><td>The biggest library of open AI models.</td><td>Downloading the embedding model</td></tr>
+      <tr><td><strong>ChromaDB</strong></td><td>A lightweight vector database that runs on your machine.</td><td>Storing the PDF's vectors</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="warn"><p><strong>Model names change. Settings beat hard-coding.</strong> Providers add and retire models often. For example, Groq stopped serving its DeepSeek models in October 2025, which is why our RAG tool uses a fast Groq-hosted model by default. And at the time of writing, OpenRouter lists no free DeepSeek model, so the default is a cheap paid one. That's why every model name in this project lives in one settings file (<code>.env</code>), so you can swap a model without touching the code.</p></div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="s6">
+  <div class="station-no">8</div>
+  <h2>Agent, Task, Tool, Crew</h2>
+  <p class="kicker">Four words. Learn them once and every CrewAI project becomes readable.</p>
+
+  <div class="analogy">
+    <div class="h">Think of a small office</div>
+    <p><strong>Agent</strong> = an employee (who). <strong>Task</strong> = an item on their to-do list (what). <strong>Tool</strong> = equipment they are allowed to use, like a phone or a library card (with what). <strong>Crew</strong> = the whole team plus the order in which they work (how it runs).</p>
+  </div>
+
+  <h3>An agent has three key settings</h3>
+  <ul class="clean">
+    <li><strong>role</strong>: the job title. "Router".</li>
+    <li><strong>goal</strong>: what success means. "Route user questions to the vectorstore or web search."</li>
+    <li><strong>backstory</strong>: who this agent is and how it thinks. "You are an expert at deciding…". You talk to the agent as if it were a person with expertise.</li>
+  </ul>
+  <p>Plus <code>llm</code> (its brain), <code>allow_delegation</code> (may it hand work to another agent? we say no), and <code>verbose</code> (print its thinking so we can learn from it).</p>
+
+  <h3>A task has four key settings</h3>
+  <ul class="clean">
+    <li><strong>description</strong>: the instructions, with a <code>{question}</code> placeholder.</li>
+    <li><strong>expected_output</strong>: the exact shape of the result ("one word: yes or no").</li>
+    <li><strong>agent</strong>: who does it.</li>
+    <li><strong>context</strong>: which earlier tasks' outputs it may read. This is how information flows down the line.</li>
+  </ul>
+
+  <h3>Prompt engineering is the real work</h3>
+  <p>The backstories and descriptions are prompts. Getting them right takes several rounds of trial and error. Three fixes that came from real testing of this exact project:</p>
+  <ol class="clean">
+    <li>The Router kept matching keywords instead of understanding the question. Adding <em>"make routing decisions based on the semantic meaning of the question, not just keyword matching"</em> fixed it.</li>
+    <li>Graders wrote long explanations, which confused the next agent. Adding <em>"exactly one word: yes or no, no explanation"</em> fixed it.</li>
+    <li>The final answer explained how it was found instead of just answering. Adding <em>"the final answer contains only the answer, not how you found it"</em> fixed it.</li>
+  </ol>
+  <div class="note"><p><strong>Lesson:</strong> when an agent misbehaves, don't rewrite code first. Read its output in the terminal, then tighten its backstory, description or expected output.</p></div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="s7">
+  <div class="station-no">9</div>
+  <h2>Set up the project</h2>
+  <p class="kicker">About 10 minutes, most of it waiting for installs.</p>
+
+  <h3>Folder structure</h3>
+  <div class="code"><div class="file"><span>code/</span></div><pre><code>code/
+├── step0_simulate_flow.py   <span class="c"># run first: no keys, no installs</span>
+├── step1_plain_rag.py       <span class="c"># run second: classic RAG, no agents</span>
+├── config.py                <span class="c"># all settings in one place</span>
+├── llms.py                  <span class="c"># the two LLMs</span>
+├── tools.py                 <span class="c"># rag_tool + web_search_tool</span>
+├── agents.py                <span class="c"># the 5 agents</span>
+├── tasks.py                 <span class="c"># the 5 tasks</span>
+├── main.py                  <span class="c"># wires everything and runs it</span>
+├── requirements.txt         <span class="c"># libraries to install</span>
+├── .env.example             <span class="c"># template for your secret keys</span>
+├── README.md
+├── data/                    <span class="c"># the PDF is downloaded here</span>
+└── answers_log.md           <span class="c"># created on first run: every Q&amp;A is saved</span></code></pre></div>
+
+  <h3>Step 0: feel the flow first (no keys needed)</h3>
+  <p>Before any AI, run the simulator. It does the same five steps with simple Python rules, so you can see the flow clearly, including the hallucination grader catching a made-up fact.</p>
+  <div class="code shell"><div class="file"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><code><span class="p">$ </span>cd code
+<span class="p">$ </span>python step0_simulate_flow.py</code></pre></div>
+  <details class="more"><summary>See what step0_simulate_flow.py prints</summary><div class="inner">
+  <div class="code"><div class="file"><span>output (shortened)</span></div><pre><code>QUESTION: How does self-attention work in a Transformer?
+  1. Router            -&gt; vectorstore
+  2. Retriever         -&gt; source=document
+        chunk (similarity 0.34): Self-attention lets each word in a sentence look at...
+  3. Answer Grader     -&gt; relevant? yes
+  4. Hallucination Grd -&gt; grounded? yes
+  5. Answer Generator  -&gt; Self-attention lets each word in a sentence look at every other word...
+
+QUESTION: What is multi-head attention?
+  1. Router            -&gt; vectorstore
+     (demo: the retriever added a made-up fact!)
+  2. Retriever         -&gt; source=document
+  3. Answer Grader     -&gt; relevant? yes
+  4. Hallucination Grd -&gt; grounded? no
+  5. Answer Generator  -&gt; Web result: Multi-head attention splits attention into several 'heads'...</code></pre></div>
+  </div></details>
+
+  <h3>Step 1: a virtual environment</h3>
+  <p>A virtual environment is a private box of Python libraries just for this project, so it never clashes with other projects.</p>
+  <div class="code shell"><div class="file"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><code><span class="p">$ </span>python -m venv venv
+
+<span class="c"># activate it (pick your system)</span>
+<span class="p">$ </span>venv\Scripts\Activate.ps1          <span class="c"># Windows PowerShell</span>
+<span class="p">$ </span>source venv/Scripts/activate      <span class="c"># Windows Git Bash</span>
+<span class="p">$ </span>source venv/bin/activate          <span class="c"># Mac / Linux</span></code></pre></div>
+  <p>You'll see <code>(venv)</code> at the start of the terminal line once it's active. Use Python 3.10 to 3.13.</p>
+
+  <h3>Step 2: install the libraries</h3>
+  <div class="code"><div class="file"><span>requirements.txt</span><button class="copy" type="button">Copy</button></div><pre><code><span class="c"># Agentic RAG project - created by Shivank Agrawal</span>
+<span class="c"># Python 3.10, 3.11, 3.12 or 3.13</span>
+crewai[tools]&gt;=1.15,&lt;2      <span class="c"># agents, tasks, crew + PDFSearchTool + ChromaDB (tested on 1.15)</span>
+sentence-transformers&gt;=3    <span class="c"># runs the Hugging Face embedding model locally (installs PyTorch)</span>
+tavily-python&gt;=0.7          <span class="c"># web search for AI agents</span>
+python-dotenv&gt;=1.0          <span class="c"># reads the secret keys from the .env file</span></code></pre></div>
+  <div class="code shell"><div class="file"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><code><span class="p">$ </span>pip install -r requirements.txt</code></pre></div>
+  <p>CrewAI pulls in many dependencies, and the embedding library installs PyTorch, so the first install can take several minutes and a few hundred MB. Start it, then get your keys while it runs.</p>
+
+  <h3>Step 3: choose how to run the brain</h3>
+  <p>The five agents need one "brain" (LLM). Pick one of three ways with the <code>LLM_MODE</code> setting:</p>
+  <div class="table-scroll">
+  <table class="t">
+    <thead><tr><th><code>LLM_MODE</code></th><th>What runs</th><th>Cost</th><th>Speed</th><th>Best for</th></tr></thead>
+    <tbody>
+      <tr><td><code>openrouter</code> (default)</td><td>DeepSeek V4 Flash in the cloud</td><td>Pay-as-you-go; a small credit lasts a very long time</td><td>Good</td><td>Learning the real DeepSeek setup</td></tr>
+      <tr><td><code>groq</code></td><td>A fast open model on Groq (not DeepSeek)</td><td>Free tier</td><td>Very fast</td><td>Practising with zero payment</td></tr>
+      <tr><td><code>ollama</code></td><td>DeepSeek-R1 8B on your own laptop</td><td>Free</td><td>Slow on normal laptops</td><td>Privacy, offline learning</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Step 4: get your API keys</h3>
+  <div class="table-scroll">
+  <table class="t">
+    <thead><tr><th>Key</th><th>Where</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td><code>OPENROUTER_API_KEY</code></td><td>openrouter.ai → sign in → Keys → Create key. Add a small credit under Credits. Only needed for <code>LLM_MODE=openrouter</code>.</td><td>DeepSeek brain</td></tr>
+      <tr><td><code>GROQ_API_KEY</code></td><td>console.groq.com → API Keys → Create API key. Free tier.</td><td>Fast RAG LLM, and the brain in <code>groq</code> mode</td></tr>
+      <tr><td><code>TAVILY_API_KEY</code></td><td>app.tavily.com → sign in → copy the key on the dashboard. Free tier.</td><td>Web search</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Step 5: put the keys in <code>.env</code></h3>
+  <p>Copy <code>.env.example</code> to a new file named exactly <code>.env</code> and paste your keys after the <code>=</code> signs.</p>
+  <div class="code"><div class="file"><span>.env.example</span><button class="copy" type="button">Copy</button></div><pre><code><span class="c"># ============================================================</span>
+<span class="c"># Agentic RAG project - created by Shivank Agrawal</span>
+<span class="c"># 1) Copy this file and rename the copy to:  .env</span>
+<span class="c"># 2) Paste your own keys after the = sign (no quotes, no spaces)</span>
+<span class="c"># 3) NEVER share or upload your .env file</span>
+<span class="c"># ============================================================</span>
+
+<span class="c"># --- API keys -------------------------------------------------</span>
+OPENROUTER_API_KEY=
+GROQ_API_KEY=
+TAVILY_API_KEY=
+
+<span class="c"># --- Main brain for the 5 agents --------------------------------</span>
+<span class="c"># openrouter = DeepSeek in the cloud (tiny pay-as-you-go cost)</span>
+<span class="c"># groq       = free-tier practice model (not DeepSeek)</span>
+<span class="c"># ollama     = DeepSeek on your laptop (free, slow, ~8 GB RAM)</span>
+LLM_MODE=openrouter
+OPENROUTER_MODEL=deepseek/deepseek-v4-flash
+OLLAMA_MODEL=deepseek-r1:8b
+OLLAMA_BASE_URL=http://localhost:11434
+
+<span class="c"># --- Fast LLM inside the RAG tool -------------------------------</span>
+<span class="c"># groq = fast cloud model   |   same = reuse the main brain</span>
+RAG_LLM_MODE=groq
+GROQ_MODEL=llama-3.3-70b-versatile
+
+<span class="c"># --- Embeddings + document ---------------------------------------</span>
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+PDF_PATH=data/attention_is_all_you_need.pdf
+<span class="c"># PDF_TOPIC=one line describing what is inside YOUR pdf</span>
+
+<span class="c"># --- Limits -------------------------------------------------------</span>
+TOP_K=4
+MAX_RPM=10</code></pre></div>
+  <div class="warn"><p><strong>Never share or upload <code>.env</code>.</strong> Anyone with your keys can spend your credits. If you use Git, add <code>.env</code> to <code>.gitignore</code>.</p></div>
+</section>
+
+<!-- ============================================================ plain -->
+<section id="plain">
+  <div class="station-no">10</div>
+  <h2>Plain RAG first</h2>
+  <p class="kicker">Before building the team, see what one person working alone can and can't do.</p>
+  <p><code>step1_plain_rag.py</code> is the traditional pipeline from chapter 2 in a few lines: search the PDF, make one LLM call, print the answer. No router, no web, no checks.</p>
+  <div class="code"><div class="file"><span>step1_plain_rag.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">plain_rag</span>(question: str) -&gt; str:
+    <span class="c"># 1. INDEXING (only slow the first time; the vectors are saved on disk)</span>
+    library = create_pdf_search_tool(config.PDF_PATH)
+
+    <span class="c"># 2. RETRIEVAL: get the top-k most similar chunks</span>
+    chunks = library.run(query=question)
+    print(<span class="s">&quot;\n----- CHUNKS FOUND (first 600 characters) -----&quot;</span>)
+    print(chunks[:<span class="n">600</span>], <span class="s">&quot;...&quot;</span>)
+
+    <span class="c"># 3. GENERATION: one LLM call with question + chunks</span>
+    llm = get_rag_llm()
+    answer = clean_text(llm.call(RAG_PROMPT.format(context=chunks, question=question)))
+    <span class="k">return</span> answer</code></pre></div>
+  <ol class="explain">
+    <li>It reuses the same library builder as the agentic version, so you're comparing like with like.</li>
+    <li>It prints the chunks it found, so you can see exactly what the LLM was given.</li>
+    <li>One LLM call, then done. Fast and cheap.</li>
+  </ol>
+  <div class="code shell"><div class="file"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><code><span class="p">$ </span>python step1_plain_rag.py "What is multi-head attention?"
+<span class="p">$ </span>python step1_plain_rag.py "What is the weather in Delhi today?"</code></pre></div>
+  <p>The first question gets a good answer. The second can't: the PDF knows nothing about Delhi's weather, so the best plain RAG can do is say <code>NOT_FOUND_IN_DOCUMENT</code>. There is no other place it can look.</p>
+  <div class="analogy">
+    <div class="h">One shopkeeper vs. a well-run store</div>
+    <p>Plain RAG is a single shopkeeper who only checks the shelf behind him. Agentic RAG is a store with a front-desk person who knows whether to check the godown or call the supplier, plus a supervisor who checks the bill before it reaches you.</p>
+  </div>
+  <p>Now run the same two questions through <code>main.py</code> (after the next chapters) and compare the answers, the time taken, and the journey line.</p>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="s8">
+  <div class="station-no">11</div>
+  <h2>config.py and llms.py</h2>
+  <p class="kicker">One place for settings, one place for the two brains.</p>
+
+  <h3>config.py: read settings from <code>.env</code></h3>
+  <div class="code"><div class="file"><span>config.py</span><button class="copy" type="button">Copy</button></div><pre><code>
+<span class="c"># Read the .env file and put every line into &quot;environment variables&quot;.</span>
+load_dotenv()
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 1) API KEYS  (see the study guide for where to get each one)</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+OPENROUTER_API_KEY = os.getenv(<span class="s">&quot;OPENROUTER_API_KEY&quot;</span>, <span class="s">&quot;&quot;</span>)  <span class="c"># DeepSeek in the cloud</span>
+GROQ_API_KEY = os.getenv(<span class="s">&quot;GROQ_API_KEY&quot;</span>, <span class="s">&quot;&quot;</span>)              <span class="c"># very fast cloud models</span>
+TAVILY_API_KEY = os.getenv(<span class="s">&quot;TAVILY_API_KEY&quot;</span>, <span class="s">&quot;&quot;</span>)          <span class="c"># web search</span>
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 2) WHICH &quot;BRAIN&quot; DO THE 5 AGENTS USE?</span>
+<span class="c">#    &quot;openrouter&quot; -&gt; DeepSeek in the cloud (default). Pay-as-you-go, but a</span>
+<span class="c">#                    question costs a tiny fraction of a rupee.</span>
+<span class="c">#    &quot;groq&quot;       -&gt; a fast open model on Groq&#x27;s free tier (not DeepSeek).</span>
+<span class="c">#                    Good for practising without any payment.</span>
+<span class="c">#    &quot;ollama&quot;     -&gt; DeepSeek running on your own laptop. Free and private,</span>
+<span class="c">#                    but slow, and needs about 8 GB of free RAM.</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+LLM_MODE = os.getenv(<span class="s">&quot;LLM_MODE&quot;</span>, <span class="s">&quot;openrouter&quot;</span>).strip().lower()
+
+<span class="c"># DeepSeek model on OpenRouter. It must support &quot;tools&quot; (function calling),</span>
+<span class="c"># because our Retriever agent calls tools. Check openrouter.ai/models.</span>
+OPENROUTER_MODEL = os.getenv(<span class="s">&quot;OPENROUTER_MODEL&quot;</span>, <span class="s">&quot;deepseek/deepseek-v4-flash&quot;</span>)
+
+<span class="c"># DeepSeek on your laptop via Ollama  (run:  ollama pull deepseek-r1:8b)</span>
+OLLAMA_MODEL = os.getenv(<span class="s">&quot;OLLAMA_MODEL&quot;</span>, <span class="s">&quot;deepseek-r1:8b&quot;</span>)
+OLLAMA_BASE_URL = os.getenv(<span class="s">&quot;OLLAMA_BASE_URL&quot;</span>, <span class="s">&quot;http://localhost:11434&quot;</span>)</code></pre></div>
+  <ol class="explain">
+    <li><code>load_dotenv()</code> reads your <code>.env</code> file and makes each line available through <code>os.getenv(...)</code>.</li>
+    <li><code>os.getenv("NAME", "default")</code> means: use the value from <code>.env</code> if present, otherwise use the default. That's why the code still runs if you skip optional settings.</li>
+    <li><code>LLM_MODE</code> is a three-way switch: <code>openrouter</code> (cloud DeepSeek), <code>groq</code> (free practice model) or <code>ollama</code> (DeepSeek on your laptop).</li>
+    <li>The model must support <strong>tools</strong> (also called function calling), because the Retriever agent has to call our tools. Not every model can.</li>
+  </ol>
+  <div class="code"><div class="file"><span>config.py</span><button class="copy" type="button">Copy</button></div><pre><code>PDF_PATH = os.getenv(<span class="s">&quot;PDF_PATH&quot;</span>, <span class="s">&quot;data/attention_is_all_you_need.pdf&quot;</span>)
+PDF_URL = os.getenv(<span class="s">&quot;PDF_URL&quot;</span>, <span class="s">&quot;https://arxiv.org/pdf/1706.03762&quot;</span>)
+
+<span class="c"># One line that tells the Router agent WHAT is inside the PDF.</span>
+<span class="c"># The router never reads the PDF itself - it decides using this description.</span>
+<span class="c"># If you swap in your own PDF, update this line too!</span>
+PDF_TOPIC = os.getenv(
+    <span class="s">&quot;PDF_TOPIC&quot;</span>,
+    <span class="s">&quot;the Transformer neural-network architecture: attention, self-attention, &quot;</span>
+    <span class="s">&quot;multi-head attention, positional encoding, encoder-decoder design and &quot;</span>
+    <span class="s">&quot;how it was trained for machine translation&quot;</span>,
+)</code></pre></div>
+  <ol class="explain">
+    <li><code>PDF_TOPIC</code> is a one-line description of what's inside the PDF. The Router never opens the PDF; it decides from this description and the question. If you use your own PDF, update this line.</li>
+  </ol>
+  <div class="code"><div class="file"><span>config.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 6) SAFETY LIMITS</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+WEB_RESULTS = int(os.getenv(<span class="s">&quot;WEB_RESULTS&quot;</span>, <span class="s">&quot;3&quot;</span>))   <span class="c"># how many web results to fetch</span>
+TOP_K = int(os.getenv(<span class="s">&quot;TOP_K&quot;</span>, <span class="s">&quot;4&quot;</span>))               <span class="c"># how many PDF chunks to retrieve</span>
+MAX_RPM = int(os.getenv(<span class="s">&quot;MAX_RPM&quot;</span>, <span class="s">&quot;10&quot;</span>))          <span class="c"># max LLM calls per minute (free tiers are strict)</span>
+ANSWERS_LOG = os.getenv(<span class="s">&quot;ANSWERS_LOG&quot;</span>, <span class="s">&quot;answers_log.md&quot;</span>)  <span class="c"># every Q&amp;A is saved here</span></code></pre></div>
+  <ol class="explain">
+    <li><code>TOP_K</code>: how many chunks to bring back. <code>MAX_RPM</code>: at most this many LLM calls per minute, so free tiers don't block you. Like a speed governor on a school bus.</li>
+    <li><code>ANSWERS_LOG</code>: every question, answer and journey gets saved to this file, so you can compare runs later.</li>
+  </ol>
+  <details class="more"><summary>See the full config.py</summary><div class="inner"><div class="code"><div class="file"><span>config.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="s">&quot;&quot;&quot;
+config.py  -  The &quot;settings room&quot; of our project
+=================================================
+Created by Shivank Agrawal
+
+Every secret key and every model name lives here, in ONE place.
+The other files simply do:   import config
+
+Why?  Think of the main switchboard in your house. You don&#x27;t rewire every
+room to turn off the lights - you flip one switch. Same here: change a model
+in ONE place, and the whole project follows.
+
+The actual secret values are NOT written in this file.
+They are read from a file called `.env` (copy `.env.example` -&gt; `.env`).
+Never share your `.env` file or push it to GitHub.
+&quot;&quot;&quot;</span>
+
+<span class="k">import</span> os
+
+<span class="k">from</span> dotenv <span class="k">import</span> load_dotenv
+
+<span class="c"># Read the .env file and put every line into &quot;environment variables&quot;.</span>
+load_dotenv()
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 1) API KEYS  (see the study guide for where to get each one)</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+OPENROUTER_API_KEY = os.getenv(<span class="s">&quot;OPENROUTER_API_KEY&quot;</span>, <span class="s">&quot;&quot;</span>)  <span class="c"># DeepSeek in the cloud</span>
+GROQ_API_KEY = os.getenv(<span class="s">&quot;GROQ_API_KEY&quot;</span>, <span class="s">&quot;&quot;</span>)              <span class="c"># very fast cloud models</span>
+TAVILY_API_KEY = os.getenv(<span class="s">&quot;TAVILY_API_KEY&quot;</span>, <span class="s">&quot;&quot;</span>)          <span class="c"># web search</span>
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 2) WHICH &quot;BRAIN&quot; DO THE 5 AGENTS USE?</span>
+<span class="c">#    &quot;openrouter&quot; -&gt; DeepSeek in the cloud (default). Pay-as-you-go, but a</span>
+<span class="c">#                    question costs a tiny fraction of a rupee.</span>
+<span class="c">#    &quot;groq&quot;       -&gt; a fast open model on Groq&#x27;s free tier (not DeepSeek).</span>
+<span class="c">#                    Good for practising without any payment.</span>
+<span class="c">#    &quot;ollama&quot;     -&gt; DeepSeek running on your own laptop. Free and private,</span>
+<span class="c">#                    but slow, and needs about 8 GB of free RAM.</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+LLM_MODE = os.getenv(<span class="s">&quot;LLM_MODE&quot;</span>, <span class="s">&quot;openrouter&quot;</span>).strip().lower()
+
+<span class="c"># DeepSeek model on OpenRouter. It must support &quot;tools&quot; (function calling),</span>
+<span class="c"># because our Retriever agent calls tools. Check openrouter.ai/models.</span>
+OPENROUTER_MODEL = os.getenv(<span class="s">&quot;OPENROUTER_MODEL&quot;</span>, <span class="s">&quot;deepseek/deepseek-v4-flash&quot;</span>)
+
+<span class="c"># DeepSeek on your laptop via Ollama  (run:  ollama pull deepseek-r1:8b)</span>
+OLLAMA_MODEL = os.getenv(<span class="s">&quot;OLLAMA_MODEL&quot;</span>, <span class="s">&quot;deepseek-r1:8b&quot;</span>)
+OLLAMA_BASE_URL = os.getenv(<span class="s">&quot;OLLAMA_BASE_URL&quot;</span>, <span class="s">&quot;http://localhost:11434&quot;</span>)
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 3) THE SECOND, FAST LLM - used only inside the RAG tool to turn the</span>
+<span class="c">#    retrieved PDF chunks into a short answer.</span>
+<span class="c">#    &quot;groq&quot;  -&gt; very fast cloud inference (needs GROQ_API_KEY)</span>
+<span class="c">#    &quot;same&quot;  -&gt; reuse the main brain above (no Groq key needed)</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+RAG_LLM_MODE = os.getenv(<span class="s">&quot;RAG_LLM_MODE&quot;</span>, <span class="s">&quot;groq&quot;</span>).strip().lower()
+
+<span class="c"># One Groq model name, used for the RAG LLM (and for the brain if LLM_MODE=groq)</span>
+GROQ_MODEL = os.getenv(<span class="s">&quot;GROQ_MODEL&quot;</span>, <span class="s">&quot;llama-3.3-70b-versatile&quot;</span>)
+GROQ_BASE_URL = <span class="s">&quot;https://api.groq.com/openai/v1&quot;</span>
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 4) EMBEDDINGS - the model that turns text into numbers (vectors).</span>
+<span class="c">#    Runs locally on your laptop. Downloaded once from Hugging Face.</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+EMBEDDING_MODEL = os.getenv(<span class="s">&quot;EMBEDDING_MODEL&quot;</span>, <span class="s">&quot;BAAI/bge-small-en-v1.5&quot;</span>)
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 5) OUR KNOWLEDGE BASE (the private document)</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+PDF_PATH = os.getenv(<span class="s">&quot;PDF_PATH&quot;</span>, <span class="s">&quot;data/attention_is_all_you_need.pdf&quot;</span>)
+PDF_URL = os.getenv(<span class="s">&quot;PDF_URL&quot;</span>, <span class="s">&quot;https://arxiv.org/pdf/1706.03762&quot;</span>)
+
+<span class="c"># One line that tells the Router agent WHAT is inside the PDF.</span>
+<span class="c"># The router never reads the PDF itself - it decides using this description.</span>
+<span class="c"># If you swap in your own PDF, update this line too!</span>
+PDF_TOPIC = os.getenv(
+    <span class="s">&quot;PDF_TOPIC&quot;</span>,
+    <span class="s">&quot;the Transformer neural-network architecture: attention, self-attention, &quot;</span>
+    <span class="s">&quot;multi-head attention, positional encoding, encoder-decoder design and &quot;</span>
+    <span class="s">&quot;how it was trained for machine translation&quot;</span>,
+)
+
+<span class="c"># ---------------------------------------------------------------------------</span>
+<span class="c"># 6) SAFETY LIMITS</span>
+<span class="c"># ---------------------------------------------------------------------------</span>
+WEB_RESULTS = int(os.getenv(<span class="s">&quot;WEB_RESULTS&quot;</span>, <span class="s">&quot;3&quot;</span>))   <span class="c"># how many web results to fetch</span>
+TOP_K = int(os.getenv(<span class="s">&quot;TOP_K&quot;</span>, <span class="s">&quot;4&quot;</span>))               <span class="c"># how many PDF chunks to retrieve</span>
+MAX_RPM = int(os.getenv(<span class="s">&quot;MAX_RPM&quot;</span>, <span class="s">&quot;10&quot;</span>))          <span class="c"># max LLM calls per minute (free tiers are strict)</span>
+ANSWERS_LOG = os.getenv(<span class="s">&quot;ANSWERS_LOG&quot;</span>, <span class="s">&quot;answers_log.md&quot;</span>)  <span class="c"># every Q&amp;A is saved here</span>
+
+
+<span class="k">def</span> <span class="f">check_keys</span>() -&gt; list[str]:
+    <span class="s">&quot;&quot;&quot;Return a list of friendly warnings for settings or keys that are missing.&quot;&quot;&quot;</span>
+    problems = []
+    <span class="k">if</span> LLM_MODE <span class="k">not</span> <span class="k">in</span> (<span class="s">&quot;openrouter&quot;</span>, <span class="s">&quot;groq&quot;</span>, <span class="s">&quot;ollama&quot;</span>):
+        problems.append(<span class="s">f&quot;</span><span class="s">LLM_MODE=&#x27;</span>{LLM_MODE}<span class="s">&#x27; is not valid. Use openrouter, groq or ollama.</span><span class="s">&quot;</span>)
+    <span class="k">if</span> RAG_LLM_MODE <span class="k">not</span> <span class="k">in</span> (<span class="s">&quot;groq&quot;</span>, <span class="s">&quot;same&quot;</span>):
+        problems.append(<span class="s">f&quot;</span><span class="s">RAG_LLM_MODE=&#x27;</span>{RAG_LLM_MODE}<span class="s">&#x27; is not valid. Use groq or same.</span><span class="s">&quot;</span>)
+    <span class="k">if</span> LLM_MODE == <span class="s">&quot;openrouter&quot;</span> <span class="k">and</span> <span class="k">not</span> OPENROUTER_API_KEY:
+        problems.append(<span class="s">&quot;OPENROUTER_API_KEY is empty (or choose LLM_MODE=groq / ollama).&quot;</span>)
+    <span class="k">if</span> (LLM_MODE == <span class="s">&quot;groq&quot;</span> <span class="k">or</span> RAG_LLM_MODE == <span class="s">&quot;groq&quot;</span>) <span class="k">and</span> <span class="k">not</span> GROQ_API_KEY:
+        problems.append(<span class="s">&quot;GROQ_API_KEY is empty (or set RAG_LLM_MODE=same).&quot;</span>)
+    <span class="k">if</span> <span class="k">not</span> TAVILY_API_KEY:
+        problems.append(<span class="s">&quot;TAVILY_API_KEY is empty - web search will not work.&quot;</span>)
+    <span class="k">return</span> problems</code></pre></div></div></details>
+
+  <h3>llms.py: build the two brains</h3>
+  <div class="code"><div class="file"><span>llms.py</span><button class="copy" type="button">Copy</button></div><pre><code>@<span class="f">lru_cache</span>(maxsize=<span class="n">1</span>)  <span class="c"># build it once, then reuse the same object</span>
+<span class="k">def</span> <span class="f">get_main_llm</span>() -&gt; LLM:
+    <span class="s">&quot;&quot;&quot;The brain shared by every agent.&quot;&quot;&quot;</span>
+    <span class="k">if</span> config.LLM_MODE == <span class="s">&quot;ollama&quot;</span>:
+        <span class="c"># DeepSeek running on YOUR laptop. Before running:</span>
+        <span class="c">#   1) install Ollama from ollama.com</span>
+        <span class="c">#   2) in a terminal:   ollama pull deepseek-r1:8b</span>
+        <span class="k">return</span> LLM(
+            model=<span class="s">f&quot;</span><span class="s">ollama/</span>{config.OLLAMA_MODEL}<span class="s">&quot;</span>,
+            base_url=config.OLLAMA_BASE_URL,
+            temperature=<span class="n">0.1</span>,
+        )
+
+    <span class="k">if</span> config.LLM_MODE == <span class="s">&quot;groq&quot;</span>:
+        <span class="c"># Free-tier practice mode: a fast open model on Groq (not DeepSeek).</span>
+        <span class="k">return</span> _groq_llm()
+
+    <span class="c"># Default: DeepSeek in the cloud through OpenRouter.</span>
+    <span class="c"># The &quot;openrouter/&quot; prefix tells CrewAI which provider to call.</span>
+    <span class="k">return</span> LLM(
+        model=<span class="s">f&quot;</span><span class="s">openrouter/</span>{config.OPENROUTER_MODEL}<span class="s">&quot;</span>,
+        api_key=config.OPENROUTER_API_KEY,
+        temperature=<span class="n">0.1</span>,  <span class="c"># low temperature = calm, consistent answers</span>
+    )</code></pre></div>
+  <ol class="explain">
+    <li><code>LLM(...)</code> is CrewAI's universal model connector, like a universal charger with different tips. The text before the first slash in <code>model</code> tells it which provider to call: <code>openrouter/…</code>, <code>ollama/…</code> or <code>openai/…</code>.</li>
+    <li><code>temperature=0.1</code> keeps answers calm and consistent. Higher values make the model more creative, which we don't want for routing and grading.</li>
+    <li><code>@lru_cache(maxsize=1)</code> means "build this once and reuse it". All five agents share one brain object.</li>
+  </ol>
+  <div class="code"><div class="file"><span>llms.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">get_rag_llm</span>() -&gt; LLM:
+    <span class="s">&quot;&quot;&quot;The fast helper LLM used only inside the RAG tool.&quot;&quot;&quot;</span>
+    <span class="k">if</span> config.RAG_LLM_MODE == <span class="s">&quot;groq&quot;</span>:
+        <span class="k">return</span> _groq_llm()
+    <span class="c"># &quot;same&quot; -&gt; reuse the main brain</span>
+    <span class="k">return</span> get_main_llm()</code></pre></div>
+  <div class="code"><div class="file"><span>llms.py</span><button class="copy" type="button">Copy</button></div><pre><code>@<span class="f">lru_cache</span>(maxsize=<span class="n">1</span>)
+<span class="k">def</span> <span class="f">_groq_llm</span>() -&gt; LLM:
+    <span class="c"># Groq speaks the same &quot;language&quot; (API format) as OpenAI,</span>
+    <span class="c"># so we use the OpenAI connector and just point it at Groq&#x27;s address.</span>
+    <span class="k">return</span> LLM(
+        model=<span class="s">f&quot;</span><span class="s">openai/</span>{config.GROQ_MODEL}<span class="s">&quot;</span>,
+        base_url=config.GROQ_BASE_URL,
+        api_key=config.GROQ_API_KEY,
+        temperature=<span class="n">0.0</span>,
+    )</code></pre></div>
+  <ol class="explain">
+    <li>Groq speaks the same API "language" as OpenAI, so we use the <code>openai/</code> connector and just change <code>base_url</code> to Groq's address. Same plug, different socket.</li>
+    <li>No Groq key? Set <code>RAG_LLM_MODE=same</code> and the RAG tool reuses the main brain.</li>
+  </ol>
+  <div class="code"><div class="file"><span>llms.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">clean_text</span>(text) -&gt; str:
+    <span class="s">&quot;&quot;&quot;Reasoning models like DeepSeek-R1 sometimes print their private
+    &#x27;thinking&#x27; inside &lt;think&gt; ... &lt;/think&gt;. We only want the final answer.&quot;&quot;&quot;</span>
+    text = str(text)
+    text = re.sub(<span class="s">r&quot;&lt;think&gt;.*?&lt;/think&gt;&quot;</span>, <span class="s">&quot;&quot;</span>, text, flags=re.DOTALL)
+    <span class="k">return</span> text.strip()</code></pre></div>
+  <ol class="explain">
+    <li>Reasoning models like DeepSeek-R1 sometimes write their private "rough work" between <code>&lt;think&gt;</code> tags, like a student's rough page in an exam. We keep only the final answer.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="s9">
+  <div class="station-no">12</div>
+  <h2>tools.py</h2>
+  <p class="kicker">The hands of the agents: one searches our PDF, one searches the web.</p>
+
+  <h3>The library: <code>create_pdf_search_tool</code></h3>
+  <div class="code"><div class="file"><span>tools.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_pdf_search_tool</span>(pdf_path: str) -&gt; PDFSearchTool:
+    <span class="s">&quot;&quot;&quot;Build the &#x27;library&#x27;: load the PDF, chunk it, embed it, store it.&quot;&quot;&quot;</span>
+    <span class="c"># One &quot;shelf&quot; (collection) per PDF + embedding model, so switching to a</span>
+    <span class="c"># different PDF or model never mixes old vectors with new ones.</span>
+    shelf = <span class="s">f&quot;</span>{Path(pdf_path).stem}<span class="s">_</span>{config.EMBEDDING_MODEL.split(<span class="s">&#x27;/&#x27;</span>)[-<span class="n">1</span>]}<span class="s">&quot;</span>
+    shelf = re.sub(<span class="s">r&quot;[^a-zA-Z0-9_-]&quot;</span>, <span class="s">&quot;_&quot;</span>, shelf)[:<span class="n">60</span>]
+
+    <span class="k">return</span> PDFSearchTool(
+        pdf=pdf_path,
+        collection_name=shelf,
+        limit=config.TOP_K,  <span class="c"># bring back the top-k most similar chunks</span>
+        config={
+            <span class="c"># The embedding model: turns text into numbers (vectors).</span>
+            <span class="c"># It runs locally and is downloaded once from Hugging Face.</span>
+            <span class="s">&quot;embedding_model&quot;</span>: {
+                <span class="s">&quot;provider&quot;</span>: <span class="s">&quot;sentence-transformer&quot;</span>,
+                <span class="s">&quot;config&quot;</span>: {<span class="s">&quot;model_name&quot;</span>: config.EMBEDDING_MODEL},
+            },
+            <span class="c"># The vector database where the vectors are stored.</span>
+            <span class="s">&quot;vectordb&quot;</span>: {<span class="s">&quot;provider&quot;</span>: <span class="s">&quot;chromadb&quot;</span>, <span class="s">&quot;config&quot;</span>: {}},
+        },
+    )</code></pre></div>
+  <ol class="explain">
+    <li><code>PDFSearchTool</code> from CrewAI does the whole indexing phase for us: load the PDF, split into chunks, embed, store in ChromaDB.</li>
+    <li><code>collection_name</code> is the "shelf" in the vector database. We name it after the PDF and the embedding model so that switching either one never mixes old vectors with new ones.</li>
+    <li><code>limit=config.TOP_K</code> is our top-k: bring back the 4 most similar chunks (change it in <code>.env</code>).</li>
+    <li><code>"sentence-transformer"</code> means the embedding model runs locally on your laptop. It's downloaded once from Hugging Face (about 130 MB).</li>
+  </ol>
+
+  <h3>The RAG tool: retrieval + fast generation</h3>
+  <div class="code"><div class="file"><span>tools.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_rag_tool</span>(pdf_path: str):
+    <span class="s">&quot;&quot;&quot;Wrap the PDF search + the fast RAG LLM into ONE tool the agents can call.&quot;&quot;&quot;</span>
+    pdf_search = create_pdf_search_tool(pdf_path)  <span class="c"># indexing happens here</span>
+    rag_llm = get_rag_llm()
+
+    @<span class="f">tool</span>(<span class="s">&quot;rag_tool&quot;</span>)
+    <span class="k">def</span> <span class="f">rag_tool</span>(question: str) -&gt; str:
+        <span class="s">&quot;&quot;&quot;Search the private PDF knowledge base and return an answer grounded
+        in the document, followed by the exact text chunks that were used.
+        Input must be the user&#x27;s full question as plain text.&quot;&quot;&quot;</span>
+        <span class="c"># Step A - RETRIEVAL: find the most similar chunks in the vector DB</span>
+        chunks = pdf_search.run(query=question)
+
+        <span class="k">if</span> <span class="k">not</span> chunks <span class="k">or</span> <span class="s">&quot;No relevant content found&quot;</span> <span class="k">in</span> chunks:
+            <span class="k">return</span> <span class="s">&quot;NOT_FOUND_IN_DOCUMENT&quot;</span>
+
+        <span class="c"># Step B - GENERATION: the fast LLM writes an answer from those chunks</span>
+        answer = clean_text(rag_llm.call(RAG_PROMPT.format(context=chunks, question=question)))
+
+        <span class="k">if</span> <span class="s">&quot;NOT_FOUND_IN_DOCUMENT&quot;</span> <span class="k">in</span> answer:
+            <span class="k">return</span> <span class="s">&quot;NOT_FOUND_IN_DOCUMENT&quot;</span>
+        <span class="k">return</span> <span class="s">f&quot;</span><span class="s">ANSWER FROM DOCUMENT:\n</span>{answer}<span class="s">\n\nCHUNKS USED:\n</span>{chunks}<span class="s">&quot;</span>
+
+    <span class="k">return</span> rag_tool</code></pre></div>
+  <ol class="explain">
+    <li>We build the library once (<code>pdf_search</code>) and the fast LLM once (<code>rag_llm</code>) outside the inner function, so they are reused on every call.</li>
+    <li><code>@tool("rag_tool")</code> turns the inner function into something an agent can call. The agent learns what the tool does by reading its <strong>docstring</strong>, so the docstring is an instruction, not decoration.</li>
+    <li>Step A, retrieval: <code>pdf_search.run(query=question)</code> returns the most similar chunks.</li>
+    <li>Step B, generation: the fast LLM reads only those chunks and writes an answer. The prompt says "use ONLY the context" and "reply NOT_FOUND_IN_DOCUMENT if it isn't there".</li>
+    <li><code>clean_text</code> removes any <code>&lt;think&gt;</code> rough work. If the fast LLM itself says the answer isn't there, the tool says <code>NOT_FOUND_IN_DOCUMENT</code> so the Retriever knows to try the web.</li>
+    <li>We return both the answer and the chunks. The chunks are the evidence the Hallucination Grader needs later, like attaching receipts to an expense claim.</li>
+  </ol>
+  <details class="more"><summary>See the RAG prompt</summary><div class="inner"><div class="code"><div class="file"><span>tools.py</span><button class="copy" type="button">Copy</button></div><pre><code>RAG_PROMPT = <span class="s">&quot;&quot;&quot;You are a careful assistant answering questions from a document.
+
+Use ONLY the context below. Do not use outside knowledge.
+If the context does not contain the answer, reply with exactly: NOT_FOUND_IN_DOCUMENT
+
+Context from the document:
+-----
+{context}
+-----
+
+Question: {question}
+
+Answer in 3 to 6 clear sentences:&quot;&quot;&quot;</span></code></pre></div></div></details>
+
+  <h3>The web search tool</h3>
+  <div class="code"><div class="file"><span>tools.py</span><button class="copy" type="button">Copy</button></div><pre><code>@<span class="f">tool</span>(<span class="s">&quot;web_search_tool&quot;</span>)
+<span class="k">def</span> <span class="f">web_search_tool</span>(question: str) -&gt; str:
+    <span class="s">&quot;&quot;&quot;Search the internet for fresh or general information that is NOT in the
+    private PDF. Input must be the user&#x27;s full question as plain text.
+    Returns the top results with their title, link and content.&quot;&quot;&quot;</span>
+    <span class="k">try</span>:
+        client = TavilyClient(api_key=config.TAVILY_API_KEY)
+        response = client.search(query=question, max_results=config.WEB_RESULTS)
+    <span class="k">except</span> Exception <span class="k">as</span> error:  <span class="c"># no internet, wrong key, limit reached ...</span>
+        <span class="c"># Return a readable message instead of crashing the whole crew.</span>
+        <span class="k">return</span> <span class="s">f&quot;</span><span class="s">WEB_SEARCH_FAILED: </span>{error}<span class="s">&quot;</span>
+
+    results = response.get(<span class="s">&quot;results&quot;</span>, [])
+    <span class="k">if</span> <span class="k">not</span> results:
+        <span class="k">return</span> <span class="s">&quot;NO_WEB_RESULTS&quot;</span>
+
+    lines = []
+    <span class="k">for</span> number, item <span class="k">in</span> enumerate(results, start=<span class="n">1</span>):
+        lines.append(
+            <span class="s">f&quot;</span><span class="s">[</span>{number}<span class="s">] </span>{item.get(<span class="s">&#x27;title&#x27;</span>, <span class="s">&#x27;&#x27;</span>)}<span class="s">\n</span><span class="s">&quot;</span>
+            <span class="s">f&quot;</span><span class="s">Link: </span>{item.get(<span class="s">&#x27;url&#x27;</span>, <span class="s">&#x27;&#x27;</span>)}<span class="s">\n</span><span class="s">&quot;</span>
+            <span class="s">f&quot;</span>{item.get(<span class="s">&#x27;content&#x27;</span>, <span class="s">&#x27;&#x27;</span>)}<span class="s">\n</span><span class="s">&quot;</span>
+        )
+    <span class="k">return</span> <span class="s">&quot;\n&quot;</span>.join(lines)</code></pre></div>
+  <ol class="explain">
+    <li>The plain <code>@tool</code> decorator makes this ordinary Python function an agent tool.</li>
+    <li><code>TavilyClient(...).search(query=..., max_results=3)</code> runs the search and returns clean results.</li>
+    <li>The <code>try / except</code> catches problems like no internet or a wrong key, and returns a readable message instead of crashing the whole team. One broken tool shouldn't stop the whole office.</li>
+    <li>We format each result as title, link and content so the agents (and you) can see where facts came from.</li>
+  </ol>
+  <div class="note"><p><strong>A bug worth remembering.</strong> In an early version of this project, the web search tool failed with "missing 1 required positional argument". The agent was calling the tool without passing the question. The fix had two parts: the tool's docstring says "Input must be the user's full question", and the task descriptions say "pass it the question: '{question}'". When an agent calls a tool wrongly, fix the instructions it reads.</p></div>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="s10">
+  <div class="station-no">13</div>
+  <h2>agents.py</h2>
+  <p class="kicker">Five job descriptions. Same structure, different personality.</p>
+
+  <h3>The Router</h3>
+  <div class="code"><div class="file"><span>agents.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_router_agent</span>() -&gt; Agent:
+    <span class="k">return</span> Agent(
+        role=<span class="s">&quot;Router&quot;</span>,
+        goal=<span class="s">&quot;Route each user question to either the vectorstore (our PDF) &quot;</span>
+        <span class="s">&quot;or a web search, based on what the question is really about.&quot;</span>,
+        backstory=(
+            <span class="s">&quot;You are an expert at deciding whether a question can be answered &quot;</span>
+            <span class="s">&quot;from the information stored in our vector database or needs a web search. &quot;</span>
+            <span class="s">f&quot;</span><span class="s">The vector database contains a detailed document about </span>{config.PDF_TOPIC}<span class="s">. </span><span class="s">&quot;</span>
+            <span class="s">&quot;You make routing decisions based on the semantic MEANING of the &quot;</span>
+            <span class="s">&quot;question, not just on matching keywords.&quot;</span>
+        ),
+        allow_delegation=<span class="k">False</span>,
+        max_iter=<span class="n">5</span>,
+        verbose=<span class="k">True</span>,
+        llm=get_main_llm(),  <span class="c"># the DeepSeek brain (same one for all agents)</span>
+    )</code></pre></div>
+  <ol class="explain">
+    <li>The backstory tells the Router what's inside the vector database (from <code>PDF_TOPIC</code>). Without this it would have no idea what the PDF contains.</li>
+    <li>The last sentence, "semantic meaning, not keyword matching", was added after testing showed the Router was just matching words.</li>
+    <li><code>allow_delegation=False</code>: the Router decides alone; it can't pass the job to another agent.</li>
+    <li><code>max_iter=5</code>: at most 5 think-and-act rounds, then it must answer. A safety brake so an agent can't go round in circles and burn your credits.</li>
+  </ol>
+
+  <h3>The Retriever</h3>
+  <div class="code"><div class="file"><span>agents.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_retriever_agent</span>() -&gt; Agent:
+    <span class="k">return</span> Agent(
+        role=<span class="s">&quot;Retriever&quot;</span>,
+        goal=<span class="s">&quot;Use the tool chosen by the router to fetch the information &quot;</span>
+        <span class="s">&quot;needed to answer the question.&quot;</span>,
+        backstory=(
+            <span class="s">&quot;You are an assistant for question-answering tasks. You call exactly &quot;</span>
+            <span class="s">&quot;the tool you are told to call, pass it the user&#x27;s full question, and &quot;</span>
+            <span class="s">&quot;report what the tool returned. Use the information present in the &quot;</span>
+            <span class="s">&quot;retrieved context to answer the question. Provide a clear, concise answer &quot;</span>
+            <span class="s">&quot;and never add facts that are not in the retrieved context.&quot;</span>
+        ),
+        allow_delegation=<span class="k">False</span>,
+        max_iter=<span class="n">5</span>,
+        verbose=<span class="k">True</span>,
+        llm=get_main_llm(),  <span class="c"># the DeepSeek brain (same one for all agents)</span>
+    )</code></pre></div>
+  <p>Notice what's not here: tools. In our design, tools are attached to the <em>task</em>, not the agent, so the same agent could be reused for other tasks with different tools.</p>
+
+  <details class="more"><summary>See the other three agents (Answer Grader, Hallucination Grader, Answer Generator)</summary><div class="inner">
+  <div class="code"><div class="file"><span>agents.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_answer_grader_agent</span>() -&gt; Agent:
+    <span class="k">return</span> Agent(
+        role=<span class="s">&quot;Answer Grader&quot;</span>,
+        goal=<span class="s">&quot;Filter out wrong or irrelevant retrievals.&quot;</span>,
+        backstory=(
+            <span class="s">&quot;You are a strict grader. You read the question and the retrieved answer &quot;</span>
+            <span class="s">&quot;and judge only one thing: does this answer actually address the question? &quot;</span>
+            <span class="s">&quot;If it contains the key ideas related to the question, it is relevant.&quot;</span>
+        ),
+        allow_delegation=<span class="k">False</span>,
+        max_iter=<span class="n">5</span>,
+        verbose=<span class="k">True</span>,
+        llm=get_main_llm(),  <span class="c"># the DeepSeek brain (same one for all agents)</span>
+    )</code></pre></div>
+  <div class="code"><div class="file"><span>agents.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_hallucination_grader_agent</span>() -&gt; Agent:
+    <span class="k">return</span> Agent(
+        role=<span class="s">&quot;Hallucination Grader&quot;</span>,
+        goal=<span class="s">&quot;Catch made-up facts before they reach the user.&quot;</span>,
+        backstory=(
+            <span class="s">&quot;You are a fact checker. You compare the answer with the source text it &quot;</span>
+            <span class="s">&quot;came from and decide whether every important claim is supported by that &quot;</span>
+            <span class="s">&quot;source. An answer that invents facts, numbers or names is a hallucination.&quot;</span>
+        ),
+        allow_delegation=<span class="k">False</span>,
+        max_iter=<span class="n">5</span>,
+        verbose=<span class="k">True</span>,
+        llm=get_main_llm(),  <span class="c"># the DeepSeek brain (same one for all agents)</span>
+    )</code></pre></div>
+  <div class="code"><div class="file"><span>agents.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_answer_generator_agent</span>() -&gt; Agent:
+    <span class="k">return</span> Agent(
+        role=<span class="s">&quot;Answer Generator&quot;</span>,
+        goal=<span class="s">&quot;Give the user one clear, correct and concise final answer.&quot;</span>,
+        backstory=(
+            <span class="s">&quot;You are the final editor. You receive the retrieved answer together with &quot;</span>
+            <span class="s">&quot;the relevance and hallucination checks. If the checks pass, you polish the &quot;</span>
+            <span class="s">&quot;answer. If they fail, you run a fresh web search and answer from that. &quot;</span>
+            <span class="s">&quot;You never explain your internal process to the user.&quot;</span>
+        ),
+        allow_delegation=<span class="k">False</span>,
+        max_iter=<span class="n">5</span>,
+        verbose=<span class="k">True</span>,
+        llm=get_main_llm(),  <span class="c"># the DeepSeek brain (same one for all agents)</span>
+    )</code></pre></div>
+  </div></details>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="s11">
+  <div class="station-no">14</div>
+  <h2>tasks.py</h2>
+  <p class="kicker">The to-do list, and the wiring that passes each result to the next agent.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 230" role="img" aria-labelledby="ctxT ctxD">
+      <title id="ctxT">How task context flows</title>
+      <desc id="ctxD">Router task feeds the Retriever task. The Retriever task feeds the Grader task, the Hallucination task and the Answer task. The Grader task feeds the Hallucination task and the Answer task. The Hallucination task feeds the Answer task.</desc>
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--ink-2)"/></marker></defs>
+      <g font-family="Atkinson Hyperlegible, sans-serif" font-size="14" fill="var(--ink)" text-anchor="middle">
+        <rect x="10" y="95" width="120" height="50" rx="8" fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="2"/><text x="70" y="125" font-weight="700">router_task</text>
+        <rect x="165" y="95" width="125" height="50" rx="8" fill="var(--lib-soft)" stroke="var(--lib)" stroke-width="2"/><text x="227" y="125" font-weight="700">retriever_task</text>
+        <rect x="325" y="95" width="115" height="50" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/><text x="382" y="125" font-weight="700">grader_task</text>
+        <rect x="475" y="95" width="140" height="50" rx="8" fill="var(--panel)" stroke="var(--rule)" stroke-width="2"/><text x="545" y="125" font-weight="700">hallucination_task</text>
+        <rect x="650" y="95" width="100" height="50" rx="8" fill="var(--ink)"/><text x="700" y="125" font-weight="700" fill="var(--paper)">answer_task</text>
+        <path d="M130 120 H158 M290 120 H318 M440 120 H468 M615 120 H643" stroke="var(--ink-2)" stroke-width="2.5" marker-end="url(#ar2)"/>
+        <path d="M227 95 V45 H545 V88" fill="none" stroke="var(--lib)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar2)"/>
+        <path d="M227 45 H700 V88" fill="none" stroke="var(--lib)" stroke-width="2" stroke-dasharray="5 4"/>
+        <path d="M382 145 V195 H700 V152" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ar2)"/>
+        <text x="470" y="36" fill="var(--lib)" font-size="13">retriever output (answer + evidence) is read by three later tasks</text>
+        <text x="540" y="215" fill="var(--ink-2)" font-size="13">relevance grade also reaches the final task</text>
+      </g>
+    </svg>
+    <figcaption>Solid arrows: run order. Dashed arrows: extra <code>context</code> each task is allowed to read.</figcaption>
+  </figure>
+
+  <h3>Task 1: route</h3>
+  <div class="code"><div class="file"><span>tasks.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_router_task</span>(router_agent: Agent) -&gt; Task:
+    <span class="k">return</span> Task(
+        description=(
+            <span class="s">&quot;Analyse this question: &#x27;{question}&#x27;.\n&quot;</span>
+            <span class="s">&quot;Decide where its answer is most likely to be found:\n&quot;</span>
+            <span class="s">&quot;- Answer &#x27;vectorstore&#x27; if the question is about a topic covered by our &quot;</span>
+            <span class="s">&quot;document (even if the exact words are different).\n&quot;</span>
+            <span class="s">&quot;- Answer &#x27;websearch&#x27; if the question needs current or real-time &quot;</span>
+            <span class="s">&quot;information (news, prices, scores, today&#x27;s events) or is about a general &quot;</span>
+            <span class="s">&quot;topic that our document does not cover.\n&quot;</span>
+            <span class="s">&quot;Decide using the semantic meaning of the question, not keyword matching.&quot;</span>
+        ),
+        expected_output=(
+            <span class="s">&quot;Exactly one word: &#x27;vectorstore&#x27; or &#x27;websearch&#x27;. &quot;</span>
+            <span class="s">&quot;No explanation, no punctuation, nothing else.&quot;</span>
+        ),
+        agent=router_agent,
+    )</code></pre></div>
+  <ol class="explain">
+    <li><code>'{question}'</code> is a placeholder. When we start the crew with <code>inputs={"question": ...}</code>, CrewAI fills in the real question everywhere.</li>
+    <li>The description gives clear rules: topics in the document go to the vectorstore; current or real-time information goes to the web.</li>
+    <li><code>expected_output</code> forces a single word. The next agent then has an easy, unambiguous signal.</li>
+  </ol>
+
+  <h3>Task 2: retrieve</h3>
+  <div class="code"><div class="file"><span>tasks.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_retriever_task</span>(retriever_agent: Agent, router_task: Task,
+                          rag_tool, web_search_tool) -&gt; Task:
+    <span class="k">return</span> Task(
+        description=(
+            <span class="s">&quot;Read the router&#x27;s decision from the context.\n&quot;</span>
+            <span class="s">&quot;- If it is &#x27;vectorstore&#x27;, call the rag_tool and pass it the question: &quot;</span>
+            <span class="s">&quot;&#x27;{question}&#x27;.\n&quot;</span>
+            <span class="s">&quot;- If it is &#x27;websearch&#x27;, call the web_search_tool and pass it the &quot;</span>
+            <span class="s">&quot;question: &#x27;{question}&#x27;.\n&quot;</span>
+            <span class="s">&quot;- If the rag_tool returns NOT_FOUND_IN_DOCUMENT, fall back to the &quot;</span>
+            <span class="s">&quot;web_search_tool with the same question.\n&quot;</span>
+            <span class="s">&quot;Always pass the user&#x27;s full question to the tool.&quot;</span>
+        ),
+        expected_output=(
+            <span class="s">&quot;First line: &#x27;SOURCE: document&#x27; or &#x27;SOURCE: web&#x27;.\n&quot;</span>
+            <span class="s">&quot;Then the answer to &#x27;{question}&#x27; based only on what the tool returned.\n&quot;</span>
+            <span class="s">&quot;Then the supporting text (document chunks or web snippets) copied as is.&quot;</span>
+        ),
+        agent=retriever_agent,
+        context=[router_task],
+        tools=[rag_tool, web_search_tool],
+    )</code></pre></div>
+  <ol class="explain">
+    <li><code>context=[router_task]</code>: the Retriever reads the Router's one-word decision.</li>
+    <li><code>tools=[rag_tool, web_search_tool]</code>: it may use either tool, and the description tells it which one to pick.</li>
+    <li>If the PDF has nothing useful (<code>NOT_FOUND_IN_DOCUMENT</code>), it falls back to the web on its own.</li>
+  </ol>
+
+  <h3>Tasks 3 and 4: the two checks</h3>
+  <div class="code"><div class="file"><span>tasks.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_grader_task</span>(grader_agent: Agent, retriever_task: Task) -&gt; Task:
+    <span class="k">return</span> Task(
+        description=(
+            <span class="s">&quot;Look at the retrieved answer in the context and the question &quot;</span>
+            <span class="s">&quot;&#x27;{question}&#x27;. Decide whether the retrieved answer is RELEVANT to the &quot;</span>
+            <span class="s">&quot;question, i.e. it actually addresses what was asked.&quot;</span>
+        ),
+        expected_output=(
+            <span class="s">&quot;Exactly one word: &#x27;yes&#x27; if the retrieved answer is relevant to the &quot;</span>
+            <span class="s">&quot;question, or &#x27;no&#x27; if it is not. No explanation.&quot;</span>
+        ),
+        agent=grader_agent,
+        context=[retriever_task],
+    )</code></pre></div>
+  <div class="code"><div class="file"><span>tasks.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_hallucination_task</span>(hallucination_agent: Agent, retriever_task: Task,
+                              grader_task: Task) -&gt; Task:
+    <span class="k">return</span> Task(
+        description=(
+            <span class="s">&quot;Using the context, compare the retrieved answer with the supporting &quot;</span>
+            <span class="s">&quot;text (document chunks or web snippets) it came from. Decide whether &quot;</span>
+            <span class="s">&quot;the answer is grounded in / supported by that text for the question &quot;</span>
+            <span class="s">&quot;&#x27;{question}&#x27;. Also note the relevance grade from the previous check.&quot;</span>
+        ),
+        expected_output=(
+            <span class="s">&quot;Exactly one word: &#x27;yes&#x27; if the answer is supported by the source text &quot;</span>
+            <span class="s">&quot;and is useful (NO hallucination), or &#x27;no&#x27; if it contains claims that the &quot;</span>
+            <span class="s">&quot;source text does not support (hallucination). No explanation.&quot;</span>
+        ),
+        agent=hallucination_agent,
+        context=[retriever_task, grader_task],
+    )</code></pre></div>
+  <ol class="explain">
+    <li>Relevance and grounding are different questions. An answer can be on-topic but invented, or true but off-topic. That's why we check both.</li>
+    <li>Careful with the meaning of "yes": for the hallucination task, <strong>yes means safe</strong> (grounded, no hallucination).</li>
+  </ol>
+
+  <h3>Task 5: the final answer</h3>
+  <div class="code"><div class="file"><span>tasks.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">create_answer_task</span>(answer_agent: Agent, retriever_task: Task, grader_task: Task,
+                       hallucination_task: Task, web_search_tool) -&gt; Task:
+    <span class="k">return</span> Task(
+        description=(
+            <span class="s">&quot;Write the final reply to the question: &#x27;{question}&#x27;.\n&quot;</span>
+            <span class="s">&quot;Read the context: the retrieved answer, the relevance grade and the &quot;</span>
+            <span class="s">&quot;hallucination grade.\n&quot;</span>
+            <span class="s">&quot;- If BOTH grades are &#x27;yes&#x27;, return a clear and concise answer based on &quot;</span>
+            <span class="s">&quot;the retrieved answer.\n&quot;</span>
+            <span class="s">&quot;- If EITHER grade is &#x27;no&#x27;, call the web_search_tool with the question &quot;</span>
+            <span class="s">&quot;&#x27;{question}&#x27; and answer from those results instead.\n&quot;</span>
+            <span class="s">&quot;Make sure the final answer contains only the answer to the question, &quot;</span>
+            <span class="s">&quot;not an explanation of how you found it.&quot;</span>
+        ),
+        expected_output=(
+            <span class="s">&quot;A clear and concise answer to &#x27;{question}&#x27; in plain language &quot;</span>
+            <span class="s">&quot;(about 3-6 sentences).&quot;</span>
+        ),
+        agent=answer_agent,
+        context=[retriever_task, grader_task, hallucination_task],
+        tools=[web_search_tool],
+    )</code></pre></div>
+  <ol class="explain">
+    <li>This task reads all three earlier results: the answer and both grades.</li>
+    <li>Both "yes" → polish and return the answer. Any "no" → run a fresh web search and answer from it.</li>
+    <li>The last instruction stops the model from narrating its process in the final reply.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="s12">
+  <div class="station-no">15</div>
+  <h2>main.py</h2>
+  <p class="kicker">No intelligence here. It just builds the team and presses start.</p>
+  <div class="code"><div class="file"><span>main.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">build_crew</span>() -&gt; Crew:
+    <span class="c"># ---- 1. TOOLS ---------------------------------------------------------</span>
+    rag_tool = create_rag_tool(config.PDF_PATH)  <span class="c"># builds the vector DB (indexing)</span>
+
+    <span class="c"># ---- 2. AGENTS --------------------------------------------------------</span>
+    router = create_router_agent()
+    retriever = create_retriever_agent()
+    grader = create_answer_grader_agent()
+    hallucination_grader = create_hallucination_grader_agent()
+    answer_generator = create_answer_generator_agent()
+
+    <span class="c"># ---- 3. TASKS (each one can read the output of the ones before it) ----</span>
+    router_task = create_router_task(router)
+    retriever_task = create_retriever_task(retriever, router_task, rag_tool, web_search_tool)
+    grader_task = create_grader_task(grader, retriever_task)
+    hallucination_task = create_hallucination_task(hallucination_grader, retriever_task, grader_task)
+    answer_task = create_answer_task(
+        answer_generator, retriever_task, grader_task, hallucination_task, web_search_tool
+    )
+
+    <span class="c"># ---- 4. CREW ----------------------------------------------------------</span>
+    <span class="c"># Process.sequential = tasks run one after another, in the list order.</span>
+    <span class="c"># max_rpm = at most this many LLM calls per minute (protects free tiers).</span>
+    <span class="k">return</span> Crew(
+        agents=[router, retriever, grader, hallucination_grader, answer_generator],
+        tasks=[router_task, retriever_task, grader_task, hallucination_task, answer_task],
+        process=Process.sequential,
+        max_rpm=config.MAX_RPM,
+        verbose=<span class="k">True</span>,
+    )</code></pre></div>
+  <ol class="explain">
+    <li>Creating the RAG tool triggers indexing (first run only builds the vector database; later runs reuse it).</li>
+    <li>We create the five agents, then the five tasks, passing each task the earlier tasks it depends on.</li>
+    <li><code>Process.sequential</code>: tasks run one after another, in list order. Simple and easy to debug.</li>
+    <li><code>max_rpm=config.MAX_RPM</code>: the whole team may make at most 10 LLM calls a minute. If they go faster, CrewAI waits.</li>
+    <li><code>verbose=True</code>: print everything each agent thinks and does. Turn it off later for a cleaner output.</li>
+  </ol>
+  <div class="code"><div class="file"><span>main.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">ask</span>(crew: Crew, question: str) -&gt; str:
+    start = time.time()
+    <span class="c"># kickoff() starts the team. `inputs` fills every {question} placeholder.</span>
+    result = crew.kickoff(inputs={<span class="s">&quot;question&quot;</span>: question})
+    seconds = time.time() - start
+    answer = clean_text(result)
+
+    route, _, relevant, grounded, _ = (one_word(t) <span class="k">for</span> t <span class="k">in</span> crew.tasks)
+    summary = <span class="s">f&quot;</span><span class="s">route=</span>{route}<span class="s">  relevant=</span>{relevant}<span class="s">  grounded=</span>{grounded}<span class="s">  time=</span>{seconds:<span class="s">.0f</span>}<span class="s">s</span><span class="s">&quot;</span>
+
+    print(<span class="s">&quot;\n&quot;</span> + <span class="s">&quot;=&quot;</span> * <span class="n">70</span>)
+    print(<span class="s">&quot;QUESTION :&quot;</span>, question)
+    print(<span class="s">&quot;ANSWER   :&quot;</span>, answer)
+    print(<span class="s">&quot;JOURNEY  :&quot;</span>, summary)
+    print(<span class="s">&quot;=&quot;</span> * <span class="n">70</span>)
+
+    <span class="c"># Keep a diary of every question, so you can compare runs later.</span>
+    <span class="k">with</span> open(config.ANSWERS_LOG, <span class="s">&quot;a&quot;</span>, encoding=<span class="s">&quot;utf-8&quot;</span>) <span class="k">as</span> log:
+        log.write(<span class="s">f&quot;</span><span class="s">## </span>{datetime.now():<span class="s">%Y-%m-%d %H:%M</span>}<span class="s">  </span>{question}<span class="s">\n\n</span>{answer}<span class="s">\n\n`</span>{summary}<span class="s">`\n\n</span><span class="s">&quot;</span>)
+    <span class="k">return</span> answer</code></pre></div>
+  <ol class="explain">
+    <li><code>crew.kickoff(inputs={"question": question})</code> starts the team and fills every <code>{question}</code> placeholder.</li>
+    <li>After the run, every task's result is still available. We read the one-word results of the Router and both graders to print a <strong>journey line</strong>, like a train ticket showing the stations you passed.</li>
+    <li>Every question is appended to <code>answers_log.md</code>: your diary of experiments.</li>
+  </ol>
+  <div class="code"><div class="file"><span>main.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">main</span>() -&gt; <span class="k">None</span>:
+    problems = config.check_keys()
+    <span class="k">if</span> problems:
+        print(<span class="s">&quot;\nPlease fix your .env file first:&quot;</span>)
+        <span class="k">for</span> p <span class="k">in</span> problems:
+            print(<span class="s">&quot;  -&quot;</span>, p)
+        sys.exit(<span class="n">1</span>)
+
+    download_pdf(config.PDF_URL, config.PDF_PATH)
+    crew = build_crew()
+
+    <span class="k">if</span> <span class="s">&quot;--chat&quot;</span> <span class="k">in</span> sys.argv:
+        print(<span class="s">&quot;\nChat mode. Type a question and press Enter. Type &#x27;exit&#x27; to stop.&quot;</span>)
+        <span class="k">while</span> <span class="k">True</span>:
+            question = input(<span class="s">&quot;\nYou: &quot;</span>).strip()
+            <span class="k">if</span> question.lower() <span class="k">in</span> (<span class="s">&quot;exit&quot;</span>, <span class="s">&quot;quit&quot;</span>, <span class="s">&quot;&quot;</span>):
+                <span class="k">break</span>
+            ask(crew, question)
+        <span class="k">return</span>
+
+    question = <span class="s">&quot; &quot;</span>.join(sys.argv[<span class="n">1</span>:]).strip() <span class="k">or</span> DEFAULT_QUESTION
+    ask(crew, question)</code></pre></div>
+  <ol class="explain">
+    <li><code>config.check_keys()</code> gives a friendly message if a key or setting is wrong, before anything expensive runs.</li>
+    <li><code>--chat</code> keeps the team ready and lets you ask question after question. The PDF is indexed only once.</li>
+    <li>Otherwise the question comes from the command line, or falls back to a default.</li>
+  </ol>
+  <details class="more"><summary>See download_pdf()</summary><div class="inner"><div class="code"><div class="file"><span>main.py</span><button class="copy" type="button">Copy</button></div><pre><code><span class="k">def</span> <span class="f">download_pdf</span>(url: str, save_path: str) -&gt; <span class="k">None</span>:
+    <span class="s">&quot;&quot;&quot;Download the PDF only if we don&#x27;t already have it.&quot;&quot;&quot;</span>
+    <span class="k">if</span> os.path.exists(save_path):
+        print(<span class="s">f&quot;</span><span class="s">PDF already present: </span>{save_path}<span class="s">&quot;</span>)
+        <span class="k">return</span>
+    os.makedirs(os.path.dirname(save_path) <span class="k">or</span> <span class="s">&quot;.&quot;</span>, exist_ok=<span class="k">True</span>)
+    print(<span class="s">f&quot;</span><span class="s">Downloading PDF from </span>{url}<span class="s"> ...</span><span class="s">&quot;</span>)
+    request = urllib.request.Request(url, headers={<span class="s">&quot;User-Agent&quot;</span>: <span class="s">&quot;Mozilla/5.0&quot;</span>})
+    <span class="k">with</span> urllib.request.urlopen(request, timeout=<span class="n">60</span>) <span class="k">as</span> response, open(save_path, <span class="s">&quot;wb&quot;</span>) <span class="k">as</span> f:
+        f.write(response.read())
+    print(<span class="s">f&quot;</span><span class="s">Saved to </span>{save_path}<span class="s">&quot;</span>)</code></pre></div></div></details>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="s13">
+  <div class="station-no">16</div>
+  <h2>Run it and read the output</h2>
+  <p class="kicker">Ask one question the PDF can answer and one it can't.</p>
+  <div class="code shell"><div class="file"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><code><span class="p">$ </span>python main.py
+<span class="p">$ </span>python main.py "What is multi-head attention?"
+<span class="p">$ </span>python main.py "What is the latest stable version of Python?"
+<span class="p">$ </span>python main.py --chat</code></pre></div>
+
+  <h3>What you'll see, in order</h3>
+  <ol class="clean">
+    <li><strong>First run only:</strong> the PDF downloads, the embedding model downloads, and chunks are inserted into ChromaDB.</li>
+    <li><strong>Router</strong> prints its task and a final answer: <code>vectorstore</code> for the Transformer question.</li>
+    <li><strong>Retriever</strong> calls <code>rag_tool</code>. You'll see the tool input (the question) and the tool output (answer + chunks from the paper).</li>
+    <li><strong>Answer Grader</strong>: <code>yes</code>, relevant.</li>
+    <li><strong>Hallucination Grader</strong>: <code>yes</code>, grounded.</li>
+    <li><strong>Answer Generator</strong> prints the final answer.</li>
+    <li>Finally, a summary box with the question, the answer and the journey line:</li>
+  </ol>
+  <div class="code"><div class="file"><span>end of the output (example)</span></div><pre><code>======================================================================
+QUESTION : What is the self-attention mechanism in Transformers?
+ANSWER   : Self-attention lets every word in a sentence look at every other
+           word and decide how much attention to pay to it, using query, key
+           and value vectors...
+JOURNEY  : route=vectorstore  relevant=yes  grounded=yes  time=48s
+======================================================================</code></pre></div>
+  <p>For the Python version question, the Router should say <code>websearch</code> and the Retriever calls <code>web_search_tool</code> instead.</p>
+
+  <h3>Why is it slow?</h3>
+  <p>One question means roughly 7–8 LLM calls (5 agents, a tool call, and the RAG LLM). On fast providers the whole flow takes roughly 15–30 seconds. On free or overloaded models it can take several minutes; on a slow free model it once took about 10 minutes. On a laptop with Ollama, expect minutes too. Speed depends on the provider, its rate limits, and your hardware.</p>
+  <div class="warn"><p><strong>Free tiers have small limits.</strong> Free plans allow only a limited number of requests per minute and per day. Since each question uses 7–8 calls, you can hit the limit after a handful of questions. If you see a 429 error, wait a minute, lower <code>MAX_RPM</code>, or use a paid model.</p></div>
+
+  <h3>Retries are normal</h3>
+  <p>Sometimes an agent hits an error (a tool call in the wrong format, a temporary API failure) and you'll see it try again. CrewAI retries automatically. Only worry if the same error repeats until the run stops.</p>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="s14">
+  <div class="station-no">17</div>
+  <h2>Run DeepSeek on your laptop</h2>
+  <p class="kicker">No API key for the brain, full privacy, but slower and less accurate on small hardware.</p>
+  <ol class="clean">
+    <li>Install Ollama from ollama.com and open it.</li>
+    <li>Download DeepSeek-R1 8B (about 5 GB; your laptop needs roughly 8 GB of free RAM):</li>
+  </ol>
+  <div class="code shell"><div class="file"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><code><span class="p">$ </span>ollama pull deepseek-r1:8b
+<span class="p">$ </span>ollama run deepseek-r1:8b      <span class="c"># optional: chat with it to test, type /bye to exit</span></code></pre></div>
+  <ol class="clean" start="3">
+    <li>In <code>.env</code> set:</li>
+  </ol>
+  <div class="code"><div class="file"><span>.env</span><button class="copy" type="button">Copy</button></div><pre><code>LLM_MODE=ollama
+OLLAMA_MODEL=deepseek-r1:8b
+RAG_LLM_MODE=same          <span class="c"># optional: use DeepSeek inside the RAG tool too</span></code></pre></div>
+  <p>Now <code>python main.py</code> uses DeepSeek running on <code>http://localhost:11434</code>. Only Tavily (web search) still needs the internet.</p>
+  <div class="note"><p><strong>Choosing API vs. local.</strong> Use an API when you want speed and reliability with little setup. Run models yourself when privacy rules require it, or when volume is high enough that your own hardware becomes cheaper, but expect more work on hosting and maintenance. An 8B model on a normal laptop is for learning; production local setups need a GPU.</p></div>
+  <div class="warn"><p><strong>Why not the tiny 1.5B model?</strong> It downloads fast, but small models often fail to call tools in the right format, so the Retriever gets stuck. Think of it as a fresher who knows the theory but hasn't yet learned to fill the office forms. Use 8B or bigger for this project.</p></div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="s15">
+  <div class="station-no">18</div>
+  <h2>When things break</h2>
+  <p class="kicker">Read the error. It almost always tells you which of these it is.</p>
+  <div class="table-scroll">
+  <table class="t">
+    <thead><tr><th>You see</th><th>Why</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>"Please fix your .env file first"</td><td>A key is empty.</td><td>Check the file is named <code>.env</code> (not <code>.env.example</code>) and is in the <code>code</code> folder.</td></tr>
+      <tr><td>404 / model not found</td><td>The model ID no longer exists.</td><td>Find a current ID on the provider's models page; update <code>OPENROUTER_MODEL</code> or <code>GROQ_MODEL</code>.</td></tr>
+      <tr><td>429 / rate limit</td><td>Too many requests on a free tier.</td><td>Wait a minute, lower <code>MAX_RPM</code>, or switch to a paid model.</td></tr>
+      <tr><td>402 / insufficient credits</td><td>OpenRouter account has no credit.</td><td>Add a small credit, or set <code>LLM_MODE=groq</code>.</td></tr>
+      <tr><td>"does not support tools" (Ollama)</td><td>The local model can't call tools.</td><td>Use <code>deepseek-r1:8b</code> or bigger.</td></tr>
+      <tr><td><code>WEB_SEARCH_FAILED</code> in the output</td><td>No internet, wrong Tavily key, or limit reached.</td><td>Check the key and your connection. The rest of the team keeps working.</td></tr>
+      <tr><td>Embedding dimension error</td><td>The vector database was built with a different embedding model.</td><td>Our shelf name includes the model name, so changing <code>EMBEDDING_MODEL</code> creates a fresh shelf. If you renamed things manually, use a new <code>PDF_PATH</code> name.</td></tr>
+      <tr><td>"missing required argument" from a tool</td><td>The agent called the tool without the question.</td><td>Make the task description and tool docstring say exactly what to pass.</td></tr>
+      <tr><td>Router sends PDF questions to the web</td><td>It doesn't know what the PDF contains.</td><td>Write a richer <code>PDF_TOPIC</code>.</td></tr>
+      <tr><td>Final answer explains its process</td><td>The prompt allows it.</td><td>Tighten the answer task's description and expected output.</td></tr>
+      <tr><td>Very slow</td><td>Free or local model, 7–8 calls per question.</td><td>Use Groq for the RAG LLM, or try <code>LLM_MODE=groq</code> to compare.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="s16">
+  <div class="station-no">19</div>
+  <h2>Questions learners ask</h2>
+  <p class="kicker">Answers to the questions that come up every time this is taught.</p>
+
+  <h4>How does the Router know whether the answer is in the document, if it never reads it?</h4>
+  <p>It judges the <strong>meaning</strong> of the question against what it has been told the vector database contains (the <code>PDF_TOPIC</code> line in its backstory). It's an educated guess, not a lookup. The safety nets are the Retriever's fallback (if the RAG tool returns nothing, go to the web) and the two graders. A stronger design gives the Router a quick "peek" tool to check the vector database before deciding.</p>
+
+  <h4>What exactly does the RAG tool do?</h4>
+  <p>Everything from chapter 2 in one function. When created, it does the indexing (load, chunk, embed, store). When called, it does retrieval (find similar chunks) and a quick generation (the fast LLM writes an answer from them). The agents around it decide <em>when</em> to use it and check what it returns.</p>
+
+  <h4>What is a vector database, and why not use SQL?</h4>
+  <p>Text is first split into tokens, and models represent meaning as long lists of numbers. Large models use thousands of numbers per token; our small embedding model uses 384 per chunk. A normal SQL database is great at exact matches ("find customer 42") but bad at "find the 4 rows whose 384 numbers are closest to these 384 numbers". A vector database is built and indexed for exactly that similarity search.</p>
+
+  <h4>How are Agents, Tasks and Tools related?</h4>
+  <p>The task says what to do, the agent does it, and the tool helps the agent reach outside itself (a PDF, the web, an API). You give an agent a task and a tool to achieve that task's goal. They complement each other.</p>
+
+  <h4>Can an agent pull data from a website or a company API?</h4>
+  <p>Yes. Write a Python function that calls the API or scrapes the page (for example with <code>requests</code> and BeautifulSoup, or a browser tool like Selenium), decorate it with <code>@tool</code>, give it a clear docstring, and add it to a task. There's practically no limit to the tools you can add.</p>
+
+  <h4>Where does this code run: front end or back end?</h4>
+  <p>Back end. It's Python. Here we run it from the command line; in a real product you'd wrap <code>crew.kickoff()</code> in an API (for example with FastAPI) and a front end would call that API.</p>
+
+  <h4>How would I deploy this for real users?</h4>
+  <ul class="clean">
+    <li><strong>Simple start:</strong> put the API on a cloud server such as an AWS EC2 machine. Add a GPU only if you host the LLM yourself.</li>
+    <li><strong>Many users at once:</strong> run several copies behind a load balancer, and use a queue for long-running jobs, since each answer takes seconds to minutes.</li>
+    <li><strong>Models:</strong> APIs are fastest to ship; self-hosting helps with privacy and cost at scale but needs more maintenance. It depends on your timeline and requirements.</li>
+  </ul>
+
+  <h4>Can I use this for my company's documents?</h4>
+  <p>Yes. Put your PDF in <code>data/</code>, set <code>PDF_PATH</code> and a good <code>PDF_TOPIC</code>. For many documents, point the tool at a folder or build one library per department. Before real use, test with 20–30 real questions from your users and check the answers by hand. If the documents are confidential, run the brain locally with Ollama or use a provider your company has approved.</p>
+
+  <h4>Why two different LLMs?</h4>
+  <p>Different jobs need different strengths. The orchestrator needs good reasoning. The RAG step is simple ("summarise these chunks") but happens in the middle of the flow, so a very fast model keeps the whole run snappy.</p>
+</section>
+
+<!-- ============================================================ 17 -->
+<section id="s17">
+  <div class="station-no">20</div>
+  <h2>Practice and self-check</h2>
+  <p class="kicker">Do the exercises in order. Each one teaches a different part of the system.</p>
+
+  <h3>Exercises</h3>
+  <ol class="clean">
+    <li><strong>Compare plain vs agentic.</strong> Ask the same 3 questions with <code>step1_plain_rag.py</code> and <code>main.py</code>. Note answer quality, time and cost in a small table.</li>
+    <li><strong>Watch the routing.</strong> Run 3 questions about the paper and 3 about current events. Note which line each takes. Did any go to the wrong line? Why?</li>
+    <li><strong>Break the Router on purpose.</strong> Delete the "semantic meaning" sentence from the Router's backstory. Ask "How do Transformers know the order of words?" Compare.</li>
+    <li><strong>Change top-k.</strong> Set <code>limit=2</code> and then <code>limit=8</code> in <code>tools.py</code>. How do the answers and the evidence change?</li>
+    <li><strong>Use your own PDF.</strong> Add a PDF to <code>data/</code>, set <code>PDF_PATH</code> and <code>PDF_TOPIC</code> in <code>.env</code>, and ask questions about it.</li>
+    <li><strong>Add a third tool.</strong> Write a <code>@tool</code> that returns today's date, give it to the Answer Generator's task, and ask "What is today's date and what is self-attention?"</li>
+    <li><strong>Compare speed.</strong> Time the same question with <code>RAG_LLM_MODE=groq</code> and <code>RAG_LLM_MODE=same</code>, and with <code>LLM_MODE=groq</code>.</li>
+    <li><strong>Build a mini use case.</strong> Pick one case from the "Real-world use cases" chapter, find a public PDF for it (for example a bank's published fee schedule), and write 5 questions: 3 the PDF should answer, 2 that need the web. Check that the journey line matches your expectation every time.</li>
+  </ol>
+
+  <h3>Quick quiz</h3>
+  <div id="quiz"></div>
+</section>
+
+<!-- ============================================================ 18 -->
+<section id="s18">
+  <div class="station-no">21</div>
+  <h2>Glossary</h2>
+  <div class="table-scroll">
+  <table class="t">
+    <tbody>
+      <tr><td><strong>LLM</strong></td><td>Large Language Model. Predicts and writes text. DeepSeek, Llama and GPT are examples.</td></tr>
+      <tr><td><strong>RAG</strong></td><td>Retrieval-Augmented Generation. Fetch relevant text from your documents and give it to the LLM with the question.</td></tr>
+      <tr><td><strong>Agentic RAG</strong></td><td>RAG where AI agents decide the path (which source to use) and verify the result.</td></tr>
+      <tr><td><strong>Agent</strong></td><td>An LLM with a role, a goal, a backstory and permission to use tools.</td></tr>
+      <tr><td><strong>Task</strong></td><td>A unit of work for an agent: description, expected output, context.</td></tr>
+      <tr><td><strong>Tool</strong></td><td>A function an agent can call, like searching a PDF or the web.</td></tr>
+      <tr><td><strong>Crew</strong></td><td>The team of agents plus their tasks and the order they run in.</td></tr>
+      <tr><td><strong>Chunk</strong></td><td>A small piece of a document.</td></tr>
+      <tr><td><strong>Embedding / vector</strong></td><td>A list of numbers that represents the meaning of a text.</td></tr>
+      <tr><td><strong>Vector database</strong></td><td>A database optimised to store vectors and find the most similar ones fast.</td></tr>
+      <tr><td><strong>Semantic search</strong></td><td>Searching by meaning instead of exact words.</td></tr>
+      <tr><td><strong>Top-k</strong></td><td>The number of most-similar chunks we retrieve (k = 4 here).</td></tr>
+      <tr><td><strong>Hallucination</strong></td><td>When an LLM states something that is not true or not supported by its sources.</td></tr>
+      <tr><td><strong>Grounded</strong></td><td>Supported by the source text.</td></tr>
+      <tr><td><strong>Inference</strong></td><td>Running a trained model to get an answer.</td></tr>
+      <tr><td><strong>Tool calling (function calling)</strong></td><td>An LLM's ability to say "please run this function with these inputs" in a structured format.</td></tr>
+      <tr><td><strong>Token</strong></td><td>A small piece of text (often part of a word) that LLMs read and write. Pricing and limits are counted in tokens.</td></tr>
+      <tr><td><strong>Rate limit</strong></td><td>The maximum number of requests a provider allows per minute or per day.</td></tr>
+      <tr><td><strong>API key</strong></td><td>A secret password that lets your code use a paid or free online service.</td></tr>
+      <tr><td><strong>Virtual environment</strong></td><td>A private folder of Python libraries for one project.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer>Created by <b>Shivank Agrawal</b></footer>
+
+<script>
+(function(){
+  /* ---------- theme ---------- */
+  var root=document.documentElement, btn=document.getElementById('themeBtn');
+  function isDark(){var t=root.getAttribute('data-theme'); if(t) return t==='dark'; return window.matchMedia('(prefers-color-scheme: dark)').matches;}
+  function label(){btn.textContent=isDark()?'Light mode':'Dark mode';}
+  try{var saved=localStorage.getItem('arag-theme'); if(saved) root.setAttribute('data-theme',saved);}catch(e){}
+  label();
+  btn.addEventListener('click',function(){var next=isDark()?'light':'dark'; root.setAttribute('data-theme',next); try{localStorage.setItem('arag-theme',next);}catch(e){} label(); if(window.__drawEmb) window.__drawEmb();});
+
+  /* ---------- copy buttons ---------- */
+  document.querySelectorAll('.code .copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var pre=b.closest('.code').querySelector('pre'); var clone=pre.cloneNode(true);
+      clone.querySelectorAll('.p').forEach(function(p){p.remove();});
+      var txt=clone.innerText;
+      var done=function(){b.textContent='Copied'; setTimeout(function(){b.textContent='Copy';},1400);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,function(){});}
+      else{var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); done();}catch(e){} ta.remove();}
+    });
+  });
+
+  /* ---------- hero route map ---------- */
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var train=document.getElementById('train'), journey=document.getElementById('journey');
+  var routes={
+    lib:{path:'routeLib',steps:[
+      ['Router','<b>vectorstore</b>. The question is about Transformers, which our PDF covers.'],
+      ['Retriever + RAG tool','Embeds the question, pulls the 4 closest chunks from the paper, and the fast RAG LLM writes a short answer.'],
+      ['Answer Grader','<b>yes</b>. The answer is about self-attention, which is what was asked.'],
+      ['Hallucination Grader','<b>yes</b>. Every claim is backed by the retrieved chunks.'],
+      ['Answer Generator','Polishes it: "Self-attention lets every word weigh every other word in the sentence using query, key and value vectors."']]},
+    web:{path:'routeWeb',steps:[
+      ['Router','<b>websearch</b>. Today\'s weather is real-time information; no PDF can know it.'],
+      ['Retriever + web tool','Calls Tavily and gets the top 3 web results.'],
+      ['Answer Grader','<b>yes</b>. The results are about Bengaluru\'s weather today.'],
+      ['Hallucination Grader','<b>yes</b>. The answer matches the web snippets.'],
+      ['Answer Generator','Returns a short weather summary taken from the search results.']]},
+    fail:{path:'routeFail',steps:[
+      ['Router','<b>vectorstore</b>. The question is about the paper.'],
+      ['Retriever + RAG tool','Gets good chunks, but the answer it writes adds a date that is not in them.'],
+      ['Answer Grader','<b>yes</b>. It is on topic…'],
+      ['Hallucination Grader','<b>no</b>. "That date is not in the source chunks." Red signal.'],
+      ['Answer Generator','Sees a "no", so it does not trust the answer. It takes the fallback line and runs a fresh web search.'],
+      ['Final answer','Built from the web results instead of the bad answer.']]}
+  };
+  var anim=null;
+  function show(steps,upto){
+    journey.innerHTML='';
+    steps.slice(0,upto).forEach(function(s){var li=document.createElement('li'); li.innerHTML='<span class="who">'+s[0]+'</span><span class="what">'+s[1]+'</span>'; journey.appendChild(li);});
+  }
+  document.querySelectorAll('#hero-map .chip').forEach(function(chip){
+    chip.addEventListener('click',function(){
+      document.querySelectorAll('#hero-map .chip').forEach(function(c){c.setAttribute('aria-pressed','false');});
+      chip.setAttribute('aria-pressed','true');
+      var r=routes[chip.dataset.route], p=document.getElementById(r.path), L=p.getTotalLength();
+      if(anim) cancelAnimationFrame(anim);
+      train.setAttribute('opacity','1');
+      if(reduce){var e=p.getPointAtLength(L); train.setAttribute('cx',e.x); train.setAttribute('cy',e.y); show(r.steps,r.steps.length); return;}
+      var dur=r.steps.length*1100, t0=null;
+      show(r.steps,0);
+      function frame(ts){
+        if(!t0) t0=ts; var k=Math.min(1,(ts-t0)/dur), pt=p.getPointAtLength(L*k);
+        train.setAttribute('cx',pt.x); train.setAttribute('cy',pt.y);
+        show(r.steps,Math.min(r.steps.length,Math.floor(k*r.steps.length)+1));
+        if(k<1) anim=requestAnimationFrame(frame);
+      }
+      anim=requestAnimationFrame(frame);
+    });
+  });
+
+  /* ---------- chunking lab ---------- */
+  var TEXT='The Transformer is a model architecture that relies entirely on attention to draw global dependencies between input and output. Self-attention relates different positions of a single sequence in order to compute a representation of that sequence. An attention function maps a query and a set of key-value pairs to an output. Multi-head attention lets the model attend to information from different representation subspaces at different positions. Since the model contains no recurrence, positional encodings are added to the input embeddings so the model can use the order of the words.';
+  var cols=['var(--lib-soft)','var(--web-soft)','var(--amber-soft)','var(--stop-soft)'];
+  var cs=document.getElementById('csize'), co=document.getElementById('cover'), out=document.getElementById('chunkOut'), st=document.getElementById('cstat');
+  function chunk(){
+    var size=+cs.value, ov=Math.min(+co.value,size-20), res=[], i=0;
+    while(i<TEXT.length){var end=Math.min(TEXT.length,i+size); if(end<TEXT.length){var sp=TEXT.lastIndexOf(' ',end); if(sp>i+20) end=sp;} res.push([i,end]); if(end>=TEXT.length) break; var j=end; if(ov>0){var sp2=TEXT.indexOf(' ',end-ov); if(sp2>i && sp2<end) j=sp2;} while(TEXT[j]===' ') j++; i=j;}
+    out.innerHTML='';
+    var prevEnd=0;
+    res.forEach(function(r,n){
+      var row=document.createElement('div'); row.className='chunk-row'; row.style.background=cols[n%cols.length];
+      var lab=document.createElement('span'); lab.className='cn'; lab.textContent='Chunk '+(n+1);
+      var body=document.createElement('span');
+      if(n>0 && r[0]<prevEnd){var m=document.createElement('mark'); m.textContent=TEXT.slice(r[0],prevEnd); body.appendChild(m); body.appendChild(document.createTextNode(TEXT.slice(prevEnd,r[1])));}
+      else body.textContent=TEXT.slice(r[0],r[1]);
+      row.appendChild(lab); row.appendChild(body); out.appendChild(row); prevEnd=r[1];
+    });
+    st.textContent=res.length+' chunks, '+size+' chars each, '+ov+' overlap';
+  }
+  cs.addEventListener('input',chunk); co.addEventListener('input',chunk); chunk();
+
+  /* ---------- embedding lab ---------- */
+  var pts=[
+    {x:120,y:80,t:'Self-attention relates positions in one sequence',s:'self-attention'},
+    {x:175,y:120,t:'Query, key and value vectors give attention scores',s:'query, key, value'},
+    {x:95,y:150,t:'Multi-head attention looks at several relations at once',s:'multi-head'},
+    {x:470,y:95,t:'Positional encodings add word order',s:'positional encoding'},
+    {x:520,y:150,t:'Sine and cosine functions encode position',s:'sine and cosine'},
+    {x:390,y:255,t:'Trained on 8 GPUs for 3.5 days (big model)',s:'8 GPUs, 3.5 days'},
+    {x:470,y:280,t:'Adam optimizer with warmup steps',s:'Adam optimizer'},
+    {x:230,y:270,t:'BLEU scores on English to German translation',s:'BLEU scores'}
+  ];
+  var qs=[{x:150,y:110,t:'How does a word decide what to focus on?'},{x:500,y:118,t:'How does the model know word order?'},{x:430,y:262,t:'How long did training take?'}];
+  var svg=document.getElementById('embSvg'), list=document.getElementById('simList'), cur=0;
+  function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+  function draw(){
+    var q=qs[cur], ns='http://www.w3.org/2000/svg';
+    var d=pts.map(function(p,i){return {i:i,d:Math.hypot(p.x-q.x,p.y-q.y)};}).sort(function(a,b){return a.d-b.d;});
+    var top=d.slice(0,3).map(function(o){return o.i;});
+    svg.innerHTML='';
+    function el(n,a){var e=document.createElementNS(ns,n); for(var k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e;}
+    el('rect',{x:1,y:1,width:638,height:328,rx:10,fill:css('--paper'),stroke:css('--rule')});
+    var lab=[['attention neighbourhood',120,30],['word order neighbourhood',490,40],['training neighbourhood',360,320]];
+    lab.forEach(function(l){var t=el('text',{x:l[1],y:l[2],'text-anchor':'middle','font-size':13,fill:css('--ink-2'),'font-style':'italic','font-family':'Atkinson Hyperlegible, sans-serif'}); t.textContent=l[0];});
+    top.forEach(function(i){el('line',{x1:q.x,y1:q.y,x2:pts[i].x,y2:pts[i].y,stroke:css('--lib'),'stroke-width':3,'stroke-dasharray':'6 5'});});
+    pts.forEach(function(p,i){var on=top.indexOf(i)>-1; el('circle',{cx:p.x,cy:p.y,r:on?10:8,fill:on?css('--lib'):css('--panel'),stroke:on?css('--lib'):css('--ink-2'),'stroke-width':2.5});
+      var tl=el('text',{x:p.x+15,y:p.y+5,'font-size':13,fill:on?css('--ink'):css('--ink-2'),'font-weight':on?700:400,'font-family':'Atkinson Hyperlegible, sans-serif'}); tl.textContent=p.s;});
+    el('rect',{x:q.x-9,y:q.y-9,width:18,height:18,transform:'rotate(45 '+q.x+' '+q.y+')',fill:css('--amber'),stroke:css('--ink'),'stroke-width':2});
+    list.innerHTML='';
+    d.slice(0,3).forEach(function(o){var sim=Math.max(0,1-o.d/420); var li=document.createElement('li'); li.innerHTML='<span class="stat">'+sim.toFixed(2)+'</span><span>'+pts[o.i].t+'<div class="bar" style="width:'+Math.round(sim*100)+'%"></div></span>'; list.appendChild(li);});
+  }
+  window.__drawEmb=draw;
+  document.querySelectorAll('#embLab .chip').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('#embLab .chip').forEach(function(c){c.setAttribute('aria-pressed','false');}); b.setAttribute('aria-pressed','true'); cur=+b.dataset.q; draw();});});
+  draw();
+  if(window.matchMedia){window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);}
+
+  /* ---------- quiz ---------- */
+  var Q=[
+    ['What does the "R" in RAG do?',['Retrains the model on your documents','Retrieves relevant pieces of your documents','Rewrites the user question','Ranks LLMs by speed'],1,'RAG retrieves the most relevant chunks and gives them to the LLM. No retraining happens.'],
+    ['Why must the question and the chunks use the same embedding model?',['It is faster','Different models place text on different "maps", so distances become meaningless','The vector database only accepts one model name','It reduces cost'],1,'Similarity only makes sense when both vectors come from the same model.'],
+    ['The user asks "What is the weather in Bengaluru today?". What should the Router say?',['vectorstore','websearch','yes','no'],1,'Real-time information is not in a fixed PDF, so it goes to the web.'],
+    ['The Hallucination Grader answers "yes". What does that mean?',['The answer contains a hallucination','The answer is supported by the source text','The question was off-topic','The web search failed'],1,'In our tasks, "yes" means grounded and safe.'],
+    ['Where does the agent learn what a tool does?',['From the file name','From the tool\'s name and docstring','From the .env file','It guesses'],1,'The docstring is an instruction to the agent. Write it clearly.'],
+    ['What does context=[router_task] on the retriever task do?',['Runs the router again','Lets the retriever read the router\'s output','Gives the retriever the router\'s tools','Makes them run in parallel'],1,'context passes earlier task results forward.'],
+    ['A hospital help desk bot is asked "Is Dr. Mehta available tomorrow?". Which line should that question take?',['The library line (hospital rules PDF)','The live line (the appointment system as a tool)','Neither, refuse to answer','The hallucination grader'],1,'Availability changes every day, so it must come from a live system, not a document.'],
+    ['When is plain RAG the better choice?',['When mistakes are very costly','When answers need live data','When all answers are in your documents and you need very fast, cheap replies','Never'],2,'Plain RAG is simpler, faster and cheaper. Use agentic RAG when you need routing or checks.'],
+    ['Which setting changes the brain from cloud DeepSeek to laptop DeepSeek?',['RAG_LLM_MODE=same','LLM_MODE=ollama','EMBEDDING_MODEL','PDF_TOPIC'],1,'LLM_MODE switches between openrouter and ollama.']
+  ];
+  var qz=document.getElementById('quiz');
+  Q.forEach(function(q,qi){
+    var box=document.createElement('div'); box.className='q';
+    box.innerHTML='<div class="qt">'+(qi+1)+'. '+q[0]+'</div><div class="opts"></div><div class="fb" aria-live="polite"></div>';
+    var opts=box.querySelector('.opts'), fb=box.querySelector('.fb');
+    q[1].forEach(function(o,oi){
+      var b=document.createElement('button'); b.type='button'; b.className='opt'; b.textContent=o;
+      b.addEventListener('click',function(){
+        opts.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong');});
+        if(oi===q[2]){b.classList.add('right'); fb.textContent='Correct. '+q[3];}
+        else{b.classList.add('wrong'); fb.textContent='Not quite. Try another option.';}
+      });
+      opts.appendChild(b);
+    });
+    qz.appendChild(box);
+  });
+
+  /* ---------- route-map table of contents ---------- */
+  var links=[].slice.call(document.querySelectorAll('#toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  function onScroll(){
+    var y=window.scrollY+140, idx=-1;
+    secs.forEach(function(s,i){if(s&&s.offsetTop<=y) idx=i;});
+    links.forEach(function(a,i){var li=a.parentElement; li.classList.toggle('done',i<idx); li.classList.toggle('here',i===idx); if(i===idx) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current');});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>

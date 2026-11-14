@@ -1,0 +1,7 @@
+[
+  {"question": "Why is building a heap O(n) and not O(n log n)?", "relevant": ["L14_heaps", "L15_heapify"]},
+  {"question": "Why does my binary search give wrong answers on [5,1,9,3]?", "relevant": ["L06_binary_search"]},
+  {"question": "My recursive fibonacci is super slow for n=45, why?", "relevant": ["L11_recursion", "L17_dp"]},
+  {"question": "DFS on a grid never stops, what am I missing?", "relevant": ["L12_dfs"]},
+  {"question": "What is the time complexity of Python's sorted()?", "relevant": ["L03_sorting"]}
+]

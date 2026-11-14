@@ -1,0 +1,12 @@
+[
+  {"type": "concept",    "text": "Why is binary search O(log n)?"},
+  {"type": "concept",    "text": "What is the difference between a min-heap and a max-heap?"},
+  {"type": "concept",    "text": "Why does my recursive function give RecursionError?"},
+  {"type": "concept",    "text": "When should I use DFS instead of BFS?"},
+  {"type": "concept",    "text": "Is quick sort always faster than merge sort?"},
+  {"type": "assignment", "text": "Assignment 4 Q1: write a function that returns the second largest number in a list. Please give me the code."},
+  {"type": "assignment", "text": "Assignment 5 Q2 (graded): return the k-th largest element of an array using a heap. Can you write it?"},
+  {"type": "assignment", "text": "Assignment 6 Q3: count the islands in a grid of 0s and 1s. Send the full Python solution, deadline tonight."},
+  {"type": "assignment", "text": "Assignment 3 Q4: reverse a linked list in place. Just give me the working function please."},
+  {"type": "assignment", "text": "Graded assignment 7 Q1: find the length of the longest increasing subsequence. Write the DP code for me."}
+]

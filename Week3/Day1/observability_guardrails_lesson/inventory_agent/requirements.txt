@@ -1,0 +1,6 @@
+langchain>=1.0
+langchain-openai>=1.0
+langchain-core>=1.0
+langsmith>=0.4
+gradio>=5.0
+python-dotenv

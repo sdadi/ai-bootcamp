@@ -12,10 +12,16 @@ from dotenv import load_dotenv
 from strands import Agent, tool
 from strands.models.openai import OpenAIModel
 
-load_dotenv()
 
-MODEL_ID = os.getenv("GROQ_MODEL_ID", "openai/gpt-oss-120b")
+load_dotenv(override=True)  # reads GROQ_API_KEY from a .env file, if present
 
+MODEL_ID = os.getenv("GROQ_MODEL_ID")
+API_KEY = os.getenv("GROQ_API_KEY")
+BASE_URL = os.getenv("GROQ_BASE_URL")  # or a local OpenAI-compatible server
+
+print(f"Using {MODEL_ID} on Groq")
+print(f"Using {BASE_URL} as the base URL")
+print(f"Using {API_KEY} as the API key")
 
 @tool
 def lookup_account(account_id: str) -> str:
@@ -42,13 +48,13 @@ def calculate_discount(amount: float, tier: str) -> str:
 
 model = OpenAIModel(
     client_args={
-        "api_key": os.environ["GROQ_API_KEY"],
-        "base_url": os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),  # or a local OpenAI-compatible server
+        "api_key": API_KEY,
+        "base_url": BASE_URL,  # or a local OpenAI-compatible server
         "max_retries": 5,  # retry dropped connections (the client default is 2)
     },
     model_id=MODEL_ID,
-    # Groq reasoning models stream their thinking by default; hide it so only the answer is returned.
-    params={"extra_body": {"include_reasoning": False}},
+    # Groq reasoning models stream their thinking by default; hide it so only the answer prints.
+    # params={"extra_body": {"include_reasoning": False}},
 )
 
 agent = Agent(

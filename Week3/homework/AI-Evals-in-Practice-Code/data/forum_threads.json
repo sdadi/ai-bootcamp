@@ -1,0 +1,34 @@
+[
+  {"id": "T101",
+   "post": {"user": "Meera", "text": "why does my dfs on the grid never end?? it works on small inputs"},
+   "replies": [
+     {"user": "Kabir", "text": "same problem, maybe python is slow"},
+     {"user": "TA Farhan", "text": "It's not speed: you never mark cells as visited, so DFS keeps revisiting neighbours forever. Keep a visited set and check it before recursing."}],
+   "accepted_ta_reply": "It's not speed: you never mark cells as visited, so DFS keeps revisiting neighbours forever. Keep a visited set and check it before recursing."},
+  {"id": "T102",
+   "post": {"user": "Rohit", "text": "heapify is O(n)?? sir said heappush is log n so n items should be n log n na"},
+   "replies": [
+     {"user": "TA Priya", "text": "Pushing n items one by one is O(n log n). heapify is different: it sifts down from the last parent, and most nodes are near the bottom with short paths, so the total is about 2n swaps, i.e. O(n)."}],
+   "accepted_ta_reply": "Pushing n items one by one is O(n log n). heapify is different: it sifts down from the last parent, and most nodes are near the bottom with short paths, so the total is about 2n swaps, i.e. O(n)."},
+  {"id": "T103",
+   "post": {"user": "Sana", "text": "fib(45) recursive takes forever on my laptop. is my laptop bad"},
+   "replies": [
+     {"user": "Dev", "text": "get a better laptop lol"},
+     {"user": "TA Farhan", "text": "Your laptop is fine. Naive recursive fib recomputes the same values again and again (O(2^n)). Add memoization with functools.lru_cache and it becomes O(n)."}],
+   "accepted_ta_reply": "Your laptop is fine. Naive recursive fib recomputes the same values again and again (O(2^n)). Add memoization with functools.lru_cache and it becomes O(n)."},
+  {"id": "T104",
+   "post": {"user": "Arnav", "text": "binary search returning wrong index sometimes, array is [5,1,9,3]"},
+   "replies": [
+     {"user": "TA Priya", "text": "Binary search only works on a sorted array. [5,1,9,3] is not sorted, so the halving logic throws away the wrong half. Sort it first (or use a different method)."}],
+   "accepted_ta_reply": "Binary search only works on a sorted array. [5,1,9,3] is not sorted, so the halving logic throws away the wrong half. Sort it first (or use a different method)."},
+  {"id": "T105",
+   "post": {"user": "Ishita", "text": "my fees EMI got deducted twice this month, who do i contact"},
+   "replies": [
+     {"user": "TA Farhan", "text": "Please call the course helpline on 1800-120-4567 (Mon-Sat, 10am-7pm); the fees team will check the double deduction."}],
+   "accepted_ta_reply": "Please call the course helpline on 1800-120-4567 (Mon-Sat, 10am-7pm); the fees team will check the double deduction."},
+  {"id": "T106",
+   "post": {"user": "Kunal", "text": "quick sort took ages on an already sorted list of 1 lakh items. why"},
+   "replies": [
+     {"user": "TA Priya", "text": "If your pivot is the first element, a sorted list makes every split as uneven as possible, which is quick sort's O(n^2) worst case. Pick a random pivot or the middle element."}],
+   "accepted_ta_reply": "If your pivot is the first element, a sorted list makes every split as uneven as possible, which is quick sort's O(n^2) worst case. Pick a random pivot or the middle element."}
+]

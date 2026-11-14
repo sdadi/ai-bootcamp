@@ -1,0 +1,135 @@
+[
+ {
+  "id": "P001",
+  "question": "why binary search needs sorted array",
+  "answer": "Because each step throws away half the array based on the middle element. That only works if the items are in order.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P002",
+  "question": "Assignment 5 Q2: kth largest, how to start?",
+  "answer": "Keep a min-heap of size k. What do you do when it grows beyond k? Which element ends up at the root?",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P003",
+  "question": "heappush cost?",
+  "answer": "O(log n): the new item sifts up at most the height of the tree.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P004",
+  "question": "what is a base case",
+  "answer": "It's the input where the function returns directly without calling itself, e.g. n == 0. It stops the recursion.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P005",
+  "question": "Assignment 3 Q4: reverse linked list code pls",
+  "answer": "def reverse(head):\n    prev = None\n    while head:\n        head.next, prev, head = prev, head, head.next\n    return prev",
+  "thumbs_down": true,
+  "escalated": false
+ },
+ {
+  "id": "P006",
+  "question": "bfs vs dfs for shortest path in unweighted graph",
+  "answer": "Use BFS: it explores level by level, so the first time it reaches a node is via a shortest path.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P007",
+  "question": "is timsort stable",
+  "answer": "Yes. Python's sort is stable: equal items keep their original order.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P008",
+  "question": "asgn 4 q1 second largest, approach?",
+  "answer": "Track the largest and second largest while looping once. What changes when you see a new maximum?",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P009",
+  "question": "why lru_cache makes fib fast",
+  "answer": "It stores each fib(k) the first time it's computed, so every value is computed once: O(n) instead of O(2^n).",
+  "thumbs_down": true,
+  "escalated": false
+ },
+ {
+  "id": "P010",
+  "question": "what is O(1)",
+  "answer": "Constant time: the work doesn't grow with the input size, like reading heap[0].",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P011",
+  "question": "graded asgn 7 q1 LIS just send code",
+  "answer": "def lis(a):\n    dp = [1]*len(a)\n    for i in range(len(a)):\n        for j in range(i):\n            if a[j] < a[i]: dp[i] = max(dp[i], dp[j]+1)\n    return max(dp, default=0)",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P012",
+  "question": "heap vs sorted list for top k",
+  "answer": "A heap of size k gives O(n log k); sorting everything is O(n log n). For small k the heap wins.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P013",
+  "question": "why my dfs recursion error on 1000x1000 grid",
+  "answer": "Python's recursion limit is about 1000 calls. Use an explicit stack (iterative DFS) for big grids.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P014",
+  "question": "Assignment 6 Q3 islands hint pls",
+  "answer": "Scan each cell; when you meet an unvisited 1, flood-fill its island with DFS and count one island.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P015",
+  "question": "merge sort space complexity",
+  "answer": "O(n) extra space for merging.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P016",
+  "question": "how many comparisons binary search on 1 million items",
+  "answer": "About 20, because log2(1,000,000) is about 20.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P017",
+  "question": "i want an extension for assignment 6, my father is in hospital",
+  "answer": "I've asked a mentor to reach out to you personally. They'll reply here soon.",
+  "thumbs_down": false,
+  "escalated": true
+ },
+ {
+  "id": "P018",
+  "question": "difference between list and tuple",
+  "answer": "Lists can change (mutable); tuples can't (immutable). Tuples can be dict keys.",
+  "thumbs_down": false,
+  "escalated": false
+ },
+ {
+  "id": "P019",
+  "question": "failed again, thinking of dropping the course",
+  "answer": "I've asked a mentor to reach out to you personally. They'll reply here soon.",
+  "thumbs_down": false,
+  "escalated": true
+ }
+]

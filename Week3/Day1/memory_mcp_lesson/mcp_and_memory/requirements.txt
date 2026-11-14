@@ -1,0 +1,7 @@
+openai>=2.0
+langchain>=1.0
+langchain-openai>=1.0
+langgraph>=1.0
+fastmcp>=4.0
+requests>=2.31
+python-dotenv>=1.0

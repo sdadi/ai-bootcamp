@@ -1,0 +1,31 @@
+{
+  "_about": "Hand-checked answers for the fictional NimbusPay corpus, as of 2026-11-01. Used by Lab 1 and Lab 11. In a real project YOU write this file by researching a few cases manually — it is the most valuable evaluation asset you will own.",
+  "as_of": "2026-11-01",
+  "cases": [
+    {
+      "id": "nimbuspay-due-diligence",
+      "question": "Is NimbusPay (Bengaluru, India) a reliable payment-gateway partner for our D2C startup today? Check leadership, licence status, funding, reliability, security incidents, pricing and merchant sentiment.",
+      "entity": {
+        "name": "NimbusPay",
+        "country": "India",
+        "city": "Bengaluru",
+        "industry_keywords": ["payment gateway", "payment aggregator", "payments", "merchants"],
+        "official_domain": "nimbuspay.example"
+      },
+      "expected": {
+        "ceo": {"value": "Ananya Rao", "historical": ["Rohit Mehra"]},
+        "founded_year": {"value": "2019"},
+        "headquarters": {"value": "Bengaluru"},
+        "latest_funding": {"value": "Series B — $40M", "historical": ["Series A — $8M"]},
+        "regulatory_status": {"value": "final authorisation", "historical": ["in-principle approval"]},
+        "pricing_domestic_cards": {"value": "2.0%"},
+        "uptime_90d": {"value": "99.95%"},
+        "major_outage": {"value": "12 January 2026"},
+        "security_incident": {"value": "merchant contact details exposed (June 2025); no card data"},
+        "merchant_rating": {"value": "3.9/5"}
+      },
+      "must_not_appear": ["licence revoked", "PayQuick", "Daniel Hughes", "Manchester", "2015"],
+      "expected_conflicts": ["ceo", "latest_funding", "regulatory_status", "pricing_domestic_cards"]
+    }
+  ]
+}

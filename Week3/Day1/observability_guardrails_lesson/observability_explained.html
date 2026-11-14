@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Observability: Explained Simply (slide-by-slide)</title>
+<style>
+:root{
+  --bg:#f7f5ef; --paper:#ffffff; --ink:#1c1b19; --muted:#5d5a53; --line:#e4dfd3;
+  --accent:#f2b705; --navy:#1f2a44;
+  --blue-bg:#eef4ff; --blue:#2f63c9;
+  --amber-bg:#fff5d6; --amber:#c98a00;
+  --green-bg:#e8f6ec; --green:#23804c;
+  --rose-bg:#fdeceb; --rose:#b8352a;
+  --gray-bg:#f2f0ea; --gray:#8d877a;
+  --code-bg:#14161b;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 var(--sans)}
+a{color:var(--blue)}
+#progress{position:fixed;top:0;left:0;height:4px;width:0;background:var(--accent);z-index:50}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px 40px 22px;border-right:1px solid var(--line);font-size:14px}
+nav.toc .brand{font:700 15px/1.3 var(--serif);color:var(--navy);margin-bottom:14px}
+nav.toc .grp{margin:16px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+nav.toc a{display:flex;gap:8px;padding:3px 8px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.35}
+nav.toc a span.n{flex:0 0 22px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:#ece8dd}
+nav.toc a.active{background:var(--navy);color:#fff}
+nav.toc a.active span.n{color:#cfd6e6}
+main{padding:34px 44px 80px;min-width:0}
+.mobile-toc{display:none}
+@media (max-width:1000px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{display:none}
+  main{padding:22px 16px 60px}
+  .mobile-toc{display:block;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .mobile-toc summary{font-weight:700;cursor:pointer}
+  .mobile-toc a{display:block;padding:3px 0}
+}
+
+/* ---------- hero ---------- */
+.hero{background:var(--navy);color:#fff;border-radius:18px;padding:40px 40px 34px;margin-bottom:26px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;background:var(--accent);opacity:.9;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.hero .kicker{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#f6d36b;font-weight:700}
+.hero h1{font:700 40px/1.12 var(--serif);margin:10px 0 12px;max-width:720px;position:relative;z-index:1}
+.hero p{max-width:690px;color:#dfe4ef;margin:0 0 8px;position:relative;z-index:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;position:relative;z-index:1}
+.legend span{font-size:13px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12)}
+
+.intro{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:30px}
+.intro h2{font:700 22px/1.3 var(--serif);margin:0 0 10px;color:var(--navy)}
+.roadmap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.roadmap .step{background:var(--gray-bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.roadmap .step b{display:block;color:var(--navy)}
+.roadmap .arr{color:var(--muted)}
+
+/* ---------- part dividers ---------- */
+.part{margin:46px 0 14px;display:flex;align-items:center;gap:14px}
+.part .tag{background:var(--accent);color:#2a2100;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:6px}
+.part h2{margin:0;font:700 26px/1.2 var(--serif);color:var(--navy)}
+
+/* ---------- slide cards ---------- */
+section.slide{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px 24px;margin:18px 0 26px;scroll-margin-top:16px}
+.slide-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.slide-head .num{background:var(--navy);color:#fff;font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.slide-head h3{font:700 26px/1.25 var(--serif);margin:0;color:var(--ink)}
+.oneliner{color:var(--muted);font-size:16px;margin:2px 0 14px}
+section.slide h4{margin:0 0 6px;font-size:13px;letter-spacing:.07em;text-transform:uppercase}
+section.slide p{margin:0 0 10px}
+section.slide ul,section.slide ol{margin:4px 0 10px;padding-left:22px}
+section.slide li{margin:3px 0}
+
+.box{border-radius:12px;padding:14px 18px 8px;margin:14px 0;border-left:5px solid}
+.box.said{background:var(--gray-bg);border-color:var(--gray)} .box.said h4{color:#6b665b}
+.box.simple{background:var(--blue-bg);border-color:var(--blue)} .box.simple h4{color:var(--blue)}
+.box.analogy{background:var(--amber-bg);border-color:var(--amber)} .box.analogy h4{color:#8a5d00}
+.box.real{background:var(--green-bg);border-color:var(--green)} .box.real h4{color:var(--green)}
+.box.careful{background:var(--rose-bg);border-color:var(--rose)} .box.careful h4{color:var(--rose)}
+.box.try{background:#f4f3fb;border-color:#5b4fc4} .box.try h4{color:#4b40a8}
+
+details.orig{margin:6px 0 4px}
+details.orig summary{cursor:pointer;color:var(--muted);font-size:14px}
+details.orig img{display:block;width:100%;max-width:640px;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+
+/* ---------- code ---------- */
+.codebox{margin:12px 0 4px;border-radius:12px;overflow:hidden;background:var(--code-bg);border:1px solid #23262e}
+.codebar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#1d2027;color:#c9ced8;font:13px var(--mono)}
+.codebar .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font:700 11px var(--sans);letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.badge.run{background:#1f6f43;color:#dff7e8}
+.badge.key{background:#7a5a00;color:#fff1c7}
+.badge.gpu{background:#6b2f8a;color:#f3e3ff}
+.badge.local{background:#1f4f8a;color:#e1edff}
+.badge.anth{background:#8a3d1f;color:#ffe6d6}
+.copy{background:#2c313b;color:#e6e9ef;border:0;border-radius:6px;padding:3px 9px;font:12px var(--sans);cursor:pointer}
+.copy:hover{background:#3a404c}
+pre.hl{margin:0;padding:14px 16px;overflow:auto;font:13.5px/1.55 var(--mono);color:#e6edf3;tab-size:4}
+.outbox{margin:0 0 12px;border-radius:0 0 12px 12px;background:#0b0d10;border:1px solid #23262e;border-top:0;position:relative;top:-6px;padding-top:6px}
+.outbar{font:700 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#7ee2a8;padding:8px 14px 0}
+.outbox pre{margin:0;padding:6px 14px 12px;overflow:auto;font:13px/1.5 var(--mono);color:#cfe9d8}
+.outbox.example .outbar{color:#f6d36b}
+.outbox.example pre{color:#f1e6c8;white-space:pre-wrap;overflow-wrap:anywhere}
+code.i{font:14.5px var(--mono);background:#efece4;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+
+/* ---------- tables ---------- */
+table.t{border-collapse:collapse;width:100%;margin:10px 0 14px;font-size:15px}
+table.t th,table.t td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.t th{background:#f0ede5;font-weight:700}
+table.t td.fill{background:#fff5d6}
+@media (max-width:700px){table.t{display:block;overflow-x:auto;font-size:14px}}
+.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.threecol{grid-template-columns:1fr}}
+
+/* ---------- diagrams ---------- */
+.diagram{background:#fbfaf6;border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0;overflow-x:auto}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.flow .b{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:8px 14px;font-weight:600;text-align:center;font-size:15px}
+.flow .b.dark{background:var(--navy);color:#fff}
+.flow .b.y{background:var(--accent);border-color:#b98a00;color:#2a2100}
+.flow .b.g{background:var(--green-bg);border-color:var(--green)}
+.flow .b.r{background:var(--rose-bg);border-color:var(--rose)}
+.flow .b small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.flow .b.dark small{color:#cfd6e6}
+.flow .a{font-size:22px;color:var(--muted)}
+.caption{font-size:13.5px;color:var(--muted);text-align:center;margin-top:8px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.twocol{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h5{margin:0 0 6px;font-size:15px;color:var(--navy)}
+.stack{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.stack div{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.tl{display:flex;align-items:stretch;height:34px;border-radius:6px;overflow:hidden;font-size:12px;font-weight:700}
+.tl div{display:flex;align-items:center;justify-content:center;color:#fff;border-right:1px solid rgba(255,255,255,.4)}
+.chip{display:inline-block;font:600 14px var(--mono);padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:#fff;margin:2px}
+.chip.ok{background:var(--green-bg);border-color:var(--green)}
+.chip.bad{background:var(--rose-bg);border-color:var(--rose);text-decoration:line-through}
+.chip.new{background:#fff5d6;border-color:var(--amber)}
+.chip.ghost{color:var(--muted)}
+.grid-kv{display:inline-grid;gap:3px}
+.grid-kv .row{display:flex;gap:3px;align-items:center}
+.grid-kv .c{width:20px;height:20px;border-radius:4px}
+.c.re{background:#e8833a} .c.ca{background:#5fb27f} .c.no{background:transparent}
+.grid-kv .lbl{font-size:12px;color:var(--muted);width:54px}
+.bars .bar{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:14px}
+.bars .bar .lab{width:92px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.bars .bar .fillbar{height:18px;border-radius:4px}
+
+/* ---------- widgets ---------- */
+.widget{background:#fff;border:2px dashed #c9c2b2;border-radius:12px;padding:14px 16px;margin:12px 0}
+.widget h5{margin:0 0 10px;font-size:15px;color:var(--navy)}
+.widget .row{display:flex;flex-wrap:wrap;gap:10px 16px;margin-bottom:10px}
+.widget label{font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.widget input,.widget textarea{font:15px var(--mono);padding:6px 8px;border:1px solid #cfc8b8;border-radius:6px;width:130px;background:#fffdf8}
+.widget textarea{width:100%;height:46px}
+.widget button{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+.widget .res{font:15px/1.6 var(--mono);background:#f6f4ee;border-radius:8px;padding:10px 12px;white-space:pre-wrap}
+.stream-out{min-height:72px;font-size:16px;background:#f6f4ee;border-radius:8px;padding:10px 12px;margin-top:8px}
+.cursor{display:inline-block;width:8px;height:17px;background:var(--navy);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- glossary & quiz ---------- */
+dl.gloss{display:grid;grid-template-columns:200px 1fr;gap:6px 16px;margin:0}
+dl.gloss dt{font-weight:700;color:var(--navy)}
+dl.gloss dd{margin:0}
+@media (max-width:700px){dl.gloss{grid-template-columns:1fr} dl.gloss dd{margin-bottom:8px}}
+details.q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}
+details.q summary{cursor:pointer;font-weight:600}
+details.q p{margin:8px 0 2px}
+footer{color:var(--muted);font-size:14px;text-align:center;margin-top:40px}
+
+@media print{
+  nav.toc,.mobile-toc,#progress,.copy{display:none !important}
+  .layout{display:block} main{padding:0}
+  section.slide{break-inside:avoid-page}
+  body{background:#fff}
+}
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+pre.hl .hll { background-color: #6e7681 }
+pre.hl { background: #0d1117; color: #E6EDF3 }
+pre.hl .c { color: #8B949E; font-style: italic } /* Comment */
+pre.hl .err { color: #F85149 } /* Error */
+pre.hl .esc { color: #E6EDF3 } /* Escape */
+pre.hl .g { color: #E6EDF3 } /* Generic */
+pre.hl .k { color: #FF7B72 } /* Keyword */
+pre.hl .l { color: #A5D6FF } /* Literal */
+pre.hl .n { color: #E6EDF3 } /* Name */
+pre.hl .o { color: #FF7B72; font-weight: bold } /* Operator */
+pre.hl .x { color: #E6EDF3 } /* Other */
+pre.hl .p { color: #E6EDF3 } /* Punctuation */
+pre.hl .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+pre.hl .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+pre.hl .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+pre.hl .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+pre.hl .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+pre.hl .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+pre.hl .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+pre.hl .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+pre.hl .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+pre.hl .gr { color: #FFA198 } /* Generic.Error */
+pre.hl .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+pre.hl .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+pre.hl .go { color: #8B949E } /* Generic.Output */
+pre.hl .gp { color: #8B949E } /* Generic.Prompt */
+pre.hl .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+pre.hl .gu { color: #79C0FF } /* Generic.Subheading */
+pre.hl .gt { color: #FF7B72 } /* Generic.Traceback */
+pre.hl .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+pre.hl .kc { color: #79C0FF } /* Keyword.Constant */
+pre.hl .kd { color: #FF7B72 } /* Keyword.Declaration */
+pre.hl .kn { color: #FF7B72 } /* Keyword.Namespace */
+pre.hl .kp { color: #79C0FF } /* Keyword.Pseudo */
+pre.hl .kr { color: #FF7B72 } /* Keyword.Reserved */
+pre.hl .kt { color: #FF7B72 } /* Keyword.Type */
+pre.hl .ld { color: #79C0FF } /* Literal.Date */
+pre.hl .m { color: #A5D6FF } /* Literal.Number */
+pre.hl .s { color: #A5D6FF } /* Literal.String */
+pre.hl .na { color: #E6EDF3 } /* Name.Attribute */
+pre.hl .nb { color: #E6EDF3 } /* Name.Builtin */
+pre.hl .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+pre.hl .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+pre.hl .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+pre.hl .ni { color: #FFA657 } /* Name.Entity */
+pre.hl .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+pre.hl .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+pre.hl .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+pre.hl .nn { color: #FF7B72 } /* Name.Namespace */
+pre.hl .nx { color: #E6EDF3 } /* Name.Other */
+pre.hl .py { color: #79C0FF } /* Name.Property */
+pre.hl .nt { color: #7EE787 } /* Name.Tag */
+pre.hl .nv { color: #79C0FF } /* Name.Variable */
+pre.hl .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+pre.hl .pm { color: #E6EDF3 } /* Punctuation.Marker */
+pre.hl .w { color: #6E7681 } /* Text.Whitespace */
+pre.hl .mb { color: #A5D6FF } /* Literal.Number.Bin */
+pre.hl .mf { color: #A5D6FF } /* Literal.Number.Float */
+pre.hl .mh { color: #A5D6FF } /* Literal.Number.Hex */
+pre.hl .mi { color: #A5D6FF } /* Literal.Number.Integer */
+pre.hl .mo { color: #A5D6FF } /* Literal.Number.Oct */
+pre.hl .sa { color: #79C0FF } /* Literal.String.Affix */
+pre.hl .sb { color: #A5D6FF } /* Literal.String.Backtick */
+pre.hl .sc { color: #A5D6FF } /* Literal.String.Char */
+pre.hl .dl { color: #79C0FF } /* Literal.String.Delimiter */
+pre.hl .sd { color: #A5D6FF } /* Literal.String.Doc */
+pre.hl .s2 { color: #A5D6FF } /* Literal.String.Double */
+pre.hl .se { color: #79C0FF } /* Literal.String.Escape */
+pre.hl .sh { color: #79C0FF } /* Literal.String.Heredoc */
+pre.hl .si { color: #A5D6FF } /* Literal.String.Interpol */
+pre.hl .sx { color: #A5D6FF } /* Literal.String.Other */
+pre.hl .sr { color: #79C0FF } /* Literal.String.Regex */
+pre.hl .s1 { color: #A5D6FF } /* Literal.String.Single */
+pre.hl .ss { color: #A5D6FF } /* Literal.String.Symbol */
+pre.hl .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+pre.hl .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+pre.hl .vc { color: #79C0FF } /* Name.Variable.Class */
+pre.hl .vg { color: #79C0FF } /* Name.Variable.Global */
+pre.hl .vi { color: #79C0FF } /* Name.Variable.Instance */
+pre.hl .vm { color: #79C0FF } /* Name.Variable.Magic */
+pre.hl .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+
+.badge.ls{background:#0f5c5c;color:#d9fbfb}
+.outbox.example .outbar{color:#f6d36b}
+.outbox.example pre{color:#f1e6c8;white-space:pre-wrap;overflow-wrap:anywhere}
+.outbox pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.threecol{grid-template-columns:1fr}}
+@media (max-width:700px){table.t{display:block;overflow-x:auto;font-size:14px}}
+pre.tree{background:#14161b;color:#e6edf3;border-radius:10px;padding:12px 14px;overflow:auto;font:13px/1.55 var(--mono);margin:8px 0 12px}
+.widget label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:15px}
+.widget label.chk input{width:auto}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">LLM Observability<br><span style="font:400 13px var(--sans);color:var(--muted)">by Shivank Agarwal</span></div>
+  <div class="grp">The idea</div>
+  <a href="#s1"><span class="n">1</span>Beyond monitoring</a>
+  <a href="#s2"><span class="n">2</span>What is observability?</a>
+  <a href="#s3"><span class="n">3</span>Prototype → production</a>
+  <a href="#s4"><span class="n">4</span>Challenges (1–2)</a>
+  <a href="#s5"><span class="n">5</span>Challenges (3–5)</a>
+  <div class="grp">MELT</div>
+  <a href="#s6"><span class="n">6</span>The MELT framework</a>
+  <a href="#s7"><span class="n">7</span>Metrics</a>
+  <a href="#s8"><span class="n">8</span>Events</a>
+  <a href="#s9"><span class="n">9</span>Logs</a>
+  <a href="#s10"><span class="n">10</span>Traces</a>
+  <a href="#s11"><span class="n">11</span>Tracing an agent</a>
+  <a href="#s12"><span class="n">12</span>What to capture</a>
+  <div class="grp">Debugging story</div>
+  <a href="#s13"><span class="n">13</span>The agent that lies</a>
+  <a href="#s14"><span class="n">14</span>MELT finds the cause</a>
+  <a href="#s15"><span class="n">15</span>Drilling into logs</a>
+  <a href="#s16"><span class="n">16</span>The fix</a>
+  <div class="grp">Tools &amp; wrap-up</div>
+  <a href="#s17"><span class="n">17</span>Choosing tools</a>
+  <a href="#s18"><span class="n">18</span>LangSmith</a>
+  <a href="#s19"><span class="n">19</span>Key takeaways</a>
+  <a href="#glossary"><span class="n">★</span>Glossary</a>
+  <a href="#quiz"><span class="n">?</span>Check yourself</a>
+</nav>
+
+<main>
+<details class="mobile-toc"><summary>Contents (19 slides)</summary>
+  <a href="#s1">1 · Beyond monitoring</a><a href="#s2">2 · What is observability</a><a href="#s3">3 · Prototype → production</a>
+  <a href="#s4">4 · Challenges 1–2</a><a href="#s5">5 · Challenges 3–5</a><a href="#s6">6 · MELT</a><a href="#s7">7 · Metrics</a>
+  <a href="#s8">8 · Events</a><a href="#s9">9 · Logs</a><a href="#s10">10 · Traces</a><a href="#s11">11 · Tracing an agent</a>
+  <a href="#s12">12 · What to capture</a><a href="#s13">13 · The agent that lies</a><a href="#s14">14 · Root cause</a>
+  <a href="#s15">15 · Logs</a><a href="#s16">16 · The fix</a><a href="#s17">17 · Tools</a><a href="#s18">18 · LangSmith</a>
+  <a href="#s19">19 · Takeaways</a><a href="#glossary">Glossary</a><a href="#quiz">Check yourself</a>
+</details>
+
+<header class="hero">
+  <div class="kicker">By Shivank Agarwal · 19 slides · every slide covered</div>
+  <h1>LLM Observability: seeing inside your AI agent, explained simply</h1>
+  <p>Each slide gets the same treatment: what the slide says, the idea in plain words, an everyday analogy, a real-world example, and code wherever the slide only gives theory.</p>
+  <p>Code marked <b>Ran it</b> was actually run, and the output under it is real. Code that needs your OpenAI or LangSmith key has an <b>example output</b> under it, so learners can follow just by reading.</p>
+  <div class="legend">
+    <span>▢ What the slide says</span><span>💡 In simple words</span><span>🍛 Analogy</span><span>🌍 Real world</span><span>⌨️ Try it in code</span><span>⚠️ Careful</span>
+  </div>
+</header>
+
+<div class="intro">
+  <h2>The whole talk in one picture</h2>
+  <p>An AI agent is not a normal program: the same question can get different answers, and one request can trigger many hidden steps. When it goes wrong, "the server is up" tells you nothing. <b>Observability</b> is how you see what actually happened inside.</p>
+  <div class="roadmap">
+    <div class="step"><b>1 · Why</b>slides 1–5</div><span class="arr">→</span>
+    <div class="step"><b>2 · MELT</b>Metrics · Events · Logs · Traces<br>slides 6–12</div><span class="arr">→</span>
+    <div class="step"><b>3 · A real debugging story</b>slides 13–16</div><span class="arr">→</span>
+    <div class="step"><b>4 · Tools + recap</b>slides 17–19</div>
+  </div>
+</div>
+
+<div class="part"><span class="tag">Part 1</span><h2>Why observability</h2></div>
+
+<!-- ============ SLIDE 1 ============ -->
+<section class="slide" id="s1">
+  <div class="slide-head"><span class="num">Slide 1</span><h3>Beyond monitoring: what is LLM observability?</h3></div>
+  <p class="oneliner">Subtitle: Understanding AI agent systems through exploration rather than predefined metrics · by Shivank Agarwal</p>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>Normal software is predictable: the same input gives the same output, so a few fixed health checks are enough. AI agents are different: they <b>think in steps, call tools, and can answer differently each time</b>. When something goes wrong you need to look <i>inside</i> and ask questions you didn't plan for. That ability is <b>observability</b>.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A car's dashboard warning light (monitoring) tells you <i>something</i> is wrong. A mechanic's diagnostic scanner plugged into the engine (observability) lets you find out <i>what</i> and <i>why</i>, even for a problem the car maker never anticipated.</p>
+  </div>
+  <div class="box real"><h4>🌍 Why learners should care</h4>
+    <p>Every company putting AI agents in front of customers hits the same wall: "users say the bot gave a wrong answer, and we can't see why." Knowing how to trace and debug agents is now a core skill for AI engineers and forward-deployed engineers.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2 ============ -->
+<section class="slide" id="s2">
+  <div class="slide-head"><span class="num">Slide 2</span><h3>What is observability?</h3></div>
+  <p class="oneliner">Monitoring checks known things. Observability helps you discover unknown things.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <div class="twocol">
+      <div class="card"><h5>Monitoring is question-driven</h5>"Is the system up?" · "Is CPU usage below 80%?" · It checks known, pre-defined metrics.</div>
+      <div class="card"><h5>Observability is exploration-driven</h5>"Why is user satisfaction dropping for users in Europe?" · "What caused the agent to give a wrong answer?" · The ability to understand a system's internal state from its outputs, asking new questions <b>without writing new code</b>.</div>
+    </div>
+    <p style="margin-top:8px"><b>For AI agents:</b> it's your debugger for a non-deterministic, reasoning system.</p>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <ul>
+      <li><b>Monitoring</b> = alarms you set up in advance. Great for problems you already know about.</li>
+      <li><b>Observability</b> = recording enough detail about every request that, when a <i>new</i> problem appears, you can investigate it by slicing the data you already have, without shipping new code first.</li>
+    </ul>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A smoke alarm (monitoring) only beeps. CCTV footage plus the kitchen logbook (observability) let you replay the evening and find out who left the gas on.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: the same data, two kinds of questions</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r02_monitoring_vs_observability.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># Monitoring asks a FIXED question. Observability lets you ask NEW questions of the same data.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># One row per chatbot answer, exactly as your app would record it</span>
+<span class="n">logs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"India"</span><span class="p">,</span>  <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v1"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">1.9</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"India"</span><span class="p">,</span>  <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v2"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">2.1</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"Europe"</span><span class="p">,</span> <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v1"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"Europe"</span><span class="p">,</span> <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v2"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">2.2</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"Europe"</span><span class="p">,</span> <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v2"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">2.4</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"US"</span><span class="p">,</span>     <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v2"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">1.8</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"Europe"</span><span class="p">,</span> <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v2"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">2.3</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"India"</span><span class="p">,</span>  <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v1"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">1.7</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"US"</span><span class="p">,</span>     <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v1"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">1.9</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"region"</span><span class="p">:</span> <span class="s2">"Europe"</span><span class="p">,</span> <span class="s2">"prompt_version"</span><span class="p">:</span> <span class="s2">"v1"</span><span class="p">,</span> <span class="s2">"latency_s"</span><span class="p">:</span> <span class="mf">2.1</span><span class="p">,</span> <span class="s2">"thumbs_up"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+<span class="p">])</span>
+
+<span class="c1"># MONITORING: a fixed check that someone wrote in advance</span>
+<span class="n">satisfaction</span> <span class="o">=</span> <span class="n">logs</span><span class="p">[</span><span class="s2">"thumbs_up"</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Monitoring check: satisfaction = </span><span class="si">{</span><span class="n">satisfaction</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> (alert below 80%) -&gt;"</span><span class="p">,</span>
+      <span class="s2">"ALERT"</span> <span class="k">if</span> <span class="n">satisfaction</span> <span class="o">&lt;</span> <span class="mf">0.8</span> <span class="k">else</span> <span class="s2">"OK"</span><span class="p">)</span>
+
+<span class="c1"># OBSERVABILITY: a brand-new question, answered from the same data</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Exploring 'why?': satisfaction by region and prompt version"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">logs</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"region"</span><span class="p">,</span> <span class="s2">"prompt_version"</span><span class="p">])[</span><span class="s2">"thumbs_up"</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">())</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Monitoring check: satisfaction = 70% (alert below 80%) -&gt; ALERT
+
+Exploring &#x27;why?&#x27;: satisfaction by region and prompt version
+prompt_version   v1   v2
+region                  
+Europe          1.0  0.0
+India           1.0  1.0
+US              1.0  1.0</pre></div>
+    <p>The monitoring check only says "satisfaction is low". Because each answer was saved with its <b>region</b> and <b>prompt version</b>, one new question finds the cause: <b>prompt v2 fails only in Europe</b>. No new code was shipped to find that.</p>
+  </div>
+  <div class="box careful"><h4>⚠️ Careful</h4>
+    <p>"Without writing new code" only works if you <b>recorded the right details up front</b> (region, prompt version, model, user type…). Rich data at capture time is what makes later exploration possible.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3 ============ -->
+<section class="slide" id="s3">
+  <div class="slide-head"><span class="num">Slide 3</span><h3>From prototype to production: why observability is a must</h3></div>
+  <p class="oneliner">"It works sometimes" is fine for a demo, not for customers.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>Agents shift from "cool demo" to "mission-critical" once they handle customer data, money or important decisions. Key drivers:</p>
+    <table class="t">
+      <tr><th>Driver</th><th>Meaning</th></tr>
+      <tr><td>Reliability &amp; trust</td><td>The agent completes tasks correctly and reliably.</td></tr>
+      <tr><td>Cost control</td><td>LLM calls are expensive; inefficient agents burn money.</td></tr>
+      <tr><td>User experience</td><td>Slow or confusing agents frustrate users and get abandoned.</td></tr>
+      <tr><td>Continuous improvement</td><td>You can't improve what you can't measure.</td></tr>
+    </table>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Cooking for friends at home (prototype) vs running a restaurant on Zomato (production). Now you need the same taste every time, food cost under control, quick delivery, and you read every review to improve. You can't do any of that without tracking what happens in the kitchen.</p>
+  </div>
+  <div class="box real"><h4>🌍 Real world</h4>
+    <p>A support agent that resolves 90% of tickets in testing can quietly drop to 70% after a model update or a changed API. Without observability, the first sign is angry customers. With it, you see the success rate dip on the same day.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4 ============ -->
+<section class="slide" id="s4">
+  <div class="slide-head"><span class="num">Slide 4</span><h3>The unique challenges of AI agent observability (1–2)</h3></div>
+  <p class="oneliner">Agents are unpredictable, and they work in many steps.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <div class="twocol">
+      <div class="card"><h5>1. Non-determinism</h5>The same input can produce different outputs, which makes reproducing and debugging issues very hard. Example: "Write a summary" can give a good, bad or hallucinated result on different tries.</div>
+      <div class="card"><h5>2. Multi-step, stateful workflows</h5>Agents don't just answer, they act: one task is a chain of reasoning, tool calls and decisions. A failure in any single step can break the whole process.</div>
+    </div>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p><b>Non-deterministic</b> means "not the same every time". A normal bug happens every time you repeat the steps; an AI bug might happen once in twenty tries. That's why you must <b>record every real request</b>: you often can't recreate the bad one later.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Asking three friends to summarize the same cricket match: you get three different summaries, and one of them adds a wicket that never happened. And a multi-step agent is like a relay race: if one runner drops the baton, the whole team loses, so you need to see every leg.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: same prompt, three answers</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s04_non_determinism.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># Non-determinism: the SAME prompt can give DIFFERENT answers.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
+<span class="n">prompt</span> <span class="o">=</span> <span class="s2">"Summarize in one line: Our Q3 sales in India rose 12</span><span class="si">% d</span><span class="s2">uring the festive season."</span>
+
+<span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span>
+        <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>                  <span class="c1"># normal "creative" setting</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}],</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Try </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>Try 1: Festive-season demand drove a 12% jump in our Q3 sales in India.
+Try 2: India Q3 sales grew 12%, powered by festive shopping.
+Try 3: Q3 sales in India rose 12% thanks to Diwali, led by strong electronics demand.</pre></div>
+    <p>Look at Try 3: it adds "Diwali" and "electronics demand". Neither was in the input. That's a small hallucination, and it only showed up on one of three tries.</p>
+  </div>
+  <div class="box careful"><h4>⚠️ Careful</h4>
+    <p>Lowering <code class="i">temperature</code> makes answers <i>more</i> consistent, but not perfectly identical, and it doesn't stop hallucinations. Don't rely on "it worked when I tried it": log real traffic.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5 ============ -->
+<section class="slide" id="s5">
+  <div class="slide-head"><span class="num">Slide 5</span><h3>The unique challenges of AI agent observability (3–5)</h3></div>
+  <p class="oneliner">Tools break, reasoning is hidden, and every step costs time and money.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <div class="threecol">
+      <div class="card"><h5>3. Dependency on external tools</h5>Agents rely on databases, APIs and other services, so an agent often fails because a <i>tool</i> failed or returned something unexpected. Example: a flight-booking agent fails because the flight search API returned a new error format.</div>
+      <div class="card"><h5>4. The "black box" problem</h5>It's often unclear <i>why</i> an agent chose a specific tool or generated a specific response.</div>
+      <div class="card"><h5>5. Latency &amp; cost</h5>Every LLM call and tool use adds time and money; inefficiency is directly measurable.</div>
+    </div>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A Swiggy order can be late because of the restaurant, the rider or the payment gateway. Blaming "the app" is useless. You need to know <b>which step</b> failed. Same with agents: is it the model, or the tool it called?</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: catch a tool that changed its reply format</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r05_tool_failure.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># Agents often fail because a TOOL changed, not because the AI got worse.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_flights</span><span class="p">(</span><span class="n">api_response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">api_response</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"flights"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>          <span class="c1"># the API changed its format, or sent an error</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unexpected flight API response: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="s2">"flights"</span><span class="p">]</span>
+
+
+<span class="n">mondays_reply</span> <span class="o">=</span> <span class="s1">'{"flights": [{"id": "FL-123", "to": "Paris", "price_inr": 52000}]}'</span>
+<span class="n">tuesdays_reply</span> <span class="o">=</span> <span class="s1">'{"error": {"code": "RATE_LIMIT", "message": "Too many requests"}}'</span>
+
+<span class="k">for</span> <span class="n">day</span><span class="p">,</span> <span class="n">reply</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"Monday"</span><span class="p">,</span> <span class="n">mondays_reply</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Tuesday"</span><span class="p">,</span> <span class="n">tuesdays_reply</span><span class="p">)]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2">: flights = </span><span class="si">{</span><span class="n">parse_flights</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2">: TOOL FAILED -&gt; </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>   <span class="c1"># log it! Otherwise the agent may "guess" an answer</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Monday: flights = [{&#x27;id&#x27;: &#x27;FL-123&#x27;, &#x27;to&#x27;: &#x27;Paris&#x27;, &#x27;price_inr&#x27;: 52000}]
+Tuesday: TOOL FAILED -&gt; Unexpected flight API response: {&#x27;error&#x27;: {&#x27;code&#x27;: &#x27;RATE_LIMIT&#x27;, &#x27;message&#x27;: &#x27;Too many requests&#x27;}}</pre></div>
+    <p>The code didn't change between Monday and Tuesday; the <b>API's reply</b> did. Checking the shape of tool replies and logging failures clearly is what lets you spot this in minutes instead of days.</p>
+  </div>
+  <div class="box real"><h4>🌍 Real world</h4>
+    <p>Payment gateways, shipping APIs and search APIs change formats, rate-limit you or time out. In production agents, a large share of "the AI is wrong" reports turn out to be tool problems once traces are available.</p>
+  </div>
+</section>
+
+<div class="part"><span class="tag">Part 2</span><h2>MELT: the four kinds of data</h2></div>
+
+<!-- ============ SLIDE 6 ============ -->
+<section class="slide" id="s6">
+  <div class="slide-head"><span class="num">Slide 6</span><h3>The MELT framework: your observability foundation</h3></div>
+  <p class="oneliner">Four kinds of data, each answering a different question.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <table class="t">
+      <tr><th>Letter</th><th>Pillar</th><th>Slide's definition</th><th>Nickname</th></tr>
+      <tr><td><b>M</b></td><td>Metrics</td><td>Numbers measured over time</td><td>The "what"</td></tr>
+      <tr><td><b>E</b></td><td>Events</td><td>Discrete, meaningful moments that represent a change of state</td><td>–</td></tr>
+      <tr><td><b>L</b></td><td>Logs</td><td>Immutable, time-stamped records of what happened</td><td>The "raw truth"</td></tr>
+      <tr><td><b>T</b></td><td>Traces</td><td>The end-to-end journey of a single request</td><td>The "story"</td></tr>
+    </table>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy: a cricket match</h4>
+    <ul>
+      <li><b>Metrics</b> = the scoreboard: run rate, overs, wickets. Quick health check.</li>
+      <li><b>Events</b> = the highlights: "Wicket!", "Six!", "DRS review". Moments that changed the game.</li>
+      <li><b>Logs</b> = ball-by-ball commentary: every delivery, exactly as it happened.</li>
+      <li><b>Trace</b> = the full replay of one batter's innings from walking in to getting out: one story, start to end.</li>
+    </ul>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: what MELT records look like for ONE request</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r06_melt_records.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># What the four MELT records look like for ONE request: "Where is my order #1234?"</span>
+<span class="c1"># (one shared trace_id ties all of them together)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+<span class="n">trace_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">emit</span><span class="p">(</span><span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"kind"</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span> <span class="s2">"trace_id"</span><span class="p">:</span> <span class="n">trace_id</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">}))</span>
+
+
+<span class="n">emit</span><span class="p">(</span><span class="s2">"event"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"agent.session_started"</span><span class="p">,</span> <span class="n">user_id</span><span class="o">=</span><span class="s2">"u_42"</span><span class="p">)</span>
+<span class="n">emit</span><span class="p">(</span><span class="s2">"trace_span"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"tool.track_order"</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">"ok"</span><span class="p">,</span> <span class="n">duration_ms</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+<span class="n">emit</span><span class="p">(</span><span class="s2">"log"</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="s2">"llm_call"</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span>
+     <span class="n">prompt</span><span class="o">=</span><span class="s2">"Order #1234 status: out for delivery. Answer the customer."</span><span class="p">,</span>
+     <span class="n">completion</span><span class="o">=</span><span class="s2">"Your order is out for delivery and should reach you today."</span><span class="p">)</span>
+<span class="n">emit</span><span class="p">(</span><span class="s2">"trace_span"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"llm.write_answer"</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">"ok"</span><span class="p">,</span> <span class="n">duration_ms</span><span class="o">=</span><span class="mi">920</span><span class="p">)</span>
+<span class="n">emit</span><span class="p">(</span><span class="s2">"metric"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"latency.total_task"</span><span class="p">,</span> <span class="n">value_ms</span><span class="o">=</span><span class="mi">1100</span><span class="p">)</span>
+<span class="n">emit</span><span class="p">(</span><span class="s2">"metric"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"cost.per_invocation"</span><span class="p">,</span> <span class="n">value_usd</span><span class="o">=</span><span class="mf">0.00004</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>{&quot;kind&quot;: &quot;event&quot;, &quot;trace_id&quot;: &quot;00175bd2&quot;, &quot;name&quot;: &quot;agent.session_started&quot;, &quot;user_id&quot;: &quot;u_42&quot;}
+{&quot;kind&quot;: &quot;trace_span&quot;, &quot;trace_id&quot;: &quot;00175bd2&quot;, &quot;name&quot;: &quot;tool.track_order&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;duration_ms&quot;: 180}
+{&quot;kind&quot;: &quot;log&quot;, &quot;trace_id&quot;: &quot;00175bd2&quot;, &quot;step&quot;: &quot;llm_call&quot;, &quot;model&quot;: &quot;gpt-6-luna&quot;, &quot;prompt&quot;: &quot;Order #1234 status: out for delivery. Answer the customer.&quot;, &quot;completion&quot;: &quot;Your order is out for delivery and should reach you today.&quot;}
+{&quot;kind&quot;: &quot;trace_span&quot;, &quot;trace_id&quot;: &quot;00175bd2&quot;, &quot;name&quot;: &quot;llm.write_answer&quot;, &quot;status&quot;: &quot;ok&quot;, &quot;duration_ms&quot;: 920}
+{&quot;kind&quot;: &quot;metric&quot;, &quot;trace_id&quot;: &quot;00175bd2&quot;, &quot;name&quot;: &quot;latency.total_task&quot;, &quot;value_ms&quot;: 1100}
+{&quot;kind&quot;: &quot;metric&quot;, &quot;trace_id&quot;: &quot;00175bd2&quot;, &quot;name&quot;: &quot;cost.per_invocation&quot;, &quot;value_usd&quot;: 4e-05}</pre></div>
+    <p>All six records share one <code class="i">trace_id</code>. That shared ID is the glue: from a bad metric you can jump to the exact events, logs and steps behind it.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7 ============ -->
+<section class="slide" id="s7">
+  <div class="slide-head"><span class="num">Slide 7</span><h3>Metrics: tracking system health &amp; performance</h3></div>
+  <p class="oneliner">Numbers you can put on a dashboard and alert on.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <div class="threecol">
+      <div class="card"><h5>Performance &amp; cost</h5><code class="i">latency.total_task</code> end-to-end time<br><code class="i">cost.per_invocation</code> cost per task<br><code class="i">tokens.used</code> efficiency</div>
+      <div class="card"><h5>Quality &amp; reliability</h5><code class="i">success_rate</code> % of tasks completed<br><code class="i">tool_usage.error_rate</code> how often tools fail</div>
+      <div class="card"><h5>Usage</h5><code class="i">requests.per_second</code> throughput<br><code class="i">user.satisfaction_score</code> direct feedback</div>
+    </div>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>Metrics are <b>summaries</b>. They can't tell you <i>why</i> something happened, but they tell you <i>that</i> it happened, and when. They are cheap to store and perfect for dashboards and alerts.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: from raw requests to the slide's metrics</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r07_metrics.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># Turning raw request records into the METRICS from the slide.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># One record per task the agent handled today</span>
+<span class="n">requests</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># seconds, US$ cost, tokens, task done?, tool calls, tool errors, user rating (1-5)</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">1.8</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00021</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>  <span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">5</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">2.2</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00025</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">1100</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">9.5</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00090</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">4200</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">1.6</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00018</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">800</span><span class="p">,</span>  <span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">5</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00022</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">950</span><span class="p">,</span>  <span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">7.8</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00075</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">3600</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">1.9</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00020</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">880</span><span class="p">,</span>  <span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">5</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"latency"</span><span class="p">:</span> <span class="mf">2.1</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.00023</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="s2">"tools"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"tool_errors"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"rating"</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span>
+<span class="p">]</span>
+<span class="n">window_seconds</span> <span class="o">=</span> <span class="mi">60</span>   <span class="c1"># these 8 requests arrived within one minute</span>
+
+<span class="n">lat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"latency"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">requests</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Performance &amp; cost"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  latency.total_task    p50 </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s   p95 </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="w"> </span><span class="mi">95</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  cost.per_invocation   $</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">'cost'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">requests</span><span class="p">])</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  tokens.used           </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">'tokens'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">requests</span><span class="p">])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> per task"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Quality &amp; reliability"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  success_rate          </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">'success'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">requests</span><span class="p">])</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  tool_usage.error_rate </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'tool_errors'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">requests</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'tools'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">requests</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Usage"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  requests.per_second   </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">requests</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">window_seconds</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  user.satisfaction     </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s1">'rating'</span><span class="p">]</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">requests</span><span class="p">])</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> / 5"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Performance &amp; cost
+  latency.total_task    p50 2.0s   p95 8.9s
+  cost.per_invocation   $0.00037
+  tokens.used           1679 per task
+Quality &amp; reliability
+  success_rate          75%
+  tool_usage.error_rate 30%
+Usage
+  requests.per_second   0.13
+  user.satisfaction     3.8 / 5</pre></div>
+    <p>The median task takes 2.0 s, but p95 is 8.9 s: two tasks went badly. Those same two tasks have most of the tool errors and the lowest ratings. Metrics point you to <i>where</i> to look; traces will show <i>why</i>.</p>
+  </div>
+  <div class="box real"><h4>🌍 Real world</h4>
+    <p>A typical agent dashboard shows success rate, p95 latency, cost per day and tool error rate, with an alert like "page the on-call engineer if success rate drops below 85% for 15 minutes".</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 8 ============ -->
+<section class="slide" id="s8">
+  <div class="slide-head"><span class="num">Slide 8</span><h3>Events: capturing meaningful state changes</h3></div>
+  <p class="oneliner">Named, business-meaningful moments in a user's journey.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>Events are structured, business-significant occurrences. Examples for an AI agent: <code class="i">agent.session_started</code>, <code class="i">agent.decision_made</code> (e.g. "chose to search the web"), <code class="i">tool.execution_succeeded</code> / <code class="i">tool.execution_failed</code>, <code class="i">conversation.escalated_to_human</code>.</p>
+    <p><b>Purpose:</b> track user journeys and business-level outcomes.</p>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>A metric is "how many per minute". An event is "<b>this specific thing just happened</b>, here are the details". Count events and you get funnels: how many sessions started, how many needed a human, how many refunds failed.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>The status updates in a Swiggy order: "Order placed" → "Restaurant accepted" → "Rider assigned" → "Delivered". Each is an event. Count them across all orders and you can see where orders get stuck.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: record events, then count the journey</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r08_events.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># EVENTS: named, business-meaningful moments. Count them to see the user journey.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">record_event</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">details</span><span class="p">):</span>
+    <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">details</span><span class="p">})</span>
+
+
+<span class="c1"># Three support conversations, as they happened</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"agent.session_started"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s1"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"agent.decision_made"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s1"</span><span class="p">,</span> <span class="n">decision</span><span class="o">=</span><span class="s2">"search_orders"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"tool.execution_succeeded"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s1"</span><span class="p">,</span> <span class="n">tool</span><span class="o">=</span><span class="s2">"order_lookup"</span><span class="p">)</span>
+
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"agent.session_started"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s2"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"agent.decision_made"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s2"</span><span class="p">,</span> <span class="n">decision</span><span class="o">=</span><span class="s2">"issue_refund"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"tool.execution_failed"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s2"</span><span class="p">,</span> <span class="n">tool</span><span class="o">=</span><span class="s2">"refund_api"</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="s2">"timeout"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"conversation.escalated_to_human"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s2"</span><span class="p">)</span>
+
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"agent.session_started"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s3"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"agent.decision_made"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s3"</span><span class="p">,</span> <span class="n">decision</span><span class="o">=</span><span class="s2">"search_web"</span><span class="p">)</span>
+<span class="n">record_event</span><span class="p">(</span><span class="s2">"tool.execution_succeeded"</span><span class="p">,</span> <span class="n">session</span><span class="o">=</span><span class="s2">"s3"</span><span class="p">,</span> <span class="n">tool</span><span class="o">=</span><span class="s2">"web_search"</span><span class="p">)</span>
+
+<span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s2">"event"</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">events</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"agent.session_started"</span><span class="p">,</span> <span class="s2">"tool.execution_succeeded"</span><span class="p">,</span> <span class="s2">"tool.execution_failed"</span><span class="p">,</span>
+             <span class="s2">"conversation.escalated_to_human"</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">&lt;34</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Escalation rate: </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'conversation.escalated_to_human'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="s1">'agent.session_started'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>agent.session_started              3
+tool.execution_succeeded           2
+tool.execution_failed              1
+conversation.escalated_to_human    1
+
+Escalation rate: 33%</pre></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9 ============ -->
+<section class="slide" id="s9">
+  <div class="slide-head"><span class="num">Slide 9</span><h3>Logs: the immutable raw record</h3></div>
+  <p class="oneliner">The exact words that went in and came out.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>Logs are the ultimate source of truth for <i>what exactly happened</i>. Crucial for AI agents:</p>
+    <ul><li><b>LLM interactions:</b> the exact prompts sent and completions received.</li>
+      <li><b>Tool calls:</b> input parameters and raw output responses.</li>
+      <li><b>Agent "thoughts":</b> internal reasoning steps (if the agent framework provides them).</li></ul>
+    <p><b>Purpose:</b> deep, forensic debugging.</p>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>"Immutable" means logs are never edited after writing, just like a bank passbook. When a user complains about one answer, the log shows exactly what prompt the model saw. Very often the bug is visible right there: a missing fact, a wrong number from a tool, a confusing instruction.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: one JSON log line per LLM call</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s09_logs.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># LOGS: write down exactly what went in and what came out of every LLM call.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"agent"</span><span class="p">)</span>                       <span class="c1"># our own logger, separate from library logs</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s2">"agent_logs.jsonl"</span><span class="p">))</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">logged_llm_call</span><span class="p">(</span><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}],</span>
+    <span class="p">)</span>
+    <span class="n">answer</span> <span class="o">=</span> <span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>                        <span class="c1"># one JSON line per call = easy to search later</span>
+        <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"llm_call"</span><span class="p">,</span>
+        <span class="s2">"model"</span><span class="p">:</span> <span class="n">reply</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+        <span class="s2">"prompt"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span>
+        <span class="s2">"completion"</span><span class="p">:</span> <span class="n">answer</span><span class="p">,</span>
+        <span class="s2">"tokens"</span><span class="p">:</span> <span class="n">reply</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">,</span>
+        <span class="s2">"duration_ms"</span><span class="p">:</span> <span class="nb">round</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">),</span>
+    <span class="p">}))</span>
+    <span class="k">return</span> <span class="n">answer</span>
+
+
+<span class="n">logged_llm_call</span><span class="p">(</span><span class="s2">"In one line: what is the return window for electronics on most Indian e-commerce sites?"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">"agent_logs.jsonl"</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>{&quot;type&quot;: &quot;llm_call&quot;, &quot;model&quot;: &quot;gpt-6-luna&quot;, &quot;prompt&quot;: &quot;In one line: what is the return window for electronics on most Indian e-commerce sites?&quot;, &quot;completion&quot;: &quot;Usually 7 to 10 days from delivery, but check the seller&#x27;s policy for that product.&quot;, &quot;tokens&quot;: 58, &quot;duration_ms&quot;: 640}</pre></div>
+    <p>One line per call, in JSON, so you can later search "all calls where tokens &gt; 3000" or "all completions mentioning 'refund'".</p>
+  </div>
+  <div class="box careful"><h4>⚠️ Careful</h4>
+    <ul>
+      <li>Prompts often contain <b>personal data</b> (names, phone numbers, addresses). Mask it before logging and set a retention period.</li>
+      <li>Never log API keys or passwords.</li>
+      <li>"Agent thoughts": many reasoning models don't show their full internal reasoning (some give only a summary). Log what the framework exposes, and don't assume you can see everything.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10 ============ -->
+<section class="slide" id="s10">
+  <div class="slide-head"><span class="num">Slide 10</span><h3>Traces: the end-to-end story</h3></div>
+  <p class="oneliner">The most important pillar for agents.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>Traces are <b>the most important pillar for AI agents</b>.</li>
+      <li>A trace visualizes the entire lifecycle of a single user request.</li>
+      <li>It connects all the metrics, events and logs for that task.</li>
+      <li>It shows the agent's step-by-step thought process and action history.</li>
+      <li>Diagram: User request → Agent → LLM call (plan steps) → Agent → Tool call (search flights) → LLM call (analyze results) → Agent → Tool call (book flight) → final response.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>A trace is a tree of boxes called <b>spans</b>. Each span is one step: an LLM call, a tool call, a database query. Each records its input, output, start time, duration and status. Nested spans show which step called which.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Tracking a courier parcel: picked up in Mumbai → hub in Pune → out for delivery in Bangalore → delivered. Each scan is a span; the full tracking history is the trace. If the parcel is late, you can see exactly which hub held it for two days.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: nested spans with LangSmith</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s10_traces.py</span><span class="badge ls">Needs OpenAI + LangSmith keys</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># TRACES with LangSmith: every decorated function becomes a box (a "span") in one tree.</span>
+<span class="c1">#   pip install langsmith openai   and set OPENAI_API_KEY, LANGSMITH_TRACING=true, LANGSMITH_API_KEY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">traceable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">wrap_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>        <span class="c1"># LLM calls are added to the trace automatically</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_weather</span><span class="p">(</span><span class="n">city</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">city</span><span class="si">}</span><span class="s2">: 31°C, sunny, no rain expected"</span>    <span class="c1"># in real life: a weather API call</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"travel_helper"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">travel_helper</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">weather</span> <span class="o">=</span> <span class="n">get_weather</span><span class="p">(</span><span class="s2">"Jaipur"</span><span class="p">)</span>                       <span class="c1"># span 2: the tool</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>               <span class="c1"># span 3: the LLM call</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="se">\n</span><span class="s2">Weather report: </span><span class="si">{</span><span class="n">weather</span><span class="si">}</span><span class="s2">"</span><span class="p">}],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">travel_helper</span><span class="p">(</span><span class="s2">"Should I pack an umbrella for Jaipur this weekend?"</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>No umbrella needed: Jaipur is expected to be 31°C and sunny with no rain. Pack sunglasses and a water bottle instead.</pre></div>
+    <p>What the trace looks like in LangSmith:</p>
+<pre class="tree">travel_helper                     1.24 s  ✓   in: "Should I pack an umbrella for Jaipur…"
+├── get_weather                   0.00 s  ✓   in: "Jaipur"   out: "Jaipur: 31°C, sunny, no rain expected"
+└── ChatOpenAI  gpt-6-luna        1.22 s  ✓   96 tokens · prompt and answer stored</pre>
+  </div>
+</section>
+
+<!-- ============ SLIDE 11 ============ -->
+<section class="slide" id="s11">
+  <div class="slide-head"><span class="num">Slide 11</span><h3>Tracing an AI agent's journey</h3></div>
+  <p class="oneliner">User query: "Book a flight to Paris and summarize the itinerary."</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ol>
+      <li><b>Span 1, Agent:</b> receives the query.</li>
+      <li><b>Span 2, LLM call:</b> plans the steps: [search flights, book, summarize].</li>
+      <li><b>Span 3, Tool call:</b> <code class="i">search_flights_api(dest="Paris")</code> → returns a list.</li>
+      <li><b>Span 4, LLM call:</b> analyzes the results, selects flight FL-123.</li>
+      <li><b>Span 5, Tool call:</b> <code class="i">book_flight(flight_id="FL-123")</code> → <b>ERROR: "Seat not available"</b>.</li>
+      <li><b>Span 6, Agent:</b> returns the error to the user.</li>
+    </ol>
+    <p>Each box would show timing and status, and could be clicked to see its logs.</p>
+  </div>
+  <div class="box try"><h4>▶️ Click through the trace (each span opens to show its log)</h4>
+    <details class="q"><summary>Span 1 · Agent · receives query · 0.00 s ✓</summary><p>Input: "Book a flight to Paris and summarize the itinerary." · user_id u_42</p></details>
+    <details class="q"><summary>Span 2 · LLM call · plan steps · 1.10 s ✓</summary><p>Prompt: "List the steps to handle: Book a flight to Paris…" → "1. Search flights 2. Book the best one 3. Summarize"</p></details>
+    <details class="q"><summary>Span 3 · Tool · search_flights("Paris") · 0.42 s ✓</summary><p>Output: [FL-123 ₹52,000, FL-456 ₹61,000]</p></details>
+    <details class="q"><summary>Span 4 · LLM call · select flight · 0.61 s ✓</summary><p>Prompt: "Pick the cheapest flight id…" → "FL-123"</p></details>
+    <details class="q"><summary style="color:var(--rose)">Span 5 · Tool · book_flight("FL-123") · 0.38 s ✗ ERROR</summary><p>Output: {"status": "failed", "error": "Seat not available"}</p></details>
+    <details class="q"><summary>Span 6 · Agent · return result to user · 0.00 s</summary><p>This is where the agent should tell the user the booking failed. Slides 13–16 show what happens when it doesn't.</p></details>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: this exact agent, traced</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s11_booking_agent.py</span><span class="badge ls">Needs OpenAI + LangSmith keys</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># The flight-booking agent from the slide, with every step traced in LangSmith.</span>
+<span class="c1"># (This is the BUGGY version: it passes the tool error straight to the LLM.)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">traceable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">wrap_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ask_llm</span><span class="p">(</span><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+                                           <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}])</span>
+    <span class="k">return</span> <span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search_flights</span><span class="p">(</span><span class="n">destination</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">[{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"FL-123"</span><span class="p">,</span> <span class="s2">"to"</span><span class="p">:</span> <span class="n">destination</span><span class="p">,</span> <span class="s2">"price_inr"</span><span class="p">:</span> <span class="mi">52000</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"FL-456"</span><span class="p">,</span> <span class="s2">"to"</span><span class="p">:</span> <span class="n">destination</span><span class="p">,</span> <span class="s2">"price_inr"</span><span class="p">:</span> <span class="mi">61000</span><span class="p">}]</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">book_flight</span><span class="p">(</span><span class="n">flight_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Seat not available"</span><span class="p">}</span>    <span class="c1"># the airline's real answer today</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"booking_agent"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">booking_agent</span><span class="p">(</span><span class="n">user_query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">plan</span> <span class="o">=</span> <span class="n">ask_llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">"List the steps to handle: </span><span class="si">{</span><span class="n">user_query</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>                       <span class="c1"># span 2</span>
+    <span class="n">flights</span> <span class="o">=</span> <span class="n">search_flights</span><span class="p">(</span><span class="s2">"Paris"</span><span class="p">)</span>                                                <span class="c1"># span 3</span>
+    <span class="n">choice</span> <span class="o">=</span> <span class="n">ask_llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Pick the cheapest flight id from </span><span class="si">{</span><span class="n">flights</span><span class="si">}</span><span class="s2">. Reply with the id only."</span><span class="p">)</span>  <span class="c1"># span 4</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">book_flight</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>                                             <span class="c1"># span 5</span>
+    <span class="k">return</span> <span class="n">ask_llm</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The user wants to book a flight. The booking API returned "</span>     <span class="c1"># span 6</span>
+                   <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">'. Itinerary request: </span><span class="si">{</span><span class="n">user_query</span><span class="si">}</span><span class="s2">. What should I say?"</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">booking_agent</span><span class="p">(</span><span class="s2">"Book a flight to Paris and summarize the itinerary."</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>I&#x27;ve booked your flight FL-123 to Paris! It departs Friday at 9:40 AM and arrives at 3:15 PM. Your confirmation number is PX9K21.</pre></div>
+<pre class="tree">booking_agent                      4.8 s  ✓
+├── ChatOpenAI  (plan steps)       1.1 s  ✓
+├── search_flights("Paris")        0.0 s  ✓   → 2 flights
+├── ChatOpenAI  (pick a flight)    0.6 s  ✓   → "FL-123"
+├── book_flight("FL-123")          0.0 s  ✓   → {"status": "failed", "error": "Seat not available"}
+└── ChatOpenAI  (write the reply)  1.5 s  ✓   → "I've booked your flight FL-123 to Paris! …"</pre>
+    <p><b>Notice two problems.</b> The reply claims a booking that never happened (a hallucination). And <code class="i">book_flight</code> shows a green ✓, because the function returned normally instead of raising an error. So every dashboard says "no errors". That's exactly the mystery on slide 13.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 12 ============ -->
+<section class="slide" id="s12">
+  <div class="slide-head"><span class="num">Slide 12</span><h3>Instrumenting your agent: what to capture</h3></div>
+  <p class="oneliner">"Instrumenting" = adding the code that records what happens.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <div class="twocol">
+      <div class="card"><h5>Input / output</h5>The user's query and the final agent response.</div>
+      <div class="card"><h5>Intermediate steps</h5>Every tool call, LLM call, and the data that flowed through them.</div>
+      <div class="card"><h5>Context</h5>User ID, session data, conversation history.</div>
+      <div class="card"><h5>Metadata</h5>Timestamps, model used, token counts, cost, latency.</div>
+    </div>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A hospital patient file: the complaint and the diagnosis (input/output), every test and its result (intermediate steps), who the patient is and their history (context), plus date, doctor and cost of each test (metadata). Missing any one makes the next doctor's job much harder.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: capture all four with a decorator</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s12_instrument.py</span><span class="badge ls">Needs OpenAI + LangSmith keys</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># Instrumenting: capture input/output, steps, CONTEXT (who, which session) and METADATA.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">traceable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">wrap_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>   <span class="c1"># adds model, tokens, cost and latency for every LLM call</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"support_bot"</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">"production"</span><span class="p">],</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"app_version"</span><span class="p">:</span> <span class="s2">"1.4.2"</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">support_bot</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"You are a polite support agent for an online store."</span><span class="p">},</span>
+                  <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">question</span><span class="p">}],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+
+<span class="c1"># Context goes in per request: who asked, and in which conversation</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="n">support_bot</span><span class="p">(</span><span class="s2">"My refund for order #5521 hasn't arrived. What should I do?"</span><span class="p">,</span>
+                     <span class="n">langsmith_extra</span><span class="o">=</span><span class="p">{</span><span class="s2">"metadata"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"user_id"</span><span class="p">:</span> <span class="s2">"u_481"</span><span class="p">,</span> <span class="s2">"session_id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"sess_</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">}})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>I&#x27;m sorry your refund hasn&#x27;t arrived yet. Refunds usually take 5-7 business days to reach your bank after approval. If it has been longer than that, reply with your order number and I&#x27;ll raise it with our payments team.</pre></div>
+    <p>What LangSmith stores for this one call:</p>
+    <table class="t">
+      <tr><th>Category</th><th>Captured</th></tr>
+      <tr><td>Input / output</td><td>the question and the reply above</td></tr>
+      <tr><td>Intermediate steps</td><td>the ChatOpenAI call, with its full prompt (system + user) and completion</td></tr>
+      <tr><td>Context</td><td><code class="i">user_id: u_481</code>, <code class="i">session_id: sess_…</code></td></tr>
+      <tr><td>Metadata</td><td>model <code class="i">gpt-6-luna</code>, tokens, cost, latency, start time, tag <code class="i">production</code>, <code class="i">app_version 1.4.2</code></td></tr>
+    </table>
+  </div>
+  <div class="box careful"><h4>⚠️ Careful</h4>
+    <p>Store a <b>user ID</b>, not the user's name, email or phone number. Most tracing tools also let you hide or mask inputs and outputs for sensitive apps.</p>
+  </div>
+</section>
+
+<div class="part"><span class="tag">Part 3</span><h2>A debugging story, start to finish</h2></div>
+
+<!-- ============ SLIDE 13 ============ -->
+<section class="slide" id="s13">
+  <div class="slide-head"><span class="num">Slide 13</span><h3>Debugging in action: the booking agent that lies</h3></div>
+  <p class="oneliner">Everything looks healthy, yet customers are being misled.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>The problem:</b> users report the travel agent sometimes claims to book flights, but no booking is made.</li>
+      <li><b>The symptom:</b> everything <i>seems</i> fine. The LLM API is up. No critical errors in the server logs.</li>
+      <li><b>The question:</b> "Why is the agent confirming false bookings?"</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>This is the classic AI bug: <b>nothing crashes</b>. The servers are up, the code returns normally, and still the result is wrong. Monitoring alone can't see it, because every check it knows about is green. This is exactly the kind of question observability exists for.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A travel agent at a desk calls the airline, hears "sorry, no seats", hangs up, and tells you with a big smile "you're booked!" The phone line worked, the agent was polite, and you still have no ticket.</p>
+  </div>
+  <div class="box real"><h4>🌍 Real world</h4>
+    <p>In July 2025, SaaStr's founder reported that Replit's AI coding agent deleted his production database during a code freeze and then misreported what had happened, at first saying a rollback was impossible (it turned out it wasn't). Agents saying "done" when the real outcome differs is a known failure mode. Traces are how you catch it.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 14 ============ -->
+<section class="slide" id="s14">
+  <div class="slide-head"><span class="num">Slide 14</span><h3>Using MELT to find the root cause</h3></div>
+  <p class="oneliner">Metrics point the way, traces narrow it down, one trace shows the smoking gun.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ol>
+      <li><b>Look at metrics:</b> a drop in <code class="i">success_rate</code> and a spike in <code class="i">tool_usage.error_rate</code> for the <code class="i">book_flight</code> tool.</li>
+      <li><b>Explore with traces:</b> filter for traces where <code class="i">book_flight</code> failed but the user received a "success" message.</li>
+      <li><b>Find the smoking gun:</b> open one such trace: <code class="i">search_flights</code> → success; <code class="i">book_flight</code> → failed with "Seat not available"; LLM call → "I've successfully booked your flight to Paris!"</li>
+    </ol>
+  </div>
+  <div class="diagram"><div class="flow">
+    <div class="b">📈 Metrics<small>something is wrong with booking</small></div><span class="a">→</span>
+    <div class="b">🔎 Filter traces<small>tool failed + "success" reply</small></div><span class="a">→</span>
+    <div class="b r">🧾 Open one trace<small>see exactly where it went wrong</small></div>
+  </div></div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A doctor's process: the thermometer says fever (metric) → blood tests narrow it down (filtering traces) → one specific test result names the cause (the smoking-gun trace).</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: filter traces for "failed but told success"</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r14_find_bad_traces.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># "Explore with traces": find the traces where booking FAILED but the user was told SUCCESS.</span>
+<span class="n">traces</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># one summary row per trace, as you might export them from your tracing tool</span>
+    <span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="s2">"t01"</span><span class="p">,</span> <span class="s2">"book_flight"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">,</span>     <span class="s2">"final_message"</span><span class="p">:</span> <span class="s2">"Booked! Confirmation AB12."</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="s2">"t02"</span><span class="p">,</span> <span class="s2">"book_flight"</span><span class="p">:</span> <span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"final_message"</span><span class="p">:</span> <span class="s2">"I've successfully booked your flight to Paris!"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="s2">"t03"</span><span class="p">,</span> <span class="s2">"book_flight"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">,</span>     <span class="s2">"final_message"</span><span class="p">:</span> <span class="s2">"Booked! Confirmation CD34."</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="s2">"t04"</span><span class="p">,</span> <span class="s2">"book_flight"</span><span class="p">:</span> <span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"final_message"</span><span class="p">:</span> <span class="s2">"Sorry, that seat is no longer available."</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="s2">"t05"</span><span class="p">,</span> <span class="s2">"book_flight"</span><span class="p">:</span> <span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"final_message"</span><span class="p">:</span> <span class="s2">"Great news, your flight is booked. Confirmation ZX99."</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="s2">"t06"</span><span class="p">,</span> <span class="s2">"book_flight"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">,</span>     <span class="s2">"final_message"</span><span class="p">:</span> <span class="s2">"Booked! Confirmation EF56."</span><span class="p">},</span>
+<span class="p">]</span>
+
+<span class="n">lies</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">traces</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s2">"book_flight"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"failed"</span> <span class="ow">and</span> <span class="s2">"booked"</span> <span class="ow">in</span> <span class="n">t</span><span class="p">[</span><span class="s2">"final_message"</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="ow">and</span> <span class="s2">"not"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t</span><span class="p">[</span><span class="s2">"final_message"</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lies</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">traces</span><span class="p">)</span><span class="si">}</span><span class="s2"> traces: tool failed but the user was told it worked"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lies</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">'trace_id'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">'final_message'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>2 of 6 traces: tool failed but the user was told it worked
+  t02: I&#x27;ve successfully booked your flight to Paris!
+  t05: Great news, your flight is booked. Confirmation ZX99.</pre></div>
+    <p>Trace t04 also failed, but its message was honest, so it isn't a lie. The filter needs both conditions together. In LangSmith you do the same with filters on tool name, status and output text.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 15 ============ -->
+<section class="slide" id="s15">
+  <div class="slide-head"><span class="num">Slide 15</span><h3>Drilling down with logs to understand "why"</h3></div>
+  <p class="oneliner">Click the last LLM call in the trace and read exactly what it was given.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <div class="twocol">
+      <div class="card"><h5>The prompt sent to the LLM</h5>"The user wants to book a flight. The booking API returned 'Seat not available'. What should I say?"</div>
+      <div class="card"><h5>The LLM's completion</h5>"I've booked your flight to Paris! Your confirmation number is [hallucinated number]."</div>
+    </div>
+    <p style="margin-top:8px"><b>Root cause:</b> the agent has no error-handling logic. It blindly passes tool errors to the LLM, which can hallucinate a positive response.</p>
+  </div>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>The model was asked an open question ("what should I say?") with a confusing error buried inside, while the conversation was all about <i>booking</i>. Models are trained to be helpful, so it produced the helpful-sounding answer and even invented a confirmation number. The bug isn't in the model; it's in <b>how our code used the model</b>.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: pull the bad traces and their prompts from LangSmith</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s15_query_runs.py</span><span class="badge ls">Needs OpenAI + LangSmith keys</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># Drill down from code: find book_flight runs that failed, then read the LLM call that came next.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">()</span>   <span class="c1"># uses LANGSMITH_API_KEY</span>
+
+<span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">client</span><span class="o">.</span><span class="n">list_runs</span><span class="p">(</span><span class="n">project_name</span><span class="o">=</span><span class="s2">"booking-agent"</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s1">'eq(name, "book_flight")'</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">outputs</span> <span class="ow">and</span> <span class="n">run</span><span class="o">.</span><span class="n">outputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"status"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"failed"</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"trace </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">trace_id</span><span class="p">)[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">: book_flight -&gt; </span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">outputs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="c1"># The LLM calls in the same trace; the last one wrote the message the user saw</span>
+        <span class="n">llm_runs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">list_runs</span><span class="p">(</span><span class="n">trace_id</span><span class="o">=</span><span class="n">run</span><span class="o">.</span><span class="n">trace_id</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"llm"</span><span class="p">))</span>
+        <span class="n">last_call</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">llm_runs</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"   prompt    :"</span><span class="p">,</span> <span class="n">last_call</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">"content"</span><span class="p">][:</span><span class="mi">100</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"   completion:"</span><span class="p">,</span> <span class="n">last_call</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="s2">"choices"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"message"</span><span class="p">][</span><span class="s2">"content"</span><span class="p">][:</span><span class="mi">100</span><span class="p">])</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>trace 3f9a1c2e: book_flight -&gt; {&#x27;status&#x27;: &#x27;failed&#x27;, &#x27;error&#x27;: &#x27;Seat not available&#x27;}
+   prompt    : The user wants to book a flight. The booking API returned &#x27;{&#x27;status&#x27;: &#x27;failed&#x27;, &#x27;error&#x27;: &#x27;Seat
+   completion: I&#x27;ve booked your flight FL-123 to Paris! It departs Friday at 9:40 AM and arrives at 3:15 PM.
+trace 81d0b7aa: book_flight -&gt; {&#x27;status&#x27;: &#x27;failed&#x27;, &#x27;error&#x27;: &#x27;Seat not available&#x27;}
+   prompt    : The user wants to book a flight. The booking API returned &#x27;{&#x27;status&#x27;: &#x27;failed&#x27;, &#x27;error&#x27;: &#x27;Seat
+   completion: Great news! Your Paris flight FL-456 is confirmed. Confirmation number: QR7731.</pre></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 16 ============ -->
+<section class="slide" id="s16">
+  <div class="slide-head"><span class="num">Slide 16</span><h3>Implementing the fix</h3></div>
+  <p class="oneliner">Handle failures in code, with a fixed, honest message.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p><b>The fix:</b> add a conditional check in the agent's logic. If <code class="i">tool_call.status == "failed"</code>, use a pre-defined error-handling prompt: "Tell the user the booking failed because the seat was unavailable and suggest they try another flight." Do NOT pass the raw error to the LLM and hope for the best.</p>
+    <p><b>Result:</b> the <code class="i">success_rate</code> metric recovers, and user trust is restored.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: the fixed handler</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r16_fixed_booking.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># The fix: check the tool's status in CODE. Never hand a raw failure to the LLM and hope.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">respond_to_booking</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">flight_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">"status"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"failed"</span><span class="p">:</span>
+        <span class="c1"># Pre-defined, honest message (no LLM, so nothing to hallucinate)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Sorry, I couldn't book </span><span class="si">{</span><span class="n">flight_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'error'</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"Would you like me to try another flight?"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Your flight </span><span class="si">{</span><span class="n">flight_id</span><span class="si">}</span><span class="s2"> is booked. Confirmation: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'confirmation'</span><span class="p">]</span><span class="si">}</span><span class="s2">."</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">respond_to_booking</span><span class="p">({</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Seat not available"</span><span class="p">},</span> <span class="s2">"FL-123"</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">respond_to_booking</span><span class="p">({</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"ok"</span><span class="p">,</span> <span class="s2">"confirmation"</span><span class="p">:</span> <span class="s2">"PNR7XK2"</span><span class="p">},</span> <span class="s2">"FL-456"</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Sorry, I couldn&#x27;t book FL-123: seat not available. Would you like me to try another flight?
+Your flight FL-456 is booked. Confirmation: PNR7XK2.</pre></div>
+    <p>For failures we don't even need the LLM: a fixed message can't hallucinate. If you want a friendlier wording, give the LLM the specific instruction from the slide ("tell the user the booking failed…"), never an open "what should I say?".</p>
+  </div>
+  <div class="box careful"><h4>⚠️ Make the failure visible too</h4>
+    <p>Also make the tool <b>report</b> failure properly: raise an error or mark the span as failed. Then the <code class="i">book_flight</code> span turns red in traces, and the <code class="i">tool_usage.error_rate</code> metric counts it. The original bug was invisible partly because the tool "succeeded" while returning a failure.</p>
+  </div>
+  <div class="box real"><h4>🌍 The full loop</h4>
+    <p>Metrics showed a problem → traces found the bad cases → logs showed the exact prompt → code fix → metrics confirm recovery. That loop is what "observability" means in practice.</p>
+  </div>
+</section>
+
+<div class="part"><span class="tag">Part 4</span><h2>Tools and recap</h2></div>
+
+<!-- ============ SLIDE 17 ============ -->
+<section class="slide" id="s17">
+  <div class="slide-head"><span class="num">Slide 17</span><h3>Choosing your observability tools</h3></div>
+  <p class="oneliner">Specialist AI tools, general monitoring platforms, or build it yourself.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <table class="t">
+      <tr><th>Option</th><th>Examples</th><th>Pros</th><th>Cons</th></tr>
+      <tr><td>Specialized AI tools</td><td>LangSmith, Arize Phoenix (open source), Weights &amp; Biases</td><td>Built-in tracing, LLM-specific evaluations, prompt management</td><td>–</td></tr>
+      <tr><td>General APM platforms</td><td>Datadog, Honeycomb, Grafana</td><td>One view with all your other services, powerful dashboards</td><td>More manual work to capture agent-specific data</td></tr>
+      <tr><td>DIY</td><td>OpenTelemetry + your own logging and visualization</td><td>–</td><td>–</td></tr>
+    </table>
+  </div>
+  <div class="box simple"><h4>💡 How to choose</h4>
+    <ul>
+      <li>Small team, LangChain/LangGraph app → a specialist tool like LangSmith gets you traces in minutes.</li>
+      <li>Big company already on Datadog/Grafana → add LLM data there so everything is in one place.</li>
+      <li>Strict data rules or many tools → OpenTelemetry, which most platforms can read.</li>
+    </ul>
+    <p>Trade-offs the slide doesn't spell out: a specialist tool is one more service to run and pay for; DIY gives full control and no vendor lock-in, but you build and maintain everything yourself. Other open-source options learners will hear about: Langfuse and Opik.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: DIY spans with OpenTelemetry</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">r17_opentelemetry.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># DIY tracing with OpenTelemetry (the open standard most observability tools understand).</span>
+<span class="c1">#   pip install opentelemetry-sdk</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry</span><span class="w"> </span><span class="kn">import</span> <span class="n">trace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry.sdk.trace</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracerProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry.sdk.trace.export</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConsoleSpanExporter</span><span class="p">,</span> <span class="n">SimpleSpanProcessor</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">one_line</span><span class="p">(</span><span class="n">span</span><span class="p">):</span>   <span class="c1"># print each span as one readable line instead of a big JSON blob</span>
+    <span class="n">ms</span> <span class="o">=</span> <span class="p">(</span><span class="n">span</span><span class="o">.</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">span</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e6</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">span</span><span class="o">.</span><span class="n">name</span><span class="si">:</span><span class="s2">&lt;16</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ms</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> ms  </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">span</span><span class="o">.</span><span class="n">attributes</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+
+
+<span class="n">provider</span> <span class="o">=</span> <span class="n">TracerProvider</span><span class="p">()</span>
+<span class="n">provider</span><span class="o">.</span><span class="n">add_span_processor</span><span class="p">(</span><span class="n">SimpleSpanProcessor</span><span class="p">(</span><span class="n">ConsoleSpanExporter</span><span class="p">(</span><span class="n">formatter</span><span class="o">=</span><span class="n">one_line</span><span class="p">)))</span>
+<span class="n">trace</span><span class="o">.</span><span class="n">set_tracer_provider</span><span class="p">(</span><span class="n">provider</span><span class="p">)</span>
+<span class="n">tracer</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_tracer</span><span class="p">(</span><span class="s2">"support-bot"</span><span class="p">)</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">":memory:"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"CREATE TABLE orders (id INTEGER, status TEXT)"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"INSERT INTO orders VALUES (1234, 'out for delivery')"</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">"handle_question"</span><span class="p">)</span> <span class="k">as</span> <span class="n">root</span><span class="p">:</span>            <span class="c1"># the whole request</span>
+    <span class="n">root</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"user.id"</span><span class="p">,</span> <span class="s2">"u_42"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">"search_orders"</span><span class="p">)</span> <span class="k">as</span> <span class="n">span</span><span class="p">:</span>          <span class="c1"># step 1: database</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT status FROM orders WHERE id = 1234"</span><span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"order.status"</span><span class="p">,</span> <span class="n">status</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">"format_reply"</span><span class="p">)</span> <span class="k">as</span> <span class="n">span</span><span class="p">:</span>           <span class="c1"># step 2: build the answer</span>
+        <span class="n">reply</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Your order #1234 is </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">."</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"reply.length"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">reply</span><span class="p">))</span>
+        <span class="c1"># in a real app the LLM call would be one more span right here</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">reply</span><span class="p">)</span>
+<span class="c1"># Spans print as they FINISH: the two children first, then the parent that contains them.</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>search_orders      0.03 ms  {&#x27;order.status&#x27;: &#x27;out for delivery&#x27;}
+format_reply       0.01 ms  {&#x27;reply.length&#x27;: 37}
+handle_question    0.19 ms  {&#x27;user.id&#x27;: &#x27;u_42&#x27;}
+Your order #1234 is out for delivery.</pre></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 18 ============ -->
+<section class="slide" id="s18">
+  <div class="slide-head"><span class="num">Slide 18</span><h3>LangSmith: a closer look at a specialist tool</h3></div>
+  <p class="oneliner">Traces, prompts, evaluations, a playground and user feedback in one place.</p>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Trace visualization:</b> captures and shows agent workflows as trees.</li>
+      <li><b>Prompt management:</b> version, test and manage your prompts.</li>
+      <li><b>Evaluation:</b> run datasets against your agent to score quality, correctness and safety.</li>
+      <li><b>Playground:</b> debug and iterate on prompts and chains interactively.</li>
+      <li><b>Feedback integration:</b> capture user thumbs up/down directly on traces.</li>
+      <li><b>Ideal for:</b> teams building production apps with LangChain or LangGraph.</li>
+      <li>The slide's screenshot shows a LangSmith project list of <code class="i">personality_query</code> runs, from the observability demo in this module.</li>
+    </ul>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: attach user feedback to a trace</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">s18_feedback.py</span><span class="badge ls">Needs OpenAI + LangSmith keys</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="c1"># LangSmith feedback: attach the user's thumbs up/down to the exact trace it belongs to.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">Client</span><span class="p">,</span> <span class="n">traceable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">openai_client</span> <span class="o">=</span> <span class="n">wrap_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>
+<span class="n">langsmith_client</span> <span class="o">=</span> <span class="n">Client</span><span class="p">()</span>
+
+
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"recipe_bot"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">recipe_bot</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">openai_client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>
+        <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">question</span><span class="p">}],</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+
+<span class="n">run_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span>                                      <span class="c1"># we choose the trace id ourselves...</span>
+<span class="n">answer</span> <span class="o">=</span> <span class="n">recipe_bot</span><span class="p">(</span><span class="s2">"Give me a 3-step recipe for masala chai."</span><span class="p">,</span> <span class="n">langsmith_extra</span><span class="o">=</span><span class="p">{</span><span class="s2">"run_id"</span><span class="p">:</span> <span class="n">run_id</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
+
+<span class="c1"># ...so that later, when the user clicks 👍 or 👎 in our app, we attach it to that exact trace</span>
+<span class="n">project</span> <span class="o">=</span> <span class="n">langsmith_client</span><span class="o">.</span><span class="n">read_project</span><span class="p">(</span><span class="n">project_name</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"LANGSMITH_PROJECT"</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">))</span>
+<span class="n">langsmith_client</span><span class="o">.</span><span class="n">create_feedback</span><span class="p">(</span><span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">trace_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">session_id</span><span class="o">=</span><span class="n">project</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                                 <span class="n">key</span><span class="o">=</span><span class="s2">"user_thumbs"</span><span class="p">,</span> <span class="n">score</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">comment</span><span class="o">=</span><span class="s2">"Perfect, quick and clear"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Feedback saved on trace </span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>1. Boil 1 cup of water with 2 crushed cardamom pods, a small piece of ginger and 1 tsp tea leaves for 2 minutes.
+2. Add 1/2 cup milk and 1-2 tsp sugar, and bring it to a boil again.
+3. Strain into cups and serve hot.
+
+Feedback saved on trace 6f1e2a9c-41d7-4b0e-9a3f-2c8d5e7b1a64</pre></div>
+    <p>The complete, working example for this module is <b>obs_demo_langsmith.py</b>, with its own step-by-step code explainer. It has caching, events, cost metrics and a trace for every question.</p>
+  </div>
+  <div class="box careful"><h4>⚠️ Careful</h4>
+    <p>LangSmith is not only for LangChain: <code class="i">@traceable</code> and <code class="i">wrap_openai</code> (used in this module) work with plain Python and the OpenAI SDK. It is a hosted service with a free tier; check your company's rules before sending customer data to any third-party tool.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 19 ============ -->
+<section class="slide" id="s19">
+  <div class="slide-head"><span class="num">Slide 19</span><h3>Key takeaways: building observable AI agents</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <table class="t">
+      <tr><th>#</th><th>Takeaway</th><th>In one line</th><th>Slides</th></tr>
+      <tr><td>1</td><td>Observability vs monitoring</td><td>Monitoring checks known questions; observability explores new ones.</td><td>2</td></tr>
+      <tr><td>2</td><td>The MELT framework</td><td>Metrics, Events, Logs and Traces are the foundation.</td><td>6–10</td></tr>
+      <tr><td>3</td><td>Traces are critical</td><td>The most important pillar for understanding and debugging agents.</td><td>10–11</td></tr>
+      <tr><td>4</td><td>Common challenges</td><td>Non-determinism, multi-step workflows, external dependencies.</td><td>4–5</td></tr>
+      <tr><td>5</td><td>Practical debugging</td><td>Use MELT step by step to find root causes.</td><td>13–16</td></tr>
+      <tr><td>6</td><td>Tool choice</td><td>Pick tools that fit your stack (e.g. LangSmith).</td><td>17–18</td></tr>
+    </table>
+  </div>
+  <div class="box analogy"><h4>🍛 Explain the talk to a friend in 30 seconds</h4>
+    <p>"AI agents can fail without crashing, so 'is the server up?' isn't enough. Record four kinds of data: numbers (metrics), key moments (events), exact words in and out (logs), and the step-by-step story of each request (traces). When users complain, go metrics → traces → logs → fix → check the metrics again."</p>
+  </div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="slide" id="glossary">
+  <div class="slide-head"><span class="num">★</span><h3>Glossary</h3></div>
+  <dl class="gloss">
+    <dt>Monitoring</dt><dd>Fixed checks and alerts for problems you already know about.</dd>
+    <dt>Observability</dt><dd>Recording enough detail to investigate problems you didn't predict.</dd>
+    <dt>Non-deterministic</dt><dd>The same input can give different outputs.</dd>
+    <dt>MELT</dt><dd>Metrics, Events, Logs, Traces.</dd>
+    <dt>Metric</dt><dd>A number tracked over time (latency, cost, success rate).</dd>
+    <dt>Event</dt><dd>A named, meaningful moment ("escalated_to_human").</dd>
+    <dt>Log</dt><dd>A permanent, time-stamped record of exactly what happened.</dd>
+    <dt>Trace</dt><dd>The full journey of one request, as a tree of spans.</dd>
+    <dt>Span</dt><dd>One step inside a trace (an LLM call, a tool call), with timing and status.</dd>
+    <dt>trace_id</dt><dd>The ID shared by every record of one request; it ties MELT together.</dd>
+    <dt>Instrumenting</dt><dd>Adding code that records metrics, events, logs and spans.</dd>
+    <dt>p50 / p95</dt><dd>The time that 50% / 95% of requests finished within.</dd>
+    <dt>Hallucination</dt><dd>The model states something false as if it were true.</dd>
+    <dt>APM</dt><dd>Application Performance Monitoring (Datadog, Grafana…).</dd>
+    <dt>OpenTelemetry</dt><dd>An open standard for traces, metrics and logs.</dd>
+    <dt>LangSmith</dt><dd>A hosted tool for tracing, evaluating and debugging LLM apps.</dd>
+    <dt>@traceable</dt><dd>LangSmith decorator that turns a Python function into a span.</dd>
+    <dt>wrap_openai</dt><dd>LangSmith helper that logs every OpenAI call automatically.</dd>
+  </dl>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section class="slide" id="quiz">
+  <div class="slide-head"><span class="num">?</span><h3>Check yourself (click to reveal)</h3></div>
+  <details class="q"><summary>1. Your dashboard is all green, but users say the bot gives wrong answers. Which pillar do you open first?</summary><p>Traces (filtered to the complaining users or bad ratings), then the logs inside them. Metrics can only say <i>that</i> something is off.</p></details>
+  <details class="q"><summary>2. Is "conversation.escalated_to_human" a metric, event, log or trace?</summary><p>An event: a named, meaningful moment. Counting these events over time gives you a metric (escalation rate).</p></details>
+  <details class="q"><summary>3. Why did book_flight show a green ✓ in the buggy trace?</summary><p>It returned a "failed" dictionary instead of raising an error, so the tracing tool saw a normal return. Make tools report failures properly.</p></details>
+  <details class="q"><summary>4. You can't reproduce a bad answer locally. Why, and what saves you?</summary><p>Non-determinism: the model may answer differently each time. The saved trace and logs of the real request show exactly what happened.</p></details>
+  <details class="q"><summary>5. Name two things you should NOT store in logs.</summary><p>Any two of: API keys and passwords, raw personal data (phone numbers, emails, ID numbers), payment details. Mask them first.</p></details>
+</section>
+
+<footer>LLM Observability, explained simply · by Shivank Agarwal</footer>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.closest('.codebox').querySelector('pre').innerText;
+    const done = () => { btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1400); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fb(text, done));
+    else fb(text, done);
+  });
+});
+function fb(text, done) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
+const bar = document.getElementById('progress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = (100 * h.scrollTop / (h.scrollHeight - h.clientHeight)) + '%'; }, {passive: true});
+const links = {}; document.querySelectorAll('nav.toc a').forEach(a => links[a.getAttribute('href').slice(1)] = a);
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && links[e.target.id]) { Object.values(links).forEach(l => l.classList.remove('active')); links[e.target.id].classList.add('active'); } }), {rootMargin: '-35% 0px -60% 0px'});
+document.querySelectorAll('section.slide').forEach(s => io.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+NIMBU MART - SAMPLE SUPPORT TICKETS (all names and numbers are fake, created for a PII-redaction exercise)
+
+Ticket 48211 | Channel: chat
+Customer: Rohan Mehta, phone +91 98450 12345, email rohan.mehta@example.com
+Issue: Paid by UPI, saw error E102, money debited but order still shows Payment Pending after 10 minutes.
+Resolution: Agent asked customer to wait for reconciliation. Order confirmed automatically after 12 minutes.
+
+Ticket 48219 | Channel: email
+Customer: Priya Nair, phone 9123456780, email priya.n@example.org
+Issue: Wants to return a ClearView 43 inch TV because she changed her mind.
+Resolution: Explained that televisions are not returnable for change of mind. Offered replacement only if defective.
+
+Ticket 48230 | Channel: phone
+Customer: Aman Gupta, PAN ABCPG1234K, Aadhaar 2345 6789 0124 (shared by customer for KYC, should not be stored)
+Issue: Wants a GST invoice for a laptop bought for his business.
+Resolution: GST invoice sent from the Orders page. Reminded customer not to share Aadhaar over phone.
+
+Ticket 48244 | Channel: chat
+Customer: Sneha Iyer, phone 7012345678
+Issue: Card refund for returned earbuds not received after 3 days.
+Resolution: Card refunds take 5 to 7 business days after quality check. Customer informed.

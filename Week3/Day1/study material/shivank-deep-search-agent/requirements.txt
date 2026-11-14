@@ -1,0 +1,10 @@
+# Python 3.10 or newer.  Install with:  pip install -r requirements.txt
+pydantic>=2.7          # schemas / contracts between agents
+openai>=1.40           # one client for every OpenAI-compatible LLM (OpenAI, Gemini, Groq, Ollama, Anthropic...)
+python-dotenv>=1.0     # reads your .env file
+mcp>=2.0               # Lab 5: Model Context Protocol server + client (SDK v2: MCPServer)
+langgraph>=1.0         # Lab 12: the same agent as a graph (optional)
+ddgs>=9.0              # live web search, no API key  (SEARCH_PROVIDER=ddgs)
+tavily-python>=0.5     # live web search API, free tier (SEARCH_PROVIDER=tavily)
+trafilatura>=2.0       # clean main text + dates from live web pages
+pytest>=8              # python -m pytest -q

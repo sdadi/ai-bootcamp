@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Shivank Agrawal">
+<title>Chapter 4 — After Launch Experiments Monitoring and Business Impact | AI Evals in Practice by Shivank Agrawal</title>
+<style>
+:root{
+  --ink:#1e293b; --ink2:#334155; --muted:#64748b; --bg:#f7f8fb; --card:#ffffff; --line:#94a3b8; --soft:#eef2f7;
+  --brand:#4f46e5; --brand2:#0891b2; --accent:#ea580c;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0;z-index:999}
+
+/* ---------- Sidebar ---------- */
+#side{position:fixed;top:0;left:0;bottom:0;width:290px;background:#0f172a;color:#cbd5e1;overflow-y:auto;padding:22px 16px 40px;font-size:.86rem;z-index:50;transition:transform .3s}
+#side .brand{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#a5b4fc;font-weight:700}
+#side h3{color:#fff;margin:.3em 0 .2em;font-size:1.05rem;line-height:1.35}
+#side .by{font-size:.78rem;color:#94a3b8;margin-bottom:14px}
+#side a{display:block;color:#cbd5e1;text-decoration:none;padding:4px 10px;border-radius:7px;line-height:1.45}
+#side a:hover{background:#1e293b;color:#fff}
+#side .grp-t{color:#fbbf24;font-weight:700;margin-top:14px;padding:0 10px;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase}
+#side .sub{padding-left:24px;font-size:.8rem;color:#94a3b8}
+#menuBtn{display:none;position:fixed;top:12px;left:12px;z-index:60;background:#0f172a;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+main{margin-left:290px;padding:34px 4.5vw 90px;max-width:1180px}
+@media (max-width:960px){#side{transform:translateX(-100%)}#side.open{transform:none}#menuBtn{display:block}main{margin-left:0;padding:64px 16px 70px}}
+
+/* ---------- Typography ---------- */
+h1{font-size:2.4rem;line-height:1.2;margin:.25em 0 .3em;letter-spacing:-.01em}
+h2.chapter{font-size:1.9rem;line-height:1.3;margin-top:56px;padding:26px 28px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+h2.chapter small{display:block;font-size:1rem;opacity:.92;font-weight:400;margin-top:4px}
+h3.sec{font-size:1.55rem;line-height:1.35;margin:64px 0 10px;padding-bottom:8px;border-bottom:3px solid #e0e7ff}
+h3.sec .num{color:var(--brand)}
+h4{font-size:1.2rem;margin:34px 0 8px;color:#1e3a8a}
+h5{font-size:1rem}
+p{margin:.65em 0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+b,strong{color:#0f172a}
+a{color:var(--brand)}
+code{background:#eef2ff;padding:1px 6px;border-radius:5px;font-size:.86em;color:#9d174d;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:12px;overflow-x:auto;font-size:.84rem;line-height:1.6;font-family:"JetBrains Mono",Consolas,Menlo,monospace}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+pre .c{color:#94a3b8} pre .k{color:#c4b5fd} pre .s{color:#86efac} pre .o{color:#fcd34d}
+.lede{font-size:1.1rem;color:var(--ink2)}
+
+/* ---------- Tables ---------- */
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;background:#fff;border-radius:12px;overflow:hidden;font-size:.92rem;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+th{background:#1e293b;color:#fff;text-align:left;padding:10px 12px;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid #edf0f4;vertical-align:top}
+tr:nth-child(even) td{background:#fafbfd}
+td code{white-space:nowrap}
+
+/* ---------- Hero ---------- */
+.hero{background:#fff;border-radius:22px;padding:34px 34px 28px;box-shadow:0 6px 28px rgba(15,23,42,.06);border:1px solid #e2e8f0}
+.hero .kicker{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);background:#eef2ff;padding:4px 12px;border-radius:30px}
+.author{display:flex;align-items:center;gap:12px;margin:14px 0 6px}
+.author .av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.author b{display:block;line-height:1.2}
+.author span{font-size:.85rem;color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+.legend div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.5}
+.learn{columns:2;column-gap:28px}
+@media(max-width:800px){.learn{columns:1}}
+
+/* ---------- Callout boxes ---------- */
+.box{border-radius:14px;padding:14px 18px;margin:18px 0;border-left:5px solid;background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.box>.t{display:block;margin-bottom:4px;font-weight:700}
+.box p:first-of-type{margin-top:.2em}
+.analogy{border-color:#ea580c;background:#fff7ed}
+.real{border-color:#2563eb;background:#eff6ff}
+.example{border-color:#0d9488;background:#f0fdfa}
+.interview{border-color:#16a34a;background:#f0fdf4}
+.deep{border-color:#7c3aed;background:#f5f3ff}
+.warn{border-color:#d97706;background:#fffbeb}
+.takeaways{border-color:#4f46e5;background:#eef2ff}
+.plain{border-color:#64748b;background:#f8fafc}
+
+/* ---------- Diagram canvas ---------- */
+.fig{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:26px 16px 16px;margin:22px 0;box-shadow:0 2px 10px rgba(15,23,42,.04);overflow-x:auto}
+.fig .ft{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin:-8px 0 14px 4px}
+.cap{text-align:center;font-size:.86rem;color:var(--muted);margin-top:14px}
+
+/* nodes */
+.node{display:inline-block;padding:10px 14px;border-radius:11px;border:1.5px solid #cbd5e1;background:#f8fafc;font-weight:600;text-align:center;font-size:.88rem;line-height:1.4;min-width:110px;color:#1e293b}
+.node small{display:block;font-weight:400;opacity:.85;font-size:.78rem;margin-top:2px}
+.n-blue{background:#eff6ff;border-color:#60a5fa;color:#1e3a8a}
+.n-green{background:#f0fdf4;border-color:#4ade80;color:#14532d}
+.n-orange{background:#fff7ed;border-color:#fb923c;color:#7c2d12}
+.n-red{background:#fef2f2;border-color:#f87171;color:#7f1d1d}
+.n-purple{background:#f5f3ff;border-color:#a78bfa;color:#4c1d95}
+.n-yellow{background:#fefce8;border-color:#facc15;color:#713f12}
+.n-teal{background:#f0fdfa;border-color:#2dd4bf;color:#134e4a}
+.n-pink{background:#fdf2f8;border-color:#f472b6;color:#831843}
+.n-gray{background:#f1f5f9;border-color:#94a3b8;color:#334155}
+.n-dark{background:#1e293b;border-color:#0f172a;color:#fff}
+.n-navy{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+.db{border-radius:50% / 14%;padding:16px 16px}
+.pill{border-radius:30px}
+.diamond{width:190px;height:106px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;font-weight:700;padding:0 38px;background:#e0e7ff;color:#312e81;flex-shrink:0;line-height:1.3}
+
+/* layout helpers */
+.fv{display:flex;flex-direction:column;align-items:center}
+.fh{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.cols{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.grp{border:1.5px dashed #cbd5e1;border-radius:14px;padding:24px 14px 14px;position:relative;background:#fbfcfe;margin:12px 4px}
+.grp>.gt{position:absolute;top:-11px;left:14px;white-space:nowrap;background:#fff;padding:0 8px;font-weight:700;font-size:.76rem;color:#475569;border-radius:6px;border:1px solid #e2e8f0}
+.ladder .step{display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
+
+/* arrows (static, clean) */
+.va{width:2px;height:32px;background:var(--line);position:relative;margin:4px auto 10px}
+.va::after{content:'';position:absolute;bottom:-8px;left:-5px;border:6px solid transparent;border-top-color:var(--line)}
+.va>span{position:absolute;left:12px;top:5px;white-space:nowrap;font-size:.72rem;background:#f1f5f9;padding:1px 8px;border-radius:6px;color:#334155;border:1px solid #e2e8f0}
+.ha{height:2px;width:46px;background:var(--line);position:relative;margin:0 12px 0 4px;flex-shrink:0}
+.ha::after{content:'';position:absolute;right:-8px;top:-5px;border:6px solid transparent;border-left-color:var(--line)}
+.ha>span{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.7rem;background:#f1f5f9;padding:0 7px;border-radius:6px;border:1px solid #e2e8f0}
+.ha:has(>span){width:104px}
+.ha.long{width:110px}
+.dash{background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.dashv{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+.lbl{font-size:.74rem;background:#f1f5f9;padding:2px 9px;border-radius:6px;color:#334155;display:inline-block;margin:3px;border:1px solid #e2e8f0}
+
+/* CSS tree */
+.tree{overflow-x:auto;padding-bottom:6px}
+.tree ul{padding-top:20px;position:relative;display:flex;justify-content:center;margin:0;padding-left:0}
+.tree li{list-style:none;text-align:center;position:relative;padding:20px 5px 0;margin:0}
+.tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid #cbd5e1;width:50%;height:20px}
+.tree li::after{right:auto;left:50%;border-left:2px solid #cbd5e1}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid #cbd5e1;border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid #cbd5e1;height:20px}
+.tree>ul{padding-top:0}.tree>ul>li{padding-top:0}
+.tree .node{font-size:.78rem;min-width:auto;padding:7px 10px}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:14px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+@media(max-width:860px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 6px rgba(15,23,42,.06);border-top:4px solid #60a5fa;font-size:.95rem;line-height:1.65}
+.card h5{margin:0 0 6px;font-size:1.02rem;color:#0f172a}
+.card ul,.card ol{margin:.3em 0;padding-left:1.2em}
+.card pre{font-size:.78rem;margin:8px 0 0}
+.c-bad{border-top-color:#f87171}.c-good{border-top-color:#4ade80}.c-warn{border-top-color:#fbbf24}.c-vio{border-top-color:#a78bfa}.c-teal{border-top-color:#2dd4bf}
+.c-bad h5{color:#b91c1c}.c-good h5{color:#15803d}
+.quote{background:#f8fafc;border:1px solid #e2e8f0;padding:9px 13px;border-radius:9px;font-size:.92rem;font-family:"JetBrains Mono",Consolas,monospace;white-space:pre-wrap;line-height:1.55}
+
+/* ---------- Demos ---------- */
+.demo{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:18px 20px;margin:20px 0}
+.demo h5{margin:0 0 6px;color:#fcd34d;font-size:1rem}
+.demo p.hint{font-size:.85rem;color:#94a3b8;margin:4px 0 10px}
+.demo label{font-size:.9rem}
+.demo input[type=text],.demo input[type=number],.demo textarea,.demo select{width:100%;padding:9px 10px;border-radius:9px;border:0;font-size:.93rem;font-family:inherit;background:#f8fafc;color:#0f172a}
+.demo textarea{font-family:"JetBrains Mono",Consolas,monospace;font-size:.84rem}
+.demo button,.btn{background:#4f46e5;color:#fff;border:0;border-radius:9px;padding:8px 15px;margin:4px 6px 4px 0;font-weight:600;cursor:pointer;font-size:.88rem;font-family:inherit}
+.demo button.alt,.btn.alt{background:#334155}
+.demo button.red{background:#dc2626}
+.demo button:hover,.btn:hover{filter:brightness(1.12)}
+.panel{background:#1e293b;border-radius:11px;padding:12px 14px;min-height:56px}
+.mono{font-family:"JetBrains Mono",Consolas,monospace}
+.log{background:#020617;border-radius:10px;padding:10px 12px;max-height:190px;overflow-y:auto;font-family:"JetBrains Mono",Consolas,monospace;font-size:.8rem;margin-top:10px;line-height:1.6}
+.state{display:inline-block;padding:7px 14px;border-radius:9px;font-weight:700;margin:4px;opacity:.28;transition:all .3s;color:#fff}
+.state.on{opacity:1;box-shadow:0 0 0 3px #fff}
+.kpi{font-size:1.45rem;font-weight:800;color:#fcd34d}
+.chip{display:inline-block;padding:3px 8px;margin:3px;border-radius:7px;font-family:"JetBrains Mono",Consolas,monospace;font-size:.86rem;color:#0f172a}
+.bar{height:18px;border-radius:6px;background:linear-gradient(90deg,#6366f1,#06b6d4);transition:width .3s;margin:3px 0}
+.lit{outline:3px solid #fbbf24;outline-offset:3px}
+.slot{display:inline-block;padding:4px 8px;margin:2px;border-radius:6px;background:#4ade80;color:#052e16;font-family:monospace;font-size:.78rem;font-weight:700}
+.ok{color:#4ade80;font-weight:700}.no{color:#f87171;font-weight:700}
+.seqctl{text-align:center;margin-top:10px}
+.seqcap{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:10px 14px;margin-top:8px;min-height:44px;font-size:.92rem}
+
+/* formula */
+.formula{font-size:1.12rem;text-align:center;margin:16px 0;font-family:"Cambria Math",Georgia,serif}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 6px}
+.frac span:first-child{border-bottom:2px solid #0f172a;padding:0 6px}
+
+/* ER diagram */
+.er{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
+@media(max-width:860px){.er{grid-template-columns:1fr}}
+.ent{background:#fff;border:1.5px solid #a78bfa;border-radius:10px;overflow:hidden;font-size:.82rem}
+.ent b{display:block;background:#ede9fe;color:#4c1d95;padding:6px 10px;text-align:center}
+.ent div{padding:4px 10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px}
+.ent i{color:#64748b;font-style:normal}.ent em{color:#be185d;font-style:normal;font-weight:700}
+.rel{font-size:.78rem;text-align:center;color:#475569;background:#f1f5f9;border-radius:8px;padding:5px}
+
+/* misc */
+details{background:#fff;border-radius:12px;padding:11px 16px;margin:10px 0;box-shadow:0 1px 6px rgba(15,23,42,.05);border-left:4px solid #a78bfa}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:8px;color:#5b21b6}
+.phone{max-width:340px;margin:auto;border:3px solid #1e293b;border-radius:28px;padding:18px 14px;background:#f8fafc}
+.footer{text-align:center;color:var(--muted);margin-top:70px;font-size:.88rem;border-top:1px solid #e2e8f0;padding-top:22px}
+.footer b{color:#1e293b}
+.toc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.toc-chips span{background:#eef2ff;color:#3730a3;border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:600}
+.steps{counter-reset:s;list-style:none;padding-left:0}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:10px 0}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:27px;height:27px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:.9rem}
+.kv dt{font-family:"JetBrains Mono",Consolas,monospace;color:#9d174d;font-size:.85rem}
+.kv dd{margin:0}
+
+/* ---------- Narrow screens: turn horizontal chains into vertical ones ---------- */
+@media (max-width:1080px){
+  .fh:has(>.ha), .ladder .step{flex-direction:column}
+  .fh:has(>.ha)>.ha, .ladder .step>.ha{width:2px!important;height:32px;margin:4px auto 10px}
+  .fh:has(>.ha)>.ha::after, .ladder .step>.ha::after{right:auto;left:-5px;top:auto;bottom:-8px;border-left-color:transparent;border-top-color:var(--line)}
+  .fh:has(>.ha)>.ha>span, .ladder .step>.ha>span{left:12px;bottom:auto;top:5px;transform:none}
+  .fh:has(>.ha)>.ha.dash, .ladder .step>.ha.dash{background:repeating-linear-gradient(180deg,var(--line) 0 6px,transparent 6px 11px)!important}
+  .grid2 .fh .node, .fig .node{max-width:100%}
+  h1{font-size:1.9rem}
+  .hero{padding:24px 18px}
+}
+
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="menuBtn" onclick="document.getElementById('side').classList.toggle('open')">☰ Contents</button>
+<nav id="side">
+  <div class="brand">Future with Shivank</div>
+  <h3>AI Evals in Practice<br>Chapter 4 · After Launch</h3>
+  <div class="by">by Shivank Agrawal</div>
+  <a href="#start">🏁 Start here</a>
+  <div class="grp-t">Before full launch</div>
+  <a href="#c4-exp">4.1 Experiments and pilots</a>
+  <a class="sub" href="#c4-design">Designing the pilot</a>
+  <a class="sub" href="#c4-ab">Is the difference real?</a>
+  <div class="grp-t">In production</div>
+  <a href="#c4-wrong">4.2 What can still go wrong</a>
+  <a href="#c4-va">4.3 Evals vs analytics</a>
+  <a href="#c4-mon">4.4 What to monitor, and why it's hard</a>
+  <a href="#c4-case">4.5 Case study: monitoring DoubtBot</a>
+  <a class="sub" href="#c4-sample">Judging a sample of live traffic</a>
+  <a class="sub" href="#c4-lead">Leading → lagging</a>
+  <a class="sub" href="#c4-dash">Incident simulator</a>
+  <a href="#c4-act">4.6 Every metric needs an action</a>
+  <div class="grp-t">Proving value</div>
+  <a href="#c4-biz">4.7 From evals to business impact</a>
+  <a class="sub" href="#c4-roi">ROI calculator</a>
+  <a href="#c4-sum">4.8 Summary + quiz</a>
+  <a class="sub" href="#c4-gloss">Glossary</a>
+</nav>
+
+<main>
+<section id="start" class="hero">
+  <span class="kicker">AI Evals in Practice · Chapter 4</span>
+  <h1>After Launch: Experiments, Monitoring and Business Impact</h1>
+  <div class="author"><div class="av">SA</div><div><b>Shivank Agrawal</b><span>Future with Shivank</span></div></div>
+  <p class="lede">DoubtBot passed its offline evals. Every gate is green. Is the job done? Not even close. Offline evals tell you whether you <b>built the product right</b>. This chapter is about whether you <b>built the right product</b>: piloting with real students, monitoring the live system, and finally answering the question every leader eventually asks: <i>"So what did all this do for the business?"</i></p>
+  <h4 style="margin-top:20px">By the end of this chapter you will be able to…</h4>
+  <ul class="learn">
+    <li>Decide when a pilot is worth running, and design one</li>
+    <li>Check whether a pilot's improvement is real or luck</li>
+    <li>List what can break after launch, even after great evals</li>
+    <li>Explain the difference between evals and analytics</li>
+    <li>Pick system, product and business metrics to monitor</li>
+    <li>Run an LLM judge on a sample of live traffic, cheaply</li>
+    <li>Link leading indicators to the lagging outcomes they predict</li>
+    <li>Translate eval results into business impact and ROI</li>
+  </ul>
+  <div class="legend">
+    <div>🧠 <b>Think of it like…</b> an everyday analogy</div>
+    <div>🌍 <b>Real-world example</b> where you have seen this</div>
+    <div>🔍 <b>Worked example</b> step by step, with real values</div>
+    <div>⚠️ <b>Watch out</b> a common mistake</div>
+    <div>🎯 <b>Interview tip</b> a line you can say in an interview</div>
+    <div>🚀 <b>Going deeper</b> optional, for the curious</div>
+    <div>🎮 <b>Try it</b> an interactive demo you can click</div>
+  </div>
+<div class="box warn"><span class="t">▶ Running the code with your OpenAI key</span><code>pip install openai pydantic numpy</code> and set <code>OPENAI_API_KEY</code>. Three GPT-6 rules the code follows: <b>(1)</b> <code>temperature</code> only together with <code>reasoning_effort="none"</code> (Terra and Luna; never on Astra); <b>(2)</b> tool calling on <code>gpt-6.1-terra</code> uses the Responses API (<code>client.responses.create</code>); <b>(3)</b> JSON replies use Structured Outputs: a Pydantic class + <code>client.chat.completions.parse(..., response_format=MyClass)</code>, read from <code>.message.parsed</code>. Examples that call DoubtBot or read data files stand for your own product; real outputs will be worded differently from the samples.</div>
+</section>
+
+<h2 class="chapter" id="c4">Chapter 4 · After Launch<small>Pilots · A/B checks · monitoring · leading and lagging indicators · actions · business impact</small></h2>
+
+<!-- ============ 4.1 ============ -->
+<h3 class="sec" id="c4-exp"><span class="num">4.1</span> Experiments and pilots: the last check before release</h3>
+<div class="fig"><div class="ft">Where we are now</div>
+<div class="fh"><span class="node n-gray">Qualitative ✓</span><div class="ha"></div><span class="node n-gray">Quantitative ✓</span><div class="ha"></div><span class="node n-orange lit">Experiment / pilot</span><div class="ha"></div><span class="node n-dark pill">Deploy</span><div class="ha"></div><span class="node n-green">Monitoring</span><div class="ha"></div><span class="node n-green">Analytics</span></div></div>
+<p>Even after offline evals look great, most teams don't go straight to a full release. They first run an <b>experiment or pilot</b>: the product goes live for a <b>small group of real users</b>, and the team measures what actually happens.</p>
+<div class="grid2">
+<div class="card c-vio"><h5>Offline (quantitative) evals ask…</h5>"Does the system do what it was designed to do?" They measure <b>product behaviour</b> on test sets.</div>
+<div class="card c-warn"><h5>Experiments and pilots ask…</h5>"Do real users use it the way we intended, and does it <b>drive impact</b>?" They measure <b>business metrics</b> and real usage. They also reveal <b>missing guardrails</b> that never showed up in testing.</div>
+</div>
+<div class="grid3">
+<div class="card c-good"><h5>✅ Business metrics + guardrails</h5>Not just "does it work?" but "does it help, safely?"</div>
+<div class="card"><h5>📏 A clear baseline</h5>Numbers mean nothing alone. Compare against a <b>control</b>: the current way (TAs only).</div>
+<div class="card c-vio"><h5>🧹 Clean, analysable data</h5>Logging planned in advance, so conclusions are reliable.</div>
+</div>
+<div class="box warn"><span class="t">⚠️ Pilots are expensive, so not every change needs one</span>A pilot is usually the most resource-hungry and slowest step. For <b>low-risk</b> projects (an internal tool, a small UX tweak), teams often go straight from offline evals to release. Save pilots for <b>major launches and key features</b>, which is exactly why they're <i>gated</i> behind offline evals.</div>
+<div class="box real"><span class="t">🌍 How industry does it</span>The pattern across mature teams is consistent: <b>offline evals first</b> to check the system behaves correctly, <b>then experiments</b> to see how those improvements translate into real-world results. Model labs put heavy emphasis on experiments to understand not just <i>what</i> changed but <i>why</i>. Teams working on image and video models rely on experiments to confirm real-world performance. E-commerce companies use them to connect offline eval gains to actual shopping behaviour.</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>A film's <b>preview screening</b>. The film passed every technical check (offline evals), but the director still shows it to a small audience first to see where they laugh, where they get bored, and whether they'd recommend it. A preview audience isn't the same as the real opening weekend, but it's far closer than the editing room. 🎬</div>
+<div class="box warn"><span class="t">⚠️ Pilot users are not real users</span>Beta users volunteer, are often more motivated and more forgiving, and know they're being watched. A pilot is the <b>closest proxy</b> to production, not a perfect copy. Don't be surprised if numbers move again after full launch, and keep monitoring (section 4.4).</div>
+
+<h4 id="c4-design">🧪 Designing the pilot</h4>
+<div class="grid4">
+<div class="card"><h5>A/B test</h5>Randomly split users: half get DoubtBot (treatment), half don't (control). The cleanest way to measure cause and effect.</div>
+<div class="card c-teal"><h5>Shadow mode</h5>DoubtBot answers every doubt <b>silently</b>; only TAs' answers reach students. Compare later. Zero risk to users, but you can't measure how students react.</div>
+<div class="card c-warn"><h5>Staged rollout</h5>5% → 25% → 100% of users, watching metrics at each step and rolling back if something breaks.</div>
+<div class="card c-vio"><h5>Beta programme</h5>Volunteers opt in. Easy to run, but volunteers aren't typical users (see above).</div>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: DoubtBot's pilot plan</span>
+<div class="tbl" style="margin:0"><table>
+<tr><th style="width:26%">Field</th><th>Plan</th></tr>
+<tr><td>Control (baseline)</td><td>Sections that keep TAs only</td></tr>
+<tr><td>Method</td><td>A/B test, randomised <b>by section</b> (4 sections get DoubtBot, 4 don't)</td></tr>
+<tr><td>Why by section, not by student?</td><td>Students in the same section share answers and screenshots. If students in one section were split, the control group would get "contaminated" by DoubtBot's answers.</td></tr>
+<tr><td>Primary metric</td><td>Share of doubts resolved within 1 hour</td></tr>
+<tr><td>Guardrails</td><td>Escalation compliance on distress messages = 100% · no privacy incidents · student satisfaction not lower than control</td></tr>
+<tr><td>Hypothesis</td><td>"If we ship DoubtBot, doubts resolved within 1 hour will rise from <b>31%</b> to <b>≥ 60%</b>, while all guardrails hold."</td></tr>
+<tr><td>Duration</td><td>4 weeks (covers one mid-term, when doubt volume peaks)</td></tr>
+</table></div></div>
+
+<h4 id="c4-ab">📐 Is the difference real, or just luck?</h4>
+<p>The pilot ends. DoubtBot sections show 64% of doubts resolved within an hour; TA-only sections show 31%. Obviously real. But many differences are small (say 52% vs 48%), and then you need to check whether it could be <b>random noise</b>. The standard tool for comparing two percentages is the <b>two-proportion z-test</b>.</p>
+<div class="box example"><span class="t">🔍 Worked example: course completion, DoubtBot vs control</span>
+<p>A secondary metric: did more students finish the course? DoubtBot sections: <b>352 of 500</b> finished (70.4%). Control: <b>322 of 500</b> (64.4%). A 6-point gap. Real?</p>
+<pre><code><span class="k">from</span> statistics <span class="k">import</span> NormalDist
+<span class="k">import</span> math
+
+<span class="k">def</span> two_proportion_test(x1, n1, x2, n2):
+    p1, p2 = x1 / n1, x2 / n2
+    pooled = (x1 + x2) / (n1 + n2)                               <span class="c"># overall rate if there were no difference</span>
+    se = math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2))      <span class="c"># expected noise in the gap</span>
+    z = (p1 - p2) / se                                            <span class="c"># how many "noise units" the gap is</span>
+    p_value = 2 * (1 - NormalDist().cdf(abs(z)))                  <span class="c"># chance of a gap this big by luck alone</span>
+    <span class="k">return</span> round(p1 - p2, 3), round(z, 2), round(p_value, 3)
+
+print(two_proportion_test(352, 500, 322, 500))</code></pre>
+<p><b>Output:</b> <code>(0.06, 2.02, 0.043)</code></p>
+<p><b>Reading it:</b> the gap is 6 points; that's 2.02 "noise units"; the chance of seeing a gap this large if DoubtBot made <i>no</i> difference is 4.3%. Below the usual 5% cut-off, so the result counts as <b>statistically significant</b>, but only just. Because students in a section influence each other, the true noise is somewhat larger than this simple formula assumes, so treat it as <i>promising</i>, and confirm in the next batch.</p></div>
+<div class="demo"><h5>🎮 Try it: pilot significance check</h5>
+<p class="hint">Enter successes and group sizes for both groups.</p>
+<div class="grid4"><label>DoubtBot: successes<input type="number" id="abX1" value="352"></label><label>DoubtBot: group size<input type="number" id="abN1" value="500"></label><label>Control: successes<input type="number" id="abX2" value="322"></label><label>Control: group size<input type="number" id="abN2" value="500"></label></div>
+<div class="panel" style="margin-top:10px" id="abOut"></div></div>
+<div class="box deep"><span class="t">🚀 Going deeper: plan the size before the pilot, not after</span>To detect a lift from 62% to 67% completion (Δ = 5 points) with 95% confidence and 80% power, each group needs about (1.96 + 0.84)² × [0.62×0.38 + 0.67×0.33] ÷ 0.05² ≈ <b>1,430 students</b>. One batch doesn't have that many. Options: run across several batches, or choose a <b>more sensitive primary metric</b> that moves more and faster (like "doubts resolved within 1 hour"), and keep completion as a secondary metric. Choosing a metric that can actually show a result <i>within your pilot</i> is part of good pilot design.</div>
+
+<!-- ============ 4.2 ============ -->
+<h3 class="sec" id="c4-wrong"><span class="num">4.2</span> What can still go wrong in production</h3>
+<p>The offline evals were great, the pilot passed, DoubtBot is live for every batch. After all that work, what could go wrong? Quite a lot.</p>
+<div class="grid2">
+<div class="card c-bad"><h5>😱 Users don't need it</h5>The worst nightmare: it works, but people don't use it. Maybe students prefer asking friends on WhatsApp.</div>
+<div class="card c-bad"><h5>🔀 Eval–production mismatch</h5>If the test set didn't truly reflect real usage, problems appear only now. Real students paste screenshots; the test set had only text.</div>
+<div class="card c-warn"><h5>🆕 New edge cases</h5>Things nobody imagined: a student asks DoubtBot to explain an error message in Tamil; another uploads a 2,000-line file.</div>
+<div class="card c-warn"><h5>🔄 User behaviour changes</h5>Some users try to <b>game</b> the system ("pretend this isn't an assignment…"). Others get more advanced: they move from one-line questions to long, multi-turn tutoring sessions, using a Q&amp;A bot like a conversational tutor.</div>
+</div>
+<div class="box takeaways"><span class="t">💡 The honest truth</span>Evals will <b>never</b> be perfect, and things <b>will</b> happen in production. The goal of monitoring and analytics is to <b>catch problems early</b>: keep the product delivering value, keep quality and safety standards, and spot issues before they hurt users or business numbers.</div>
+
+<!-- ============ 4.3 ============ -->
+<h3 class="sec" id="c4-va"><span class="num">4.3</span> Evals vs analytics</h3>
+<div class="grid2">
+<div class="card c-vio"><h5>🧪 Offline evals</h5><b>When:</b> before launch<br><b>Question:</b> are we <b>building the product right?</b><br>Does the system perform as intended for its designed use cases?</div>
+<div class="card c-good"><h5>📈 Analytics</h5><b>When:</b> after launch, with real users<br><b>Question:</b> are we <b>building the right product?</b><br>How do real people actually use it, and does it create value?</div>
+</div>
+<div class="box analogy"><span class="t">🧠 Think of it like…</span>Chapter 1 compared evals to <b>exams</b>. Continue the analogy: exams measure ability in a controlled setting; after graduation, a person is judged by <b>job performance</b>, the real impact of their work. Evals are the exams. Analytics is the annual performance review. A topper can still struggle at work. 🎓➡️💼</div>
+<h4>Same type of product, completely different metrics</h4>
+<p>Compare two chat products. What would their owners want?</p>
+<div class="grid2">
+<div class="card"><h5>💬 A consumer AI assistant (like ChatGPT)</h5><b>Goals:</b> everyone subscribes · people spend more time with it · long, engaging conversations · happy users who don't switch to a rival<br><b>Metrics:</b> number of subscriptions · average time per user · <b>average turns per conversation (want ↑)</b> · thumbs-up rate, CSAT, sentiment</div>
+<div class="card c-warn"><h5>🛵 A food-delivery support bot</h5><b>Goals:</b> take workload off the call centre · answer quickly and accurately · customers come back and order again<br><b>Metrics:</b> agent hours saved · <b>average turns per conversation (want ↓)</b> · task success rate · repeat-order rate</div>
+</div>
+<p>Two things to notice. First, <b>both are chatbots, yet even the same metric ("turns per conversation") points in opposite directions</b>: for the assistant, long chats mean engagement; for the support bot, long chats mean the customer is struggling. Second, each list is a <b>mix</b> of eval metrics, product metrics and business metrics. So "should we monitor eval metrics or product metrics?" isn't an either/or question. <b>You monitor both</b>, plus business metrics.</p>
+<div class="demo"><h5>🎮 Try it: which layer does each DoubtBot metric belong to?</h5>
+<p class="hint">Eval metric = how the AI behaves. Product metric = how users interact. Business metric = what the organisation cares about.</p>
+<div id="layerQ"></div></div>
+
+<!-- ============ 4.4 ============ -->
+<h3 class="sec" id="c4-mon"><span class="num">4.4</span> What to monitor, and why it's harder for AI</h3>
+<div class="fig"><div class="ft">Three layers to watch in production</div>
+<div class="fv">
+<span class="node n-green" style="min-width:420px">💼 Business impact<small>TA hours saved · course completion · student NPS</small></span><div class="va"></div>
+<span class="node n-blue" style="min-width:420px">👩‍🎓 Product behaviour<small>resolution rate · escalation rate · sentiment · topics · turns per session</small></span><div class="va"></div>
+<span class="node n-purple" style="min-width:420px">⚙️ System health + eval metrics<small>latency · cost · error rate · tokens · guardrail violations · faithfulness (sampled)</small></span>
+</div><div class="cap">Product and business metrics aren't new ideas. Yet few teams monitor AI products well. Why?</div></div>
+<div class="grid3">
+<div class="card c-bad"><h5>🎲 Non-deterministic</h5>The same input can give different outputs, and users take unpredictable paths. What worked in testing may behave differently in production.</div>
+<div class="card c-bad"><h5>🏷 No ground truth</h5>Offline, you had labelled test sets. In production, nobody labels the answers, and human review at scale is expensive. It starts to look like an <b>unsupervised</b> problem.</div>
+<div class="card c-bad"><h5>🧩 No clear event boundaries</h5>Traditional apps track clicks and page views. AI conversations are free-form: inputs and outputs don't map neatly to predefined events. "Did the student succeed?" isn't a button.</div>
+</div>
+<h4>Three questions for every metric</h4>
+<div class="grid3">
+<div class="card"><h5>1. What are we measuring?</h5>System health, product behaviour or business impact?</div>
+<div class="card c-vio"><h5>2. When does it show up?</h5><b>Leading indicators</b> move immediately (escalation rate today). <b>Lagging indicators</b> show the real outcome, later (completion at the end of the course). You need both.</div>
+<div class="card c-good"><h5>3. What action does it drive?</h5>Alerting, optimisation or insight? <b>A metric without an action is just noise.</b> Decide the action up front, when you design the metric.</div>
+</div>
+<h4>Then, for each metric on the shortlist</h4>
+<div class="tbl"><table>
+<tr><th>Question</th><th>Options</th></tr>
+<tr><td><b>Granularity</b>: what is one data point?</td><td>Turn (one message) · conversation · session · user · whole system</td></tr>
+<tr><td><b>How is it watched?</b></td><td>Real-time stream with alerts · or daily/weekly batch analysis</td></tr>
+<tr><td><b>What if it drops?</b></td><td>Immediate rollback · alert someone on call · investigate over the next days</td></tr>
+</table></div>
+<div class="box takeaways"><span class="t">💡 Key line</span><b>Define the action before the metric moves.</b> When escalation rate jumps at 2 am during exam week is not the moment to debate who owns it.</div>
+
+<!-- ============ 4.5 ============ -->
+<h3 class="sec" id="c4-case"><span class="num">4.5</span> Case study: monitoring DoubtBot</h3>
+<div class="tbl"><table>
+<tr><th>Metric</th><th>Layer</th><th>Level</th><th>How watched</th><th>Owner</th><th>If it goes wrong…</th></tr>
+<tr><td>Latency p95</td><td>System</td><td>Turn</td><td>Real-time</td><td>Eng</td><td>Alert if &gt; 8 s for 10 min; check provider status; fall back to smaller model</td></tr>
+<tr><td>Error rate</td><td>System</td><td>Turn</td><td>Real-time</td><td>Eng</td><td>Alert if &gt; 2%; roll back last deploy</td></tr>
+<tr><td>Tokens &amp; cost per doubt</td><td>System</td><td>Turn</td><td>Daily</td><td>Eng</td><td>If +20% week on week: review context size and retrieval count</td></tr>
+<tr><td>Privacy violations</td><td>Eval (rule)</td><td>Turn</td><td>Real-time, every reply</td><td>Eng + Legal</td><td><b>Any hit:</b> block the reply, page on-call, incident review</td></tr>
+<tr><td>Faithfulness, integrity</td><td>Eval (judge)</td><td>Turn</td><td>Daily, on a sample</td><td>Data/eval</td><td>If below threshold 2 days running: inspect traces, check index</td></tr>
+<tr><td>Escalation rate</td><td>Product</td><td>Conversation</td><td>Real-time + daily</td><td>PM</td><td>Spike → check retrieval and new topics; TA staffing heads-up</td></tr>
+<tr><td>Thumbs-down &amp; sentiment</td><td>Product</td><td>Turn / session</td><td>Daily</td><td>PM + UX</td><td>Read the worst 20 conversations; add to taxonomy</td></tr>
+<tr><td>Topic distribution</td><td>Product</td><td>Conversation</td><td>Weekly</td><td>PM + instructor</td><td>Insight: which lectures confuse students?</td></tr>
+<tr><td>TA hours saved, completion, NPS</td><td>Business</td><td>System</td><td>Weekly / per batch</td><td>Head of learning</td><td>Review in monthly business meeting</td></tr>
+</table></div>
+
+<h4 id="c4-sample">🎯 Judging a sample of live traffic</h4>
+<p>Running an LLM judge on <b>every</b> production reply is usually a waste. Even with a cheap judge, costs add up with volume, and you don't need every reply judged to know the rate. <b>Sample</b> intelligently instead: a random slice for an unbiased estimate, plus <b>all</b> "suspicious" replies (thumbs-down, very long, escalated).</p>
+<div class="box example"><span class="t">🔍 Worked example: a nightly sampled-judge job</span>
+<pre><code><span class="k">import</span> random
+
+<span class="k">def</span> nightly_quality_check(todays_traces, judge, rate=0.05):
+    random_part = [t <span class="k">for</span> t <span class="k">in</span> todays_traces <span class="k">if</span> random.random() &lt; rate]          <span class="c"># unbiased 5% slice</span>
+    flagged = [t <span class="k">for</span> t <span class="k">in</span> todays_traces <span class="k">if</span> t[<span class="s">"thumbs_down"</span>] <span class="k">or</span> t[<span class="s">"escalated"</span>]]   <span class="c"># look at ALL of these</span>
+
+    fails = sum(judge(INTEGRITY, Verdict, question=t[<span class="s">"question"</span>], reply=t[<span class="s">"answer"</span>])[<span class="s">"verdict"</span>] == <span class="s">"FAIL"</span>
+                <span class="k">for</span> t <span class="k">in</span> random_part)
+    rate_est = fails / max(len(random_part), 1)                <span class="c"># estimate from the RANDOM slice only</span>
+    <span class="k">if</span> rate_est &gt; 0.02:
+        alert(<span class="s">f"Integrity failures ~{rate_est:.1%} today (threshold 2%)"</span>)
+    queue_for_ta_review(flagged)                               <span class="c"># humans read the flagged ones</span>
+    <span class="k">return</span> len(random_part), fails, round(rate_est, 3), len(flagged)
+
+print(nightly_quality_check(traces_2026_11_12, judge))</code></pre>
+<p><b>Output:</b> <code>(214, 3, 0.014, 61)</code></p>
+<p>214 replies judged out of ~4,300, 3 integrity failures, an estimated rate of 1.4% (below the 2% alert line), and 61 flagged conversations sent to TAs. <b>Why estimate only from the random slice?</b> The flagged ones are, by design, more likely to be bad; mixing them in would inflate the rate.</p></div>
+<div class="box example"><span class="t">🔍 Worked example: what does sampled judging cost?</span>
+<p>DoubtBot handles about <b>4,300 doubts a day</b>. Judging 5% plus flagged ones ≈ 280 judge calls a day. Each call ≈ 1,500 input tokens and 100 output tokens. With <code>gpt-6-luna</code> at about <b>$0.10 per million input</b> and <b>$0.50 per million output</b> tokens:</p>
+<div class="tbl"><table><tr><th>Step</th><th>Calculation</th><th>Result</th></tr>
+<tr><td>Input tokens / day</td><td>280 × 1,500</td><td>420,000</td></tr>
+<tr><td>Output tokens / day</td><td>280 × 100</td><td>28,000</td></tr>
+<tr><td>Daily cost</td><td>0.42 × $0.10 + 0.028 × $0.50</td><td>≈ <b>$0.06</b></td></tr>
+<tr><td>Judging 100% instead</td><td>× ~15</td><td>≈ $0.85 / day for each metric</td></tr></table></div>
+<p>Cheap either way for DoubtBot's volume. But for a product with millions of conversations a day and five judge metrics, sampling is the difference between a rounding error and a real budget line. <b>The goal is not to evaluate everything; it's to evaluate smartly.</b></p></div>
+
+<h4 id="c4-lead">🔮 Leading → lagging: watch the signals that predict outcomes</h4>
+<p>Business outcomes like retention show up <b>late</b>: by the time completion drops, the batch is over. So link each lagging outcome to <b>leading indicators</b> that move earlier:</p>
+<div class="fig"><div class="ft">Early signals and the outcomes they predict</div>
+<div class="fv" style="gap:10px">
+<div class="fh"><span class="node n-blue" style="width:260px">📉 Conversation depth drops<small>fewer back-and-forth turns</small></span><div class="ha"><span>predicts</span></div><span class="node n-red" style="width:260px">Lower engagement → lower retention</span></div>
+<div class="fh"><span class="node n-blue" style="width:260px">📈 Escalation rate rises</span><div class="ha"><span>predicts</span></div><span class="node n-red" style="width:260px">Higher TA workload, slower replies</span></div>
+<div class="fh"><span class="node n-blue" style="width:260px">😟 Sentiment falls</span><div class="ha"><span>predicts</span></div><span class="node n-red" style="width:260px">Fewer weekly active users, lower CSAT</span></div>
+<div class="fh"><span class="node n-blue" style="width:260px">🔁 Same doubt asked repeatedly</span><div class="ha"><span>predicts</span></div><span class="node n-red" style="width:260px">Students stuck → lower test scores</span></div>
+</div><div class="cap">Don't wait for the outcome; watch the signals that predict it.</div></div>
+<div class="box warn"><span class="t">⚠️ "Turns per session" is a DoubtBot trap</span>For DoubtBot, more turns can be <b>good</b> (a student working through a problem with hints) or <b>bad</b> (a student going in circles, not getting help). Pair it with resolution and sentiment before reading anything into it. A metric's direction depends on the product, as section 4.3 showed.</div>
+
+<h4 id="c4-dash">🚨 Incident simulator</h4>
+<div class="demo"><h5>🎮 Try it: DoubtBot's live dashboard</h5>
+<p class="hint">Inject an incident and watch which metrics move first. Leading indicators react within hours; lagging ones take weeks.</p>
+<button class="red" onclick="inc('index')">💥 Someone re-indexed the whole campus wiki</button><button class="red" onclick="inc('model')">🔄 Provider silently updated the model</button><button class="red" onclick="inc('exam')">📚 Mid-term week traffic spike</button><button class="alt" onclick="inc('reset')">↺ Normal day</button>
+<div class="grid4" style="margin-top:10px" id="dash"></div>
+<div class="log" id="dashLog"></div></div>
+
+<!-- ============ 4.6 ============ -->
+<h3 class="sec" id="c4-act"><span class="num">4.6</span> Every metric needs an action</h3>
+<p>Design metrics by <b>beginning with the end in mind</b>: what will we <b>do</b> when this number moves? Every metric falls into one of three kinds:</p>
+<div class="grid3">
+<div class="card c-bad"><h5>🚨 Alert metrics</h5>Need <b>immediate</b> attention: mitigation, or even rollback. Monitored in <b>real time</b> with alerting.<br><i>Privacy violations, error rate, latency spikes.</i></div>
+<div class="card c-warn"><h5>🔧 Optimisation metrics</h5>Help <b>tune</b> the system over time: improve quality, cut cost, adjust behaviour.<br><i>Faithfulness, cost per doubt, escalation rate.</i></div>
+<div class="card c-good"><h5>💡 Insight metrics</h5>Analytical: reveal patterns and <b>unmet needs</b>, and feed the product roadmap.<br><i>Topic distribution, repeated doubts, drop-off points.</i></div>
+</div>
+<div class="fig"><div class="ft">Evals, monitoring and analytics as one continuous loop</div>
+<div class="fv">
+<div class="fh"><span class="node n-gray">Problem &amp; idea</span><div class="ha"></div><span class="node n-purple">Plan &amp; develop<small>evals give fast feedback</small></span><div class="ha"></div><span class="node n-orange">Release<small>evals act as the gate</small></span><div class="ha"></div><span class="node n-dark pill">Production</span></div>
+<div class="va"></div>
+<div class="fh"><span class="node n-green" style="width:240px">Real-time monitoring<small>how it behaves right now</small></span><span class="lbl">+</span><span class="node n-teal" style="width:240px">Batch analytics<small>audits and deeper insights</small></span></div>
+<div class="va dashv"><span>feedback: new test cases, updated taxonomy, better coverage</span></div>
+<span class="node n-purple">Back into evals for the next version 🔁</span>
+</div><div class="cap">Not a one-time process: each stage improves the next. That's how you go from building AI to building <b>reliable</b> AI products.</div></div>
+<div class="box real"><span class="t">🌍 What feeding back looks like for DoubtBot</span>Analytics shows 9% of doubts in week 7 mention "two pointers", a topic missing from the golden test set. The team adds 40 two-pointer cases (from real, anonymised doubts), the next prompt change is tested against them, and the error taxonomy gets a new category: "Confuses two-pointer with sliding window". Production made the evals better.</div>
+
+<!-- ============ 4.7 ============ -->
+<h3 class="sec" id="c4-biz"><span class="num">4.7</span> From evals to business impact</h3>
+<p>Your eval metrics are green, the pilot passed, monitoring is in place. Then leadership asks: <i>"So what does all this mean for the business? What's the ROI of this AI investment?"</i> Many teams stumble here. Not because their evals were wrong, but because they <b>stopped one layer too early</b>.</p>
+<div class="box takeaways"><span class="t">📌 The translation gap</span>Evals describe <b>how your AI system behaves</b>. The business cares about <b>revenue, cost, risk and retention</b>. These are two different languages, and nobody will translate for you. Given how many enterprise AI projects struggle to show measurable returns, you should expect this question, and prepare for it from day one.</div>
+<div class="fig"><div class="ft">The eval → product → impact stack</div>
+<div class="fv">
+<div class="fh"><span class="node n-green" style="width:230px">Layer 3 · Business metrics<small>what it means for the organisation</small></span><div class="ha"></div><span class="node n-gray" style="width:420px;text-align:left">TA hours saved per week · course completion rate · student NPS · cost per resolved doubt <span class="lbl">❓ almost always missing</span></span></div>
+<div class="va" style="transform:rotate(180deg)"></div>
+<div class="fh"><span class="node n-blue" style="width:230px">Layer 2 · Product metrics<small>how users interact</small></span><div class="ha"></div><span class="node n-gray" style="width:420px;text-align:left">Resolution rate · escalation rate · sentiment · engagement depth <span class="lbl">⏳ some teams reach this</span></span></div>
+<div class="va" style="transform:rotate(180deg)"></div>
+<div class="fh"><span class="node n-purple" style="width:230px">Layer 1 · Eval metrics<small>what the AI is doing</small></span><div class="ha"></div><span class="node n-gray" style="width:420px;text-align:left">Faithfulness · integrity compliance · escalation accuracy · latency <span class="lbl">✅ most teams are fluent here</span></span></div>
+</div><div class="cap">Leadership looks at layer 3. Most teams stop at layer 1 or 2.</div></div>
+<h4>Three practical moves to close the gap</h4>
+<div class="grid3">
+<div class="card c-good"><h5>1. Pick a north star first</h5>Before designing the eval suite, choose <b>one or two business metrics</b>: "what does success look like in 90 days?" Then <b>work backwards</b>: which product behaviours move that number, and which eval dimensions predict those behaviours?</div>
+<div class="card"><h5>2. Track all three layers together</h5>Not three dashboards owned by three teams. Put them <b>side by side</b>; it's the only way to see if an eval improvement actually moved the needle.</div>
+<div class="card c-vio"><h5>3. Tell the full story at release</h5>When you ship, report all three layers, even if business impact isn't clear yet. Build the habit early and buy-in follows.</div>
+</div>
+<div class="box example"><span class="t">🔍 Worked example: DoubtBot's ROI story for the leadership review</span>
+<ol class="steps">
+<li><b>Volume:</b> 1,000 students × ~3 doubts a week = <b>3,000 doubts/week</b>.</li>
+<li><b>Layer 2:</b> resolution without escalation = <b>65%</b> → 1,950 doubts a week handled fully by DoubtBot.</li>
+<li><b>Layer 3, time:</b> a TA spends ~8 minutes per routine doubt → 1,950 × 8 ÷ 60 ≈ <b>260 TA-hours saved per week</b>.</li>
+<li><b>Layer 3, cost of the bot:</b> each doubt ≈ 2,500 input + 400 output tokens on <code>gpt-6.1-terra</code> (about $1 / $5 per million tokens): 3,000 × (2,500 × $1 + 400 × $5) ÷ 1,000,000 ≈ <b>$13.5 a week</b>, plus a few dollars of judge sampling.</li>
+<li><b>Layer 1 → 3 link:</b> the weeks when faithfulness dipped (the campus-wiki incident) were the weeks escalations rose and TA hours saved fell by 70. That's the evidence that eval quality drives business value.</li>
+</ol>
+<p>"DoubtBot saves ~260 TA-hours a week for under $20 of model cost, with zero privacy incidents. Students get answers in minutes instead of 6 hours, and completion in DoubtBot sections was 6 points higher in the pilot." That's a sentence leadership understands.</p></div>
+<div class="demo" id="c4-roi"><h5>🎮 Try it: ROI calculator</h5>
+<div class="grid3">
+<label>Doubts per week<input type="number" id="rD" value="3000"></label>
+<label>Resolution without escalation (%)<input type="number" id="rR" value="65"></label>
+<label>TA minutes per routine doubt<input type="number" id="rM" value="8"></label>
+<label>Input tokens per doubt<input type="number" id="rI" value="2500"></label>
+<label>Output tokens per doubt<input type="number" id="rO" value="400"></label>
+<label>TA cost per hour (₹)<input type="number" id="rC" value="500"></label></div>
+<div class="grid4" style="margin-top:10px"><div class="panel">TA-hours saved / week<div class="kpi" id="rH"></div></div><div class="panel">Value of time saved / week<div class="kpi" id="rV"></div></div><div class="panel">Model cost / week<div class="kpi" id="rMC"></div></div><div class="panel">Return per ₹1 spent on the model<div class="kpi" id="rX"></div></div></div>
+<p class="hint">Model cost assumes gpt-6.1-terra at about $1 / $5 per million input / output tokens, converted at ₹88 per dollar (illustrative).</p></div>
+<div class="box interview"><span class="t">🎯 Interview tip</span>"I design evals backwards from a business north star. For each release I report three layers together (eval metrics, product metrics and business metrics) so leadership can see how a change in, say, faithfulness shows up in escalation rate and then in TA hours saved."</div>
+
+<!-- ============ 4.8 ============ -->
+<h3 class="sec" id="c4-sum"><span class="num">4.8</span> Summary</h3>
+<div class="box takeaways"><span class="t">✅ Key takeaways</span><ul>
+<li>Pilots test business impact with real users; gate them behind offline evals and skip them for low-risk changes.</li>
+<li>A good pilot has business metrics plus guardrails, a clear control group and clean data. Pilot users ≠ real users.</li>
+<li>Check whether a difference is real (two-proportion test) and size the pilot so the primary metric can actually move.</li>
+<li>Production brings mismatches, new edge cases and changing behaviour. Evals are never perfect; catch issues early.</li>
+<li>Evals: building the product right. Analytics: building the right product.</li>
+<li>Monitor three layers: system and eval metrics, product behaviour, business impact.</li>
+<li>AI monitoring is hard: non-deterministic, no ground truth, no clean events.</li>
+<li>Run judges on a random sample plus all flagged traffic; estimate rates from the random part only.</li>
+<li>Pair each lagging outcome with leading indicators; define each metric's action in advance.</li>
+<li>Close the translation gap: pick a north star, track all three layers together, and tell the ROI story.</li></ul></div>
+
+<h4>📝 Quick quiz (click to reveal the answer)</h4>
+<details><summary>Q1. When can you skip a pilot?</summary>For low-risk changes, such as internal tools or small tweaks, where offline evals give enough confidence. Pilots are reserved for major launches and key features because they're slow and expensive.</details>
+<details><summary>Q2. Why randomise DoubtBot's pilot by section rather than by student?</summary>Students in the same section share answers. Splitting one section would let DoubtBot's help leak into the control group, shrinking the measured difference. Randomising whole sections avoids that contamination.</details>
+<details><summary>Q3. Treatment 58/100, control 50/100. Is the difference significant?</summary>Pooled rate 0.54; SE = √(0.54 × 0.46 × 0.02) ≈ 0.0705; z = 0.08 ÷ 0.0705 ≈ 1.13; p ≈ 0.26. Not significant: an 8-point gap could easily be luck with groups this small.</details>
+<details><summary>Q4. Evals vs analytics in one line each.</summary>Evals: are we building the product right (before launch, on test sets)? Analytics: are we building the right product (after launch, with real users)?</details>
+<details><summary>Q5. Why is "turns per conversation" a tricky metric?</summary>Its meaning depends on the product: more turns is good for an engagement assistant, bad for a support bot, and ambiguous for a tutor. Pair it with resolution and sentiment.</details>
+<details><summary>Q6. Give the three reasons monitoring AI products is harder than normal software.</summary>Non-deterministic outputs and unpredictable user paths; no ground-truth labels in production; free-form interactions without clean event boundaries.</details>
+<details><summary>Q7. Why estimate the failure rate from the random sample and not from flagged conversations?</summary>Flagged conversations (thumbs-down, escalated) are more likely to be bad by design. Including them would overstate the true rate. Flagged ones go to human review instead.</details>
+<details><summary>Q8. Give one leading indicator and the lagging outcome it predicts, for DoubtBot.</summary>Rising escalation rate → higher TA workload; falling conversation depth → lower retention; falling sentiment → lower weekly active users or CSAT.</details>
+<details><summary>Q9. Name the three kinds of metric by action.</summary>Alert metrics (immediate action, real-time), optimisation metrics (tuning over time) and insight metrics (patterns and roadmap).</details>
+<details><summary>Q10. What is the "translation gap", and what are the three moves to close it?</summary>The gap between eval outputs (how the AI behaves) and business outcomes (revenue, cost, risk, retention). Close it by picking a business north star first and working backwards, tracking eval, product and business metrics together, and including business impact in every release narrative.</details>
+
+<h4 id="c4-gloss">📖 Glossary</h4>
+<div class="tbl"><table><tr><th>Term</th><th>Meaning in one line</th></tr>
+<tr><td>Pilot / experiment</td><td>A limited real-world launch to measure impact before full release.</td></tr>
+<tr><td>Control / treatment</td><td>The group without the change / the group with it.</td></tr>
+<tr><td>A/B test</td><td>Randomly splitting users between control and treatment to measure cause and effect.</td></tr>
+<tr><td>Shadow mode</td><td>The AI runs silently in parallel; users only see the old system.</td></tr>
+<tr><td>Staged rollout</td><td>Releasing to a growing share of users, with rollback at each stage.</td></tr>
+<tr><td>p-value</td><td>Chance of seeing a difference this large if there were really no effect.</td></tr>
+<tr><td>Statistically significant</td><td>Unlikely to be luck (commonly p &lt; 0.05).</td></tr>
+<tr><td>Analytics</td><td>Measuring real users' behaviour and impact after launch.</td></tr>
+<tr><td>Leading / lagging indicator</td><td>An early signal / the later real outcome it predicts.</td></tr>
+<tr><td>Granularity</td><td>What one data point is: turn, conversation, session, user or system.</td></tr>
+<tr><td>Alert / optimisation / insight metric</td><td>Metrics grouped by the action they drive.</td></tr>
+<tr><td>North star metric</td><td>The one or two business outcomes everything else serves.</td></tr>
+<tr><td>Translation gap</td><td>The distance between eval results and business outcomes.</td></tr>
+<tr><td>ROI</td><td>Return on investment: value created ÷ cost.</td></tr></table></div>
+
+<div class="footer"><b>AI Evals in Practice · Chapter 4</b> · Written by <b>Shivank Agrawal</b> · Future with Shivank<br>Next up: Chapter 5 — Tools, Governance and Advanced Topics (including evaluating agents with simulated users) 🧰</div>
+</main>
+
+<script>
+/* ===== Shared helpers (Future with Shivank notes) ===== */
+const $ = id => document.getElementById(id);
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  $('progress').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+document.querySelectorAll('#side a').forEach(a => a.addEventListener('click', () => $('side').classList.remove('open')));
+
+/* ---------- Animated sequence diagram ----------
+   actors: ['Client','Server',...]
+   steps:  {f:0,t:1,l:'label',h:'plain-English hint',k:'ret'|'note',on:[a,b]}
+   groups: [{f:0,t:1,l:'group label'}]                                       */
+function seq(id, actors, steps, groups) {
+  const el = $(id), n = actors.length, colW = 178, W = n * colW + 40, rowH = 42, top = 80;
+  const H = top + steps.length * rowH + 70, X = i => 20 + colW * i + colW / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W, 760)}px" font-family="Inter,Segoe UI,Arial" font-size="12">
+  <defs><marker id="m${id}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker></defs>`;
+  (groups || []).forEach(g => {
+    s += `<rect x="${X(g.f) - colW / 2 + 6}" y="4" width="${X(g.t) - X(g.f) + colW - 12}" height="${H - 8}" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>`;
+    if (g.l) s += `<text x="${X(g.f) - colW / 2 + 16}" y="${H - 14}" font-size="11" fill="#64748b" font-weight="700">${g.l}</text>`;
+  });
+  actors.forEach((a, i) => {
+    s += `<line x1="${X(i)}" y1="54" x2="${X(i)}" y2="${H - 34}" stroke="#cbd5e1" stroke-dasharray="4 4"/>`;
+    [18, H - 60].forEach(y => {
+      s += `<rect x="${X(i) - 82}" y="${y}" width="164" height="34" rx="8" fill="#eef2ff" stroke="#a5b4fc"/><text x="${X(i)}" y="${y + 21}" text-anchor="middle" font-weight="700" fill="#312e81" font-size="11.5">${a}</text>`;
+    });
+  });
+  let k = 0;
+  steps.forEach((st, i) => {
+    const y = top + i * rowH + 16;
+    s += `<g class="sq" style="transition:opacity .4s">`;
+    if (st.k === 'note') {
+      const a = Math.min(...st.on), b = Math.max(...st.on);
+      s += `<rect x="${X(a) - 86}" y="${y - 14}" width="${X(b) - X(a) + 172}" height="26" rx="6" fill="#fef9c3" stroke="#facc15"/><text x="${(X(a) + X(b)) / 2}" y="${y + 3}" text-anchor="middle" font-weight="700" fill="#713f12">${st.l}</text>`;
+    } else {
+      k++;
+      const badge = x => `<circle cx="${x}" cy="${y}" r="9" fill="#4f46e5"/><text x="${x}" y="${y + 4}" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">${k}</text>`;
+      if (st.f === st.t) {
+        const x = X(st.f);
+        s += `<path d="M${x} ${y - 6} h34 v14 h-30" fill="none" stroke="#475569" stroke-width="1.6" marker-end="url(#m${id})"/><text x="${x + 40}" y="${y + 4}" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x - 14);
+      } else {
+        const x1 = X(st.f), x2 = X(st.t), d = st.k === 'ret' ? 'stroke-dasharray="5 4"' : '', pad = x2 > x1 ? -4 : 4;
+        s += `<line x1="${x1}" y1="${y}" x2="${x2 + pad}" y2="${y}" stroke="#475569" stroke-width="1.6" ${d} marker-end="url(#m${id})"/><text x="${(x1 + x2) / 2}" y="${y - 7}" text-anchor="middle" fill="#1e293b" paint-order="stroke" stroke="#fff" stroke-width="4">${st.l}</text>` + badge(x1);
+      }
+    }
+    s += `</g>`;
+  });
+  s += '</svg>';
+  el.innerHTML = s + `<div class="seqctl"><button class="btn" data-a="play">▶ Play</button><button class="btn alt" data-a="next">⏭ Next step</button><button class="btn alt" data-a="all">👁 Show all</button></div><div class="seqcap">Press ▶ Play — the meaning of each step will appear here.</div>`;
+  const gs = [...el.querySelectorAll('.sq')], cap = el.querySelector('.seqcap');
+  let cur = -1, timer = null;
+  const show = i => {
+    gs.forEach((g, j) => g.style.opacity = j <= i ? 1 : .12);
+    const st = steps[i];
+    cap.innerHTML = `<b style="color:#fcd34d">Step ${i + 1}/${steps.length}:</b> ${st.l}${st.h ? ' — <span style="color:#93c5fd">' + st.h + '</span>' : ''}`;
+  };
+  el.querySelector('[data-a=play]').onclick = () => { clearInterval(timer); cur = -1; timer = setInterval(() => { cur++; if (cur >= steps.length) { clearInterval(timer); return; } show(cur); }, 1500); };
+  el.querySelector('[data-a=next]').onclick = () => { clearInterval(timer); cur = (cur + 1) % steps.length; show(cur); };
+  el.querySelector('[data-a=all]').onclick = () => { clearInterval(timer); gs.forEach(g => g.style.opacity = 1); cap.textContent = 'You are now seeing the whole flow.'; };
+}
+
+/* ---------- Circuit breaker playground ---------- */
+function makeBreaker(id, threshold, fallbackText, cooldownText) {
+  const el = $(id);
+  el.innerHTML = `<div><span class="state" data-s="C" style="background:#16a34a">🟢 CLOSED · normal</span><span class="state" data-s="O" style="background:#dc2626">🔴 OPEN · tripped</span><span class="state" data-s="H" style="background:#d97706">🟡 HALF-OPEN · testing</span></div>
+  <div style="margin-top:8px"><button data-a="ok">✅ Call succeeds</button><button class="red" data-a="fail">❌ Call fails</button><button class="alt" data-a="cool">⏱ ${cooldownText}</button><button class="alt" data-a="reset">↺ Reset</button></div><div class="log"></div>`;
+  let st = 'C', fails = 0;
+  const log = el.querySelector('.log');
+  const L = m => { log.innerHTML += `<div>${m}</div>`; log.scrollTop = 1e6; };
+  const paint = () => el.querySelectorAll('.state').forEach(s => s.classList.toggle('on', s.dataset.s === st));
+  el.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const a = b.dataset.a;
+    if (a === 'reset') { st = 'C'; fails = 0; log.innerHTML = ''; }
+    else if (a === 'cool') {
+      if (st === 'O') { st = 'H'; L('⏱ Cooldown over → HALF-OPEN: we let ONE test request ("canary") through to the primary model.'); }
+      else L('The cooldown only matters when the breaker is OPEN.');
+    }
+    else if (st === 'O') L(`🔴 Breaker is OPEN → we don't even try the primary. ${fallbackText}`);
+    else if (st === 'H') {
+      if (a === 'ok') { st = 'C'; fails = 0; L('🐤 Canary succeeded → CLOSED. Full traffic goes back to the primary model.'); }
+      else { st = 'O'; L('🐤 Canary failed → back to OPEN. The cooldown timer starts again.'); }
+    } else {
+      if (a === 'ok') { fails = 0; L('✅ Success. Failure counter reset to 0.'); }
+      else { fails++; L(`❌ Failure ${fails}/${threshold}`); if (fails >= threshold) { st = 'O'; L(`⚡ ${threshold} failures in a row → breaker TRIPS to OPEN. Traffic now goes to the fallback.`); } }
+    }
+    paint();
+  });
+  paint();
+}
+
+/* tiny non-crypto hash for demos */
+const djb = s => { let h = 5381; for (const c of s) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(8, '0').slice(0, 8); };
+
+
+/* ===== Chapter 4 demos ===== */
+/* --- Which layer? --- */
+const LAYERS = ['⚙️ Eval metric', '👩‍🎓 Product metric', '💼 Business metric'];
+const LQ = [['Faithfulness of answers to the course notes', 0], ['Escalation rate to TAs', 1], ['TA hours saved per week', 2], ['Academic-integrity compliance', 0], ['Thumbs-down rate', 1], ['Course completion rate', 2], ['Precision@3 of retrieval', 0], ['Average turns per conversation', 1], ['Student NPS for the course', 2]];
+function layerRender() {
+  $('layerQ').innerHTML = LQ.map(([m], i) => `<div class="panel" style="margin:6px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:220px">${m}</span>${LAYERS.map((l, j) => `<button class="alt" onclick="layerAns(${i},${j})">${l}</button>`).join('')}<span id="ly${i}" style="width:24px"></span></div>`).join('');
+}
+function layerAns(i, j) { $('ly' + i).innerHTML = j === LQ[i][1] ? '<span class="ok">✓</span>' : `<span class="no" title="${LAYERS[LQ[i][1]]}">✗</span>`; }
+layerRender();
+
+/* --- Two-proportion test --- */
+function ncdf(x) { const t = 1 / (1 + 0.2316419 * Math.abs(x)), d = 0.3989423 * Math.exp(-x * x / 2); const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return x > 0 ? 1 - p : p; }
+function abUpdate() {
+  const x1 = +$('abX1').value, n1 = +$('abN1').value, x2 = +$('abX2').value, n2 = +$('abN2').value;
+  if (!(n1 > 0 && n2 > 0) || x1 > n1 || x2 > n2) { $('abOut').textContent = 'Check the numbers.'; return; }
+  const p1 = x1 / n1, p2 = x2 / n2, pp = (x1 + x2) / (n1 + n2), se = Math.sqrt(pp * (1 - pp) * (1 / n1 + 1 / n2));
+  const z = se ? (p1 - p2) / se : 0, p = 2 * (1 - ncdf(Math.abs(z)));
+  $('abOut').innerHTML = `DoubtBot ${(p1 * 100).toFixed(1)}% vs control ${(p2 * 100).toFixed(1)}% → gap <b>${((p1 - p2) * 100).toFixed(1)} pts</b> · z = ${z.toFixed(2)} · p-value = <span class="kpi" style="font-size:1.1rem">${p.toFixed(3)}</span><br>` +
+    (p < 0.05 ? '<span class="ok">✓ Statistically significant at 5%: unlikely to be luck alone.</span>' : '<span class="no">✗ Not significant: a gap this big could easily be random noise. Collect more data or use a more sensitive metric.</span>');
+}
+['abX1', 'abN1', 'abX2', 'abN2'].forEach(id => $(id).addEventListener('input', abUpdate)); abUpdate();
+
+/* --- Monitoring dashboard simulator --- */
+const BASE = { latency: [3.1, 's', 'p95 latency', 8], escal: [24, '%', 'Escalation rate', 35], faith: [94, '%', 'Faithfulness (sampled)', 90], thumbs: [4, '%', 'Thumbs-down', 8], tokens: [2900, '', 'Tokens / doubt', 3600], integ: [99, '%', 'Integrity (sampled)', 98], ta: [260, 'h', 'TA hours saved / wk', 200], compl: [70, '%', 'Completion (batch)', 65] };
+const LOWBAD = { faith: 1, integ: 1, ta: 1, compl: 1 };
+let cur = {};
+function dashPaint() {
+  $('dash').innerHTML = Object.entries(BASE).map(([k, [, u, name, th]]) => {
+    const v = cur[k], bad = LOWBAD[k] ? v < th : v > th;
+    return `<div class="panel" style="${bad ? 'outline:2px solid #f87171' : ''}"><div style="font-size:.78rem;color:#94a3b8">${name}${k === 'ta' || k === 'compl' ? ' · lagging' : ' · leading'}</div><div class="kpi" style="font-size:1.2rem;color:${bad ? '#f87171' : '#fcd34d'}">${typeof v === 'number' && v % 1 ? v.toFixed(1) : v}${u}</div></div>`;
+  }).join('');
+}
+function dL(m) { $('dashLog').innerHTML += `<div>${m}</div>`; $('dashLog').scrollTop = 1e6; }
+function inc(kind) {
+  cur = Object.fromEntries(Object.entries(BASE).map(([k, v]) => [k, v[0]]));
+  $('dashLog').innerHTML = '';
+  if (kind === 'index') {
+    Object.assign(cur, { faith: 78, escal: 39, thumbs: 11, tokens: 3700 });
+    dL('⏱ Hour 2: 🔴 Faithfulness (sampled judge) drops to 78%: answers no longer match course notes.');
+    dL('⏱ Hour 3: 🔴 Escalation rate 39%, thumbs-down 11%. Students are confused.');
+    dL('🔎 Action (optimisation → alert): traces show wiki pages in retrieval → re-index only course notes → metrics recover by evening.');
+    dL('📅 Lagging metrics (TA hours, completion) never moved, because leading indicators caught it within hours.');
+  } else if (kind === 'model') {
+    Object.assign(cur, { integ: 95.5, thumbs: 6, latency: 2.6 });
+    dL('⏱ Day 1: latency actually improves (2.6 s). Looks good…');
+    dL('⏱ Day 2: 🔴 Integrity compliance (sampled) 95.5%: the new model version gives full code more often.');
+    dL('🔎 Action: pin the previous model version, re-run the golden test set on the new version, update the rubric examples, then re-release.');
+    dL('💡 Lesson: always pin model versions, and re-run evals when the provider updates.');
+  } else if (kind === 'exam') {
+    Object.assign(cur, { latency: 11.2, escal: 31, tokens: 3300 });
+    dL('⏱ Mid-term week: traffic ×4. 🔴 p95 latency 11.2 s → real-time alert fires.');
+    dL('🔎 Action: auto-scale, cap retrieved chunks at 3, route simple doubts to a smaller model.');
+    dL('🟡 Escalation 31%: more hard, exam-specific doubts. TA staffing heads-up for the week.');
+  } else dL('✅ Normal day: every metric within its threshold.');
+  dashPaint();
+}
+inc('reset');
+
+/* --- ROI calculator --- */
+function roi() {
+  const v = id => +$(id).value || 0;
+  const hours = v('rD') * v('rR') / 100 * v('rM') / 60;
+  const usd = v('rD') * (v('rI') * 1 + v('rO') * 5) / 1e6, inr = usd * 88;
+  const val = hours * v('rC');
+  $('rH').textContent = Math.round(hours).toLocaleString();
+  $('rV').textContent = '₹' + Math.round(val).toLocaleString('en-IN');
+  $('rMC').textContent = '₹' + Math.round(inr).toLocaleString('en-IN');
+  $('rX').textContent = inr ? '₹' + Math.round(val / inr).toLocaleString('en-IN') : '—';
+}
+['rD', 'rR', 'rM', 'rI', 'rO', 'rC'].forEach(id => $(id).addEventListener('input', roi)); roi();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,2214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deep Search Agents</title>
+<meta name="description" content="Future with Shivank — AI Agents in Finance, Section 5: build an analyst-grade deep search agent that plans, researches in parallel, validates with code and writes an investment memo.">
+<script>
+  try { var t = localStorage.getItem('fws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f7f3; --surface:#ffffff; --surface-2:#f1f0ea; --ink:#1c232b; --muted:#5a6573; --line:#e1ddd2;
+  --accent:#0d6e5b; --accent-ink:#ffffff; --accent-soft:#e1f1eb;
+  --gold:#835c00; --gold-soft:#fff4d4;
+  --warn:#ad4519; --warn-soft:#fdede3;
+  --blue:#1d5ca6; --blue-soft:#e5eef9;
+  --skip:#5f6874; --skip-soft:#eceef1;
+  --good:#17803a; --good-soft:#e3f4e8; --bad:#be3326; --bad-soft:#fbe8e5;
+  --code-bg:#151a21; --code-ink:#e7e9ec; --code-line:#262d37;
+  --radius:14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1317; --surface:#161b21; --surface-2:#1c232a; --ink:#e6eaee; --muted:#9aa5b1; --line:#29313b;
+    --accent:#4cc3a5; --accent-ink:#04231c; --accent-soft:#12302a;
+    --gold:#efc85a; --gold-soft:#2c250f;
+    --warn:#f29a69; --warn-soft:#35200f;
+    --blue:#82b3ee; --blue-soft:#14253a;
+    --skip:#a7b0bb; --skip-soft:#1f262e;
+    --good:#5fd07e; --good-soft:#12301c; --bad:#ff7d70; --bad-soft:#3a1714;
+    --code-bg:#0b0f13; --code-ink:#e7e9ec; --code-line:#1d242d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1317; --surface:#161b21; --surface-2:#1c232a; --ink:#e6eaee; --muted:#9aa5b1; --line:#29313b;
+  --accent:#4cc3a5; --accent-ink:#04231c; --accent-soft:#12302a;
+  --gold:#efc85a; --gold-soft:#2c250f;
+  --warn:#f29a69; --warn-soft:#35200f;
+  --blue:#82b3ee; --blue-soft:#14253a;
+  --skip:#a7b0bb; --skip-soft:#1f262e;
+  --good:#5fd07e; --good-soft:#12301c; --bad:#ff7d70; --bad-soft:#3a1714;
+  --code-bg:#0b0f13; --code-ink:#e7e9ec; --code-line:#1d242d;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:72px}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+#progress{position:fixed; top:0; left:0; height:3px; width:0; background:var(--accent); z-index:60}
+
+/* top bar */
+.topbar{position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; padding:10px 20px; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.brand{font-weight:800; letter-spacing:-.01em; font-size:15px}
+.brand span{color:var(--accent)}
+.brand em{font-style:normal}
+.iconbtn{white-space:nowrap; display:inline-flex; align-items:center; gap:6px}
+.iconbtn svg{width:15px; height:15px}
+input[type=range]{accent-color:var(--accent)}
+.svgwrap svg{display:block; width:100%; height:auto; color:var(--ink)}
+.trail{display:flex; flex-wrap:wrap; align-items:center; gap:4px 4px; margin:6px 0 2px; font:11.5px/1.3 "JetBrains Mono",ui-monospace,monospace}
+.trail span.c{padding:3px 7px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--muted)}
+.trail span.c.done{background:var(--accent-soft); color:var(--accent); border-color:transparent}
+.trail span.c.now{background:var(--gold-soft); color:var(--gold); border-color:var(--gold); font-weight:700}
+.trail i{font-style:normal; color:var(--muted)}
+.trail b.day{font:700 10.5px Inter,system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); padding:0 4px}
+.topbar .sp{flex:1}
+.iconbtn{font:inherit; font-size:14px; font-weight:600; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 14px; cursor:pointer}
+.iconbtn:hover{border-color:var(--accent)}
+#tocBtn{display:none}
+
+/* layout */
+.layout{display:grid; grid-template-columns:260px minmax(0,1fr); gap:40px; max-width:1240px; margin:0 auto; padding:0 24px}
+.toc{position:sticky; top:64px; align-self:start; max-height:calc(100vh - 80px); overflow:auto; padding:24px 0 40px; font-size:14px; line-height:1.45}
+.toc h4{margin:0 0 8px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.toc a{display:block; padding:5px 10px; border-radius:8px; color:var(--muted); text-decoration:none; border-left:2px solid transparent}
+.toc a.lvl2{padding-left:22px; font-size:13.5px}
+.toc a:hover{color:var(--ink); background:var(--surface-2)}
+.toc a.active{color:var(--accent); border-left-color:var(--accent); background:var(--accent-soft); font-weight:600}
+.toc .grp{margin-top:16px}
+main{min-width:0; max-width:880px; padding:28px 0 80px}
+
+@media (max-width:1100px){
+  .layout{grid-template-columns:minmax(0,1fr); padding:0 16px}
+  #tocBtn{display:inline-block}
+  .toc{position:fixed; top:56px; left:0; right:0; max-height:70vh; background:var(--surface); border-bottom:1px solid var(--line); padding:16px 20px; display:none; z-index:45; box-shadow:0 12px 30px rgba(0,0,0,.15)}
+  .toc.open{display:block}
+  main{padding-top:16px}
+}
+
+/* type */
+h1,h2,h3,h4{line-height:1.25; letter-spacing:-.015em}
+h1{font-size:clamp(32px,5vw,46px); margin:.2em 0 .3em; font-weight:800}
+h1 .small{display:block; font-size:.48em; color:var(--muted); font-weight:600; letter-spacing:0; margin-top:6px}
+h2{font-size:clamp(26px,3.6vw,34px); margin:0 0 .4em; font-weight:800}
+h3{font-size:23px; margin:2.2em 0 .5em; font-weight:700; display:flex; gap:10px; align-items:baseline}
+h3 .num{flex:none; font-size:13px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:8px; padding:2px 8px; transform:translateY(-3px)}
+h4{font-size:18px; margin:1.6em 0 .4em}
+p{margin:.6em 0 1em}
+.muted{color:var(--muted)}
+strong{font-weight:650}
+code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.86em; background:var(--surface-2); border:1px solid var(--line); padding:1px 6px; border-radius:6px; overflow-wrap:anywhere}
+.kicker{font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin:0}
+hr.sec{border:0; border-top:1px solid var(--line); margin:64px 0 48px}
+
+/* hero */
+.hero{padding:24px 0 8px}
+.lede{font-size:19px; color:var(--ink); max-width:760px}
+.story{margin:20px 0; padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
+.build-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin:18px 0}
+.build-grid .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; font-size:15px; line-height:1.5}
+.build-grid .card b{display:block; font-size:15.5px; margin-bottom:2px}
+.build-grid .card .lab{font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.06em; text-transform:uppercase}
+.legend{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 4px}
+.legend span{font-size:13.5px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface)}
+
+/* callouts */
+.box{margin:20px 0; padding:14px 18px 14px 18px; border-radius:12px; border:1px solid var(--line); border-left-width:5px; background:var(--surface); font-size:16px; line-height:1.65}
+.box > .tag{display:block; font-size:12.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px}
+.box p:first-of-type{margin-top:0} .box p:last-child{margin-bottom:0}
+.box ul{margin:.3em 0 .2em; padding-left:1.2em}
+.analogy{border-left-color:var(--gold); background:var(--gold-soft)} .analogy > .tag{color:var(--gold)}
+.fin{border-left-color:var(--accent); background:var(--accent-soft)} .fin > .tag{color:var(--accent)}
+.warn{border-left-color:var(--warn); background:var(--warn-soft)} .warn > .tag{color:var(--warn)}
+.skip{border-left-color:var(--skip); background:var(--skip-soft)} .skip > .tag{color:var(--skip)}
+.tip{border-left-color:var(--blue); background:var(--blue-soft)} .tip > .tag{color:var(--blue)}
+
+/* code */
+.code{margin:16px 0 18px; border-radius:12px; overflow:hidden; background:var(--code-bg); border:1px solid var(--code-line)}
+.code .head{display:flex; align-items:center; gap:10px; padding:8px 12px 8px 16px; background:var(--code-line); color:#aeb7c2; font:600 12.5px/1.4 Inter,system-ui,sans-serif}
+.code .head .sp{flex:1}
+.code .copy{font:600 12px Inter,system-ui,sans-serif; color:#d6dbe1; background:transparent; border:1px solid #3a4350; border-radius:6px; padding:3px 10px; cursor:pointer}
+.code .copy:hover{border-color:#6c7a8a}
+.code pre{margin:0; padding:14px 16px 16px; overflow-x:auto; font:13.5px/1.62 "JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--code-ink); tab-size:4}
+.code pre code{background:none; border:0; padding:0; font-size:inherit; color:inherit; overflow-wrap:normal}
+.token.comment{color:#8d99a6; font-style:italic}
+.token.keyword{color:#ff8b7f}
+.token.string,.token.triple-quoted-string{color:#a8d8ff}
+.token.function{color:#d7b0ff}
+.token.number,.token.boolean{color:#7cc4ff}
+.token.builtin,.token.decorator,.token.annotation{color:#ffb070}
+.token.operator,.token.punctuation{color:#c9d1d9}
+.token.interpolation{color:#e7e9ec}
+.token.property{color:#a8d8ff}
+
+.prompt{margin:14px 0; padding:14px 16px; border-radius:12px; background:var(--surface); border:1px dashed var(--line); font:14px/1.6 "JetBrains Mono",ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere}
+.prompt .hl{background:var(--gold-soft); color:var(--gold); border-radius:4px; padding:0 3px; font-weight:600}
+
+/* walkthrough lists */
+ol.walk{list-style:none; counter-reset:w; padding:0; margin:12px 0 20px}
+ol.walk > li{counter-increment:w; position:relative; padding:10px 14px 10px 50px; margin:8px 0; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:16px; line-height:1.6}
+ol.walk > li::before{content:counter(w); position:absolute; left:14px; top:10px; width:24px; height:24px; border-radius:50%; background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:13px; display:grid; place-items:center}
+
+/* tables */
+.tw{overflow-x:auto; margin:16px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+table.tbl{width:100%; border-collapse:collapse; font-size:15px; line-height:1.5}
+.tbl th,.tbl td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+.tbl th{font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--surface-2)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td code{white-space:nowrap}
+.tbl .num{text-align:right; font-variant-numeric:tabular-nums}
+
+/* figures */
+figure{margin:22px 0; padding:16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
+figure svg{display:block; width:100%; height:auto; color:var(--ink)}
+figcaption{font-size:14px; color:var(--muted); margin-top:10px; line-height:1.55}
+svg text{font-family:Inter,system-ui,sans-serif; fill:currentColor}
+svg .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+svg .t13{font-size:13px} svg .t12{font-size:12px} svg .t11{font-size:11.5px} svg .t15{font-size:15px}
+svg .b{font-weight:700}
+svg .sub{opacity:.68}
+svg .nd rect, svg .nd path.shape{fill:var(--surface); stroke:currentColor; stroke-opacity:.38; stroke-width:1.3; transition:fill .25s, stroke .25s}
+svg .nd.soft rect{fill:var(--surface-2)}
+svg .nd.acc rect, svg .nd.acc path.shape{fill:var(--accent-soft); stroke:var(--accent); stroke-opacity:1}
+svg .nd.hl rect, svg .nd.hl path.shape{fill:var(--gold-soft); stroke:var(--gold); stroke-opacity:1; stroke-width:2.4}
+svg .ar{stroke:currentColor; stroke-opacity:.55; stroke-width:1.5; fill:none; transition:stroke .25s}
+svg .ar.hl{stroke:var(--gold); stroke-opacity:1; stroke-width:2.6}
+svg .alab{font-size:11.5px; opacity:.85}
+svg .zone{fill:var(--surface-2); stroke:none}
+svg .dash{stroke:currentColor; stroke-opacity:.35; stroke-dasharray:5 5}
+
+/* sims */
+.sim{margin:22px 0; padding:16px 18px 18px; border:1.5px dashed var(--accent); border-radius:var(--radius); background:var(--surface)}
+.sim > .tag{display:inline-block; font-size:12.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:4px}
+.sim h4{margin:.1em 0 .4em}
+.btn{font:inherit; font-size:14.5px; font-weight:650; border:0; border-radius:999px; padding:8px 16px; background:var(--accent); color:var(--accent-ink); cursor:pointer}
+.btn:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.4; cursor:default}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+.btn.ghost.on{border-color:var(--accent); color:var(--accent); background:var(--accent-soft)}
+.row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0}
+.row .sp{flex:1}
+.stepper .row .dots{margin-left:auto}
+.state{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin:8px 0}
+.state div{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px}
+.state div b{display:block; font:600 15px/1.4 "JetBrains Mono",ui-monospace,monospace; color:var(--ink)}
+.state div.chg{border-color:var(--gold); background:var(--gold-soft)}
+.rbrow{display:grid; grid-template-columns:110px 1fr 56px; gap:10px; align-items:center; font-size:14.5px; margin:5px 0}
+.rbtrack{position:relative; height:16px; border-radius:8px; background:var(--surface)}
+.rbtrack i{position:absolute; left:0; top:0; bottom:0; border-radius:8px; background:var(--accent); transition:width .3s}
+.rbtrack i.over{background:var(--bad)}
+.rbtrack i.def{background:var(--blue)}
+.rbtrack s{position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--bad); opacity:.8}
+.rbrow .v{text-align:right; font-variant-numeric:tabular-nums; font-weight:700}
+.inp{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:10px 0}
+.inp label{display:block; font-size:13.5px; color:var(--muted); font-weight:600}
+.inp input{width:100%; font:inherit; font-size:15px; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+.out{margin-top:10px; padding:12px 14px; border-radius:10px; background:var(--surface-2); font-size:15.5px; line-height:1.65}
+.out .ok{color:var(--good); font-weight:700} .out .no{color:var(--bad); font-weight:700}
+.pill{display:inline-block; font-size:12.5px; font-weight:700; padding:2px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line)}
+.pill.ok{background:var(--good-soft); color:var(--good); border-color:transparent}
+.pill.no{background:var(--bad-soft); color:var(--bad); border-color:transparent}
+.stepper .counter{font-size:13px; font-weight:700; color:var(--muted)}
+.stepper .panel{margin-top:10px; padding:14px 16px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line)}
+.stepper .panel h5{margin:0 0 6px; font-size:16.5px}
+.stepper .panel .lbl{font-size:12px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:10px 0 4px}
+.stepper .panel pre{margin:0; padding:10px 12px; border-radius:8px; background:var(--code-bg); color:var(--code-ink); font:13px/1.55 "JetBrains Mono",ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere}
+.stepper .panel pre.val{background:var(--surface); color:var(--ink); border:1px solid var(--line)}
+.dots{display:flex; gap:5px; flex-wrap:wrap}
+.dots i{width:22px; height:6px; border-radius:3px; background:var(--line)}
+.dots i.on{background:var(--accent)}
+
+/* glossary cards */
+.gloss{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:16px 0}
+.gloss div{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:15px; line-height:1.55}
+.gloss b{display:block; color:var(--accent); font-size:15.5px}
+
+/* ratio cards */
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin:14px 0}
+.rcard{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14.5px; line-height:1.5}
+.rcard .nm{font-size:13px; font-weight:700; color:var(--muted)}
+.rcard .v{font-size:24px; font-weight:800; letter-spacing:-.02em; margin:2px 0 4px; font-variant-numeric:tabular-nums}
+.rcard.flag{border-color:var(--warn); box-shadow:0 0 0 1px var(--warn) inset}
+.rcard.flag .v{color:var(--warn)}
+.famhead{display:flex; align-items:baseline; gap:10px; margin:18px 0 0}
+.famhead b{font-size:16px}
+.famhead span{font-size:14px; color:var(--muted)}
+
+/* df demo */
+.df{width:100%; border-collapse:collapse; font:13.5px/1.45 "JetBrains Mono",ui-monospace,monospace}
+.df th,.df td{padding:6px 10px; border-bottom:1px solid var(--line); text-align:left}
+.df th{position:sticky; top:0; z-index:1; background:var(--surface-2); font-family:Inter,system-ui,sans-serif; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+.df td.idx{font-weight:600}
+.df tr.pick td{background:var(--gold-soft)}
+.df tr.pick td.idx{color:var(--gold)}
+.df td.cellhl{background:var(--gold-soft); color:var(--gold); font-weight:700; outline:2px solid var(--gold); outline-offset:-2px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0}
+.chip{font:12.5px/1.4 "JetBrains Mono",ui-monospace,monospace; padding:3px 8px; border-radius:6px; background:var(--surface-2); border:1px solid var(--line)}
+.chip.ok{background:var(--good-soft); color:var(--good); border-color:transparent}
+.chip.no{background:var(--bad-soft); color:var(--bad); border-color:transparent; text-decoration:line-through}
+
+/* chat bubbles */
+.chat{display:flex; flex-direction:column; gap:8px; margin-top:8px}
+.bub{max-width:90%; padding:9px 13px; border-radius:12px; font-size:14.5px; line-height:1.5; border:1px solid var(--line)}
+.bub.u{align-self:flex-end; background:var(--blue-soft)}
+.bub.a{align-self:flex-start; background:var(--surface)}
+.bub .who{display:block; font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.bub.ghosted{opacity:.35; text-decoration:line-through}
+
+/* shape visual */
+.shape{font:13.5px/1.6 "JetBrains Mono",ui-monospace,monospace; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto; white-space:pre}
+.shape .k{color:var(--accent); font-weight:600}
+.shape .s{color:var(--blue)}
+.shape .m{color:var(--muted)}
+.shape .g{background:var(--gold-soft); color:var(--gold); border-radius:3px; font-weight:700}
+
+/* grid demo */
+.qgrid{display:grid; grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:6px; margin:10px 0; font-size:13.5px}
+.qgrid .h{font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; align-self:end}
+.qgrid button{font:12.5px/1.4 "JetBrains Mono",ui-monospace,monospace; text-align:left; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer; min-width:0; overflow:hidden; text-overflow:ellipsis}
+.qgrid button.on{background:var(--gold-soft); border-color:var(--gold); color:var(--gold); font-weight:700}
+.qgrid .qlab{font-size:13px; font-weight:600; align-self:center; padding-right:6px}
+
+/* pipeline */
+.pipe{display:grid; grid-template-columns:1fr 64px 1fr 64px 1fr; align-items:stretch; margin:12px 0}
+.pipe button{font:inherit; text-align:left; background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; color:var(--ink); line-height:1.4}
+.pipe button b{display:block; font-size:15px}
+.pipe button span{font-size:13px; color:var(--muted)}
+.pipe button.on{border-color:var(--accent); background:var(--accent-soft)}
+.pipe .arr{display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10.5px; color:var(--muted); text-align:center; line-height:1.25}
+.pipe .arr::before{content:"→"; font-size:24px; color:var(--accent); line-height:1}
+@media (max-width:700px){
+  .pipe{grid-template-columns:1fr}
+  .pipe .arr{padding:4px 0}
+  .pipe .arr::before{content:"↓"}
+}
+
+/* votes */
+.paths{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:10px 0}
+.paths button{font:inherit; font-size:13.5px; text-align:left; padding:10px 12px; border-radius:10px; cursor:pointer; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); line-height:1.45}
+.paths button .c{display:block; font-weight:800; margin-top:4px}
+.paths button.pos{border-color:var(--good)} .paths button.pos .c{color:var(--good)}
+.paths button.neu{border-color:var(--gold)} .paths button.neu .c{color:var(--gold)}
+.bars{display:grid; grid-template-columns:150px 1fr 30px; gap:6px 10px; align-items:center; font-size:14px}
+.bar{height:14px; border-radius:7px; background:var(--surface-2); overflow:hidden}
+.bar i{display:block; height:100%; background:var(--accent); transition:width .3s}
+
+/* quiz */
+.q{margin:14px 0; padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+.q p{margin:0 0 8px; font-weight:650}
+.q button{display:block; width:100%; text-align:left; font:inherit; font-size:15px; margin:6px 0; padding:9px 12px; border-radius:9px; border:1px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer}
+.q button.right{background:var(--good-soft); border-color:var(--good)}
+.q button.wrong{background:var(--bad-soft); border-color:var(--bad)}
+.q .why{font-size:14.5px; color:var(--muted); margin-top:6px; display:none}
+.q.done .why{display:block}
+
+footer{border-top:1px solid var(--line); padding:28px 24px 48px; text-align:center; color:var(--muted); font-size:14px}
+@media (max-width:600px){
+  .brand em{display:none}
+  .iconbtn .lbl{display:none}
+  .topbar{padding:10px 16px}
+  figure{overflow-x:auto; padding:12px}
+  figure svg{min-width:620px}
+  .svgwrap{overflow-x:auto}
+  .svgwrap svg{min-width:560px}
+  body{font-size:16px}
+  .box, ol.walk > li{font-size:15px}
+  .code pre{font-size:12.5px}
+  h3{font-size:20px}
+}
+
+/* ---- page 2 additions ---- */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:16px 0}
+.stats div{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.45; color:var(--muted)}
+.stats b{display:block; font-size:24px; letter-spacing:-.02em; color:var(--ink); font-weight:800; margin-bottom:2px}
+.fwfilter{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px}
+.fwfilter button{font:inherit; font-size:13.5px; font-weight:600; padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.fwfilter button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.fwgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin:12px 0}
+.fw{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; font-size:14.5px; line-height:1.55; transition:opacity .25s, border-color .25s, box-shadow .25s}
+.fw.dim{opacity:.28}
+.fw.lit{border-color:var(--accent); box-shadow:0 0 0 1.5px var(--accent) inset}
+.fw h5{margin:0; font-size:17px; letter-spacing:-.01em}
+.fw .pw{display:inline-block; margin:4px 0 8px; font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:2px 8px; border-radius:6px}
+.fw p{margin:0 0 6px}
+.fw .k{font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:block; margin-top:6px}
+.fw .mem{background:var(--gold-soft); border-radius:8px; padding:6px 9px; margin:6px 0; font-size:14px}
+.oneword{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:6px; margin:12px 0}
+.oneword div{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:14px}
+.oneword b{display:block; font-size:13px; color:var(--muted); font-weight:700}
+.oneword span{font-weight:800; color:var(--accent); font-size:15.5px}
+.tabs{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0}
+.tabs button{font:inherit; font-size:14px; font-weight:650; padding:7px 14px; border-radius:10px 10px 0 0; border:1px solid var(--line); border-bottom:0; background:var(--surface-2); color:var(--muted); cursor:pointer}
+.tabs button.on{background:var(--code-line); color:#e7e9ec; border-color:var(--code-line)}
+.tabpanel .code{margin-top:0; border-top-left-radius:0}
+.opt{margin:18px 0; border:1px dashed var(--skip); border-radius:12px; background:var(--skip-soft)}
+.opt > summary{cursor:pointer; padding:12px 16px; font-weight:700; list-style:none}
+.opt > summary::-webkit-details-marker{display:none}
+.opt > summary::before{content:"▸ "; color:var(--skip)}
+.opt[open] > summary::before{content:"▾ "}
+.opt > summary .optb{display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--skip); border:1px solid var(--skip); border-radius:6px; padding:1px 7px; margin-left:8px; vertical-align:2px}
+.opt .inner{padding:0 16px 14px}
+.ratingtbl{border-collapse:separate; border-spacing:4px; width:100%; font-size:13.5px}
+.ratingtbl th{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; padding:4px; text-align:center}
+.ratingtbl th.rowh{text-align:right; padding-right:8px; white-space:nowrap}
+.ratingtbl td button{width:100%; font:700 13px Inter,system-ui,sans-serif; padding:10px 4px; border-radius:8px; border:1.5px solid transparent; cursor:pointer; color:var(--ink)}
+.ratingtbl td button.on{border-color:var(--ink); box-shadow:0 0 0 2px var(--gold)}
+.r-sb{background:#1a7f3a33} .r-b{background:#1a7f3a1f} .r-h{background:var(--surface-2)} .r-s{background:#be332622} .r-ss{background:#be332640}
+.trace{font:13px/1.65 "JetBrains Mono",ui-monospace,monospace; background:var(--code-bg); color:var(--code-ink); border-radius:10px; padding:10px 14px; min-height:60px; white-space:pre-wrap}
+.trace .c{color:#ffb070} .trace .o{color:#7fd6a8} .trace .m{color:#8d99a6}
+.twocol{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0}
+@media (max-width:700px){ .twocol{grid-template-columns:1fr} }
+.slider{display:grid; grid-template-columns:200px 1fr 64px; gap:10px; align-items:center; margin:6px 0; font-size:14.5px}
+.slider b{text-align:right; font-variant-numeric:tabular-nums}
+@media (max-width:600px){ .slider{grid-template-columns:1fr 64px} .slider input{grid-column:1 / -1; grid-row:2} }
+.verdict{display:inline-block; font-weight:800; font-size:13px; letter-spacing:.04em; padding:3px 10px; border-radius:999px}
+.v-su{background:var(--good-soft); color:var(--good)} .v-u{background:var(--good-soft); color:var(--good)} .v-f{background:var(--surface-2); color:var(--ink)} .v-o{background:var(--bad-soft); color:var(--bad)} .v-so{background:var(--bad-soft); color:var(--bad)}
+.brief{font:13px/1.6 "JetBrains Mono",ui-monospace,monospace; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; white-space:pre-wrap; overflow-x:auto}
+.brief .hl{background:var(--gold-soft); color:var(--gold); font-weight:700; border-radius:3px}
+.lesson{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin:12px 0}
+.lesson div{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:12px 14px; font-size:14.5px; line-height:1.55}
+.lesson div b{display:block; font-size:15px; margin-bottom:4px}
+.lesson div .fix{display:block; margin-top:6px; color:var(--accent); font-weight:650}
+.basket{display:flex; flex-direction:column; gap:6px; margin:8px 0}
+.basket label{display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; font-size:14px; padding:7px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface)}
+.basket .sc{font:600 12.5px "JetBrains Mono",monospace}
+.hlword{border-radius:3px; padding:0 2px; font-weight:700}
+.hlword.b{background:var(--good-soft); color:var(--good)} .hlword.r{background:var(--bad-soft); color:var(--bad)}
+.flag{display:inline-block; font-size:11px; font-weight:800; color:var(--bad); border:1px solid var(--bad); border-radius:5px; padding:0 5px; margin-left:6px}
+.selrow{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0}
+.selrow select{font:inherit; font-size:14.5px; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+.game .opts{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; margin:10px 0}
+.game .opts button{font:inherit; font-size:14.5px; font-weight:600; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; text-align:left}
+.game .opts button.right{border-color:var(--good); background:var(--good-soft)}
+.game .opts button.wrong{border-color:var(--bad); background:var(--bad-soft)}
+.game .scen{font-size:17px; font-weight:650; margin:6px 0}
+.ratingtbl .short{display:none}
+@media (max-width:600px){ .ratingtbl .full{display:none} .ratingtbl .short{display:inline} .ratingtbl td button{font-size:11.5px; padding:9px 2px} }
+
+/* ---- page 3 additions ---- */
+.board{width:100%; border-collapse:collapse; font-size:14px}
+.board th,.board td{padding:7px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle}
+.board th{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); background:var(--surface-2)}
+.board td.id{font:700 13px "JetBrains Mono",monospace; width:34px}
+.board td.dep{font:12.5px "JetBrains Mono",monospace; color:var(--muted); white-space:nowrap}
+.st{display:inline-block; font:700 11.5px Inter,system-ui,sans-serif; letter-spacing:.05em; padding:2px 8px; border-radius:6px; text-transform:uppercase}
+.st-pending{background:var(--surface-2); color:var(--muted); border:1px solid var(--line)}
+.st-running{background:var(--gold-soft); color:var(--gold)}
+.st-completed{background:var(--good-soft); color:var(--good)}
+.st-failed{background:var(--bad-soft); color:var(--bad)}
+.board tr.ready td{background:var(--gold-soft)}
+.codeline{font:13px/1.55 "JetBrains Mono",monospace; background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:8px 12px; margin:8px 0; white-space:pre-wrap}
+.gold3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0}
+@media (max-width:700px){ .gold3{grid-template-columns:1fr} }
+.gold3 div{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14.5px; line-height:1.55}
+.gold3 div b{display:block; font-size:15.5px}
+.gold3 div .tag3{display:table; font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; border-radius:6px; padding:1px 7px; margin:4px 0 6px}
+.gold3 .bad .tag3{background:var(--bad-soft); color:var(--bad)}
+.gold3 .ok .tag3{background:var(--good-soft); color:var(--good)}
+.gold3 .ok{border-color:var(--good); box-shadow:0 0 0 1px var(--good) inset}
+.vtab{width:100%; border-collapse:collapse; font-size:14px}
+.vtab th,.vtab td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:left}
+.vtab th{font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+.vtab input{width:90px; font:inherit; font-size:14px; padding:5px 7px; border-radius:7px; border:1px solid var(--line); background:var(--bg); color:var(--ink)}
+.msg{display:block; padding:5px 10px; border-radius:7px; margin:4px 0; font-size:14px}
+.msg.e{background:var(--bad-soft); color:var(--bad)} .msg.w{background:var(--gold-soft); color:var(--gold)} .msg.g{background:var(--blue-soft); color:var(--blue)} .msg.ok{background:var(--good-soft); color:var(--good)}
+.raw{font:13px/1.6 "JetBrains Mono",monospace; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px; white-space:pre; overflow-x:auto}
+.raw .x{background:var(--bad-soft); color:var(--bad); border-radius:3px; font-weight:700}
+.twocol > *{min-width:0}
+.vtab .short{display:none}
+@media (max-width:600px){
+  #bd-table th:nth-child(3), #bd-table td:nth-child(3){display:none}
+  .board th,.board td{padding:6px 6px}
+  .vtab .full{display:none} .vtab .short{display:inline}
+  .vtab th,.vtab td{padding:5px 2px}
+  .vtab th{font-size:10.5px; letter-spacing:0}
+  .vtab input{width:46px; padding:4px 4px; font-size:13px}
+}
+.state div{min-width:0} .state div b{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<header class="topbar">
+  <div class="brand">Future with <span>Shivank</span><em> · AI Agents in Finance · Section 5</em></div>
+  <div class="sp"></div>
+  <button class="iconbtn" id="tocBtn" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="iconbtn" id="themeBtn" aria-label="Switch light or dark theme"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><span class="lbl">Theme</span></button>
+</header>
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Contents">
+  <h4>On this page</h4>
+  <a href="#start">Start here</a>
+  <div class="grp"><h4>The idea</h4></div>
+  <a class="lvl2" href="#s5-what">5.1 What is deep search?</a>
+  <a class="lvl2" href="#s5-anatomy">5.2 Anatomy of the agent</a>
+  <a class="lvl2" href="#s5-data">5.3 Financial data is hard</a>
+  <div class="grp"><h4>The project, step by step</h4></div>
+  <a class="lvl2" href="#s5-project">5.4 The project &amp; its map</a>
+  <a class="lvl2" href="#s5-models">5.5 Data models</a>
+  <a class="lvl2" href="#s5-planner">5.6 The planner</a>
+  <a class="lvl2" href="#s5-tools">5.7 The tools</a>
+  <a class="lvl2" href="#s5-researcher">5.8 The researcher</a>
+  <a class="lvl2" href="#s5-validator">5.9 The validator</a>
+  <a class="lvl2" href="#s5-synth">5.10 Synthesizer &amp; orchestrator</a>
+  <a class="lvl2" href="#s5-lab">5.11 Lab: PydanticAI version</a>
+  <div class="grp"><h4>Beyond the lab</h4></div>
+  <a class="lvl2" href="#s5-prod">5.12 Production lessons</a>
+  <a class="lvl2" href="#s5-oss">5.13 Who else does this</a>
+  <div class="grp"></div>
+  <a href="#wrap">Wrap-up &amp; quiz</a>
+</nav>
+<main id="main">
+<section class="hero" id="start">
+  <p class="kicker">Future with Shivank · Hands-on track · Section 5</p>
+  <h1>Deep Search <span class="small">Build an analyst-grade research agent that plans, digs, double-checks and writes the memo</span></h1>
+  <p class="lede">In Section 4 the workflow was fixed in advance: the same five agents, the same three phases, for every stock. A <strong>deep search agent</strong> goes one step further: it <em>writes its own research plan</em> for whatever question you ask, runs the plan in parallel, <strong>checks its numbers with plain Python</strong>, and if something is missing it <strong>re-plans and tries again</strong> — before writing a structured investment memo.</p>
+
+  <div class="story">🏦 <strong>Monday, 9 am at Future with Shivank Bank.</strong> A portfolio manager pings the research desk: <em>"Should we increase our NVIDIA position given the AI spending cycle? How does it compare with AMD and Intel on growth, margins and risk?"</em> A human analyst would need a day: plan the questions, pull filings, read news, cross-check numbers, write the memo. Our agent does the first draft in about 30 seconds.</div>
+
+  <div class="stats">
+    <div><b>7</b>sub-tasks the planner writes for this question</div>
+    <div><b>5 at once</b>tasks run in parallel in the first wave</div>
+    <div><b>~30 s</b>from question to a saved memo</div>
+    <div><b>~$0.15</b>per research run (~28k tokens)</div>
+  </div>
+
+  <div class="box skip"><span class="tag">⏭️ Already covered — we build on it, we don't repeat it</span>
+    <p>ReAct loops (Section 2), RAG (AWS module, Section 1), multi-agent orchestration and agents-as-tools (Section 4), Pydantic output schemas and PydanticAI (Section 3), MCP (Section 3), async/await basics (Section 1 setup).</p>
+  </div>
+  <div class="legend">
+    <span>🧠 Analogy</span><span>💰 Finance corner</span><span>⚠️ Watch out</span><span>💡 Tip</span><span>🧪 Simulation (click it!)</span>
+  </div>
+</section>
+
+<hr class="sec">
+<section id="s5">
+  <p class="kicker">Section 5 · Part 1 — The idea</p>
+  <h2>From "answer a question" to "do the research"</h2>
+
+  <!-- 5.1 -->
+  <h3 id="s5-what"><span class="num">5.1</span>What is deep search?</h3>
+  <p><strong>Deep search</strong> (also called <em>deep research</em>) is an agent that <strong>plans</strong> a research strategy, <strong>gathers</strong> information from many sources in several rounds, <strong>checks</strong> what it found, and <strong>writes</strong> a structured report. It is not a faster search engine; it is an automated junior analyst.</p>
+  <div class="box analogy"><span class="tag">🧠 Analogy — the librarian vs the research analyst</span>
+    <p><strong>Basic RAG</strong> is asking a librarian: "find me the page that mentions NVIDIA's revenue." One trip to one shelf, one answer.<br>
+    <strong>Deep search</strong> is hiring a research analyst: they write a to-do list, send juniors to five different sources at once, check that the numbers agree, notice "we're missing AMD's figures", go back for them, and only then write the memo.</p>
+  </div>
+  <figure>
+    <svg viewBox="0 0 760 270" role="img" aria-label="Basic RAG goes in one straight line from question to retrieve to generate to answer. Deep search goes question, plan, execute with many tools, validate with code, and either loops back to plan when a gap is found or continues to a structured report.">
+      <defs><marker id="rg-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" fill-opacity=".6"/></marker></defs>
+      <text class="t13 b" x="10" y="22">Basic RAG — one pass</text>
+      <g class="nd soft"><rect x="10" y="34" width="110" height="46" rx="9"/></g><text class="t13 b" x="65" y="62" text-anchor="middle">Question</text>
+      <g class="nd"><rect x="170" y="34" width="150" height="46" rx="9"/></g><text class="t13 b" x="245" y="54" text-anchor="middle">Retrieve</text><text class="t11 sub" x="245" y="70" text-anchor="middle">nearest chunks</text>
+      <g class="nd"><rect x="370" y="34" width="130" height="46" rx="9"/></g><text class="t13 b" x="435" y="62" text-anchor="middle">Generate</text>
+      <g class="nd"><rect x="550" y="34" width="200" height="46" rx="9"/></g><text class="t13 b" x="650" y="54" text-anchor="middle">Answer</text><text class="t11 sub" x="650" y="70" text-anchor="middle">short text + citations</text>
+      <line class="ar" x1="120" y1="57" x2="168" y2="57" marker-end="url(#rg-m)"/><line class="ar" x1="320" y1="57" x2="368" y2="57" marker-end="url(#rg-m)"/><line class="ar" x1="500" y1="57" x2="548" y2="57" marker-end="url(#rg-m)"/>
+
+      <text class="t13 b" x="10" y="124">Deep search — a loop</text>
+      <g class="nd soft"><rect x="10" y="140" width="110" height="50" rx="9"/></g><text class="t13 b" x="65" y="170" text-anchor="middle">Question</text>
+      <g class="nd acc"><rect x="160" y="140" width="110" height="50" rx="9"/></g><text class="t13 b" x="215" y="161" text-anchor="middle">Plan</text><text class="t11 sub" x="215" y="178" text-anchor="middle">sub-tasks</text>
+      <g class="nd acc"><rect x="310" y="140" width="120" height="50" rx="9"/></g><text class="t13 b" x="370" y="161" text-anchor="middle">Execute</text><text class="t11 sub" x="370" y="178" text-anchor="middle">many tools, in parallel</text>
+      <g class="nd acc"><rect x="470" y="140" width="110" height="50" rx="9"/></g><text class="t13 b" x="525" y="161" text-anchor="middle">Validate</text><text class="t11 sub" x="525" y="178" text-anchor="middle">code checks</text>
+      <g class="nd"><rect x="630" y="140" width="120" height="50" rx="9"/></g><text class="t13 b" x="690" y="161" text-anchor="middle">Report</text><text class="t11 sub" x="690" y="178" text-anchor="middle">structured memo</text>
+      <line class="ar" x1="120" y1="165" x2="158" y2="165" marker-end="url(#rg-m)"/><line class="ar" x1="270" y1="165" x2="308" y2="165" marker-end="url(#rg-m)"/><line class="ar" x1="430" y1="165" x2="468" y2="165" marker-end="url(#rg-m)"/><line class="ar" x1="580" y1="165" x2="628" y2="165" marker-end="url(#rg-m)"/>
+      <text class="alab" x="604" y="156" text-anchor="middle">passes</text>
+      <polyline class="ar" points="525,190 525,232 215,232 215,192" marker-end="url(#rg-m)"/>
+      <text class="alab b" x="370" y="252" text-anchor="middle">gap or error found → re-plan and try again</text>
+    </svg>
+    <figcaption>RAG answers in one straight line. Deep search runs a loop — and only writes the report once its own checks pass (or it has run out of retries).</figcaption>
+  </figure>
+  <div class="tw"><table class="tbl">
+    <tr><th></th><th>Basic RAG</th><th>Deep search agent</th></tr>
+    <tr><td><b>Planning</b></td><td>None</td><td>Writes its own research plan with sub-tasks</td></tr>
+    <tr><td><b>Sources</b></td><td>One pre-built vector store</td><td>Live APIs, SEC filings, news, databases</td></tr>
+    <tr><td><b>Maths</b></td><td>Can't compute over what it finds</td><td>Calculates growth, margins, P/E through tools</td></tr>
+    <tr><td><b>Checking</b></td><td>None</td><td>Validates, cross-checks, finds gaps</td></tr>
+    <tr><td><b>Output</b></td><td>A short answer</td><td>A multi-section research memo</td></tr>
+    <tr><td><b>Time</b></td><td>1–5 seconds</td><td>30 seconds to a few minutes</td></tr>
+  </table></div>
+  <p>RAG is perfect for <em>"What was NVIDIA's revenue in 2024?"</em> It breaks on <em>"Compare NVIDIA, AMD and Intel on growth, competition and risk, and write a memo"</em> — three companies, several data types, calculations, cross-checks, a structured write-up.</p>
+  <div class="box fin"><span class="tag">💰 Why finance is the perfect home for deep search</span>
+    <ul>
+      <li><strong>Many sources are normal:</strong> filings, earnings calls, prices, ratios, news, macro data — no single database has them all.</li>
+      <li><strong>Accuracy is non-negotiable:</strong> a wrong number can mean a wrong trade or a regulatory problem, so built-in checking matters.</li>
+      <li><strong>Speed is an edge:</strong> read a fresh quarterly filing and flag surprises in minutes, not hours.</li>
+      <li><strong>Scale is the bottleneck:</strong> an analyst can research 2–3 companies deeply in a day; an agent can cover an entire index and let the analyst focus on decisions.</li>
+    </ul>
+  </div>
+  <p class="muted" style="font-size:14.5px">You've probably used the consumer versions: Gemini Deep Research (Dec 2024), OpenAI Deep Research (Feb 2025) and Perplexity's deep research mode all made this pattern mainstream. The underlying method — plan, search, check, write — is simply how good analysts and investigative journalists have always worked.</p>
+
+  <!-- 5.2 -->
+  <h3 id="s5-anatomy"><span class="num">5.2</span>Anatomy of a deep search agent</h3>
+  <p>Every deep search agent, whatever the framework, runs the same <strong>four-phase loop</strong>:</p>
+  <ol class="walk">
+    <li><strong>Plan</strong> — split the question into sub-tasks with explicit dependencies. Good tasks are measurable ("fetch AMD revenue") not vague ("understand AMD").</li>
+    <li><strong>Execute</strong> — run each sub-task with the right tool; independent tasks run at the same time; findings are written to a scratchpad.</li>
+    <li><strong>Validate</strong> — check consistency (do two sources agree?), completeness (all three companies?), reasonableness (is 500% growth real or a parsing mistake?) and gaps.</li>
+    <li><strong>Synthesize or re-plan</strong> — if checks pass, write the report; if not, go back to step 1 knowing exactly what's missing.</li>
+  </ol>
+  <div class="tw"><table class="tbl">
+    <tr><th>Component</th><th>Its job</th><th>Office analogy</th></tr>
+    <tr><td><b>Planner</b></td><td>Turns the question into sub-tasks + dependencies</td><td>Team lead writing the to-do list on a whiteboard</td></tr>
+    <tr><td><b>Tool executor</b> (researcher)</td><td>Calls APIs, filings search, web search</td><td>Junior analysts sent out to fetch data — several at once</td></tr>
+    <tr><td><b>Validator</b></td><td>Checks completeness, ranges, contradictions</td><td>The auditor with a printed checklist</td></tr>
+    <tr><td><b>Synthesizer</b></td><td>Writes the final structured report</td><td>The senior analyst who writes the memo</td></tr>
+    <tr><td><b>Orchestrator</b></td><td>Runs the loop, decides when to retry</td><td>The project manager</td></tr>
+    <tr><td><b>Scratchpad / context manager</b></td><td>Logs every step; keeps the token budget under control</td><td>The case file — and the habit of summarising it</td></tr>
+  </table></div>
+
+  <h4>Three ways to arrange those parts</h4>
+  <div class="gold3">
+    <div><b>① One agent, ReAct loop</b><span class="tag3" style="background:var(--surface-2)">simplest</span>One LLM plans, fetches, checks and writes in one long conversation. Easy to build — but the context overflows on big questions, nothing runs in parallel, and checking is often skipped. <em>Good for: one-company questions, learning.</em></div>
+    <div><b>② Specialist agents</b><span class="tag3" style="background:var(--surface-2)">e.g. Dexter</span>Planner, action, validation and answer agents, each with its own prompt and context. Clean and debuggable, but more tokens. <em>Good for: thorough analysis where quality beats cost.</em></div>
+    <div><b>③ Orchestrator + task graph</b><span class="tag3" style="background:var(--surface-2)">e.g. AI Alliance</span>Plan once as a dependency graph, run tasks through standard tools (MCP), verify each step <em>with code</em>, re-plan only on failure. More setup. <em>Good for: production.</em></div>
+  </div>
+  <p><strong>Our project is a hybrid of ② and ③:</strong> separate planner / researcher / validator / synthesizer roles, a dependency graph with parallel waves, and a validator written in plain Python.</p>
+
+  <h4>The story that proves the point: three attempts at the same agent</h4>
+  <p>The open-source AI Alliance team documented building a finance deep-research agent three times. It's the most useful story in this whole section:</p>
+  <div class="gold3">
+    <div class="bad"><b>Attempt 1 · Too simple</b><span class="tag3">failed</span>One LLM with tools. When a tool errored, it <strong>invented the numbers</strong>. Long contexts made it "forget" earlier findings. Sometimes brilliant, sometimes nonsense.</div>
+    <div class="bad"><b>Attempt 2 · Too clever</b><span class="tag3">worse!</span>Dynamic roles, LLM checkers at every step, automatic prompt rewriting. The LLM checker <strong>approved made-up data and rejected correct data</strong>; coordination ate more tokens than the research.</div>
+    <div class="ok"><b>Attempt 3 · Just right</b><span class="tag3">worked</span>Plan up front as a task graph. Verify each step with <strong>simple Python checks</strong> ("is this margin between −50% and 100%?"). Re-plan only when something fails. Reliability jumped.</div>
+  </div>
+  <div class="box tip"><span class="tag">💡 The lesson to write on the board</span>
+    <p><strong>Use code to check numbers; use the LLM to reason and write.</strong> An LLM asked "does this look right?" can be talked into a plausible wrong number. <code>if operating_margin &gt; gross_margin:</code> can't. (Same lesson as Section 4's peer verdict.)</p>
+  </div>
+
+  <!-- 5.3 -->
+  <h3 id="s5-data"><span class="num">5.3</span>Financial data: the real challenge</h3>
+  <p>Building a deep search agent is <strong>as much data engineering as AI</strong>. Fintool's founder has called financial data <em>"adversarial"</em> — it actively resists being read by machines — and estimates data clean-up is about <strong>80% of the engineering work</strong>. Once the data is clean, the LLM reasoning is the easy part.</p>
+  <div class="tw"><table class="tbl">
+    <tr><th>Kind of data</th><th>Examples</th><th>How hard?</th></tr>
+    <tr><td><b>Structured</b></td><td>Prices, revenue, EPS, ratios via APIs</td><td>Easy — clean JSON. Watch rate limits, freshness, cost.</td></tr>
+    <tr><td><b>Semi-structured</b></td><td>SEC filings, earnings-call transcripts, news</td><td>Hard — messy HTML, speaker labels, duplicates. Each source needs its own parser.</td></tr>
+    <tr><td><b>Unstructured</b></td><td>Analyst PDFs, web pages, ESG reports</td><td>Hardest — PDF tables break, paywalls, scraping.</td></tr>
+    <tr><td><b>Macro</b></td><td>Interest rates, inflation, jobs data</td><td>Easy to fetch, hard to connect to one company.</td></tr>
+  </table></div>
+
+  <h4>Trap 1 · A real-looking 10-K table</h4>
+  <div class="twocol">
+    <div>
+      <p style="margin:0 0 6px; font-weight:700; font-size:14px">What a human reads</p>
+      <div class="tw" style="margin:0"><table class="tbl">
+        <tr><th>Revenue (in millions)</th><th class="num">2024</th><th class="num">2023</th><th class="num">2022</th></tr>
+        <tr><td>Products</td><td class="num">$89,394</td><td class="num">$78,932</td><td class="num">$68,412</td></tr>
+        <tr><td>Services<sup>(1)</sup></td><td class="num">24,631</td><td class="num">22,314</td><td class="num">19,876</td></tr>
+        <tr><td><b>Total revenue</b></td><td class="num"><b>$114,025</b></td><td class="num"><b>$101,246</b></td><td class="num"><b>$88,288</b></td></tr>
+      </table></div>
+    </div>
+    <div>
+      <p style="margin:0 0 6px; font-weight:700; font-size:14px">What a naive parser trips on</p>
+<div class="raw">Revenue <span class="x">(in millions)</span>      ← unit lives in a header
+Products     <span class="x">$</span>89,394 …           ← "$" on some numbers only
+Services<span class="x">(1)</span>  24,631 …           ← "(1)" looks like −1!
+Total revenue <span class="x">$</span>114,025 …
+<span class="x">(1)</span> Includes AppleCare …    ← footnote, not data</div>
+    </div>
+  </div>
+  <p class="muted" style="font-size:14.5px">Other classics: negatives written as <code>(1,234)</code>, the same document mixing $1,234.5M, 1.2B and 1,234,500 thousand, units that change mid-table without warning, merged cells. Now imagine dozens of such tables per filing.</p>
+
+  <h4>Trap 2 · "Q1 2024" means different months for different companies</h4>
+  <p>Companies pick their own financial year. Compare "Q1 2024" across them naively and you compare different months — a <strong>silent error</strong>: the output looks perfectly plausible and is wrong.</p>
+  <div class="sim" id="sim-fiscal"><span class="tag">🧪 Simulation · fiscal calendar translator</span>
+    <h4>Drag to any month — see what each company calls it</h4>
+    <div class="slider"><label for="fy-m">Calendar month</label><input id="fy-m" type="range" min="0" max="23" value="10"><b id="fy-mv" style="white-space:nowrap">Nov 2023</b></div>
+    <div class="svgwrap"><svg id="fy-svg" viewBox="0 0 760 210" role="img" aria-label="Timeline of 24 months showing how the calendar, Apple, Microsoft, NVIDIA and JPMorgan label their fiscal quarters, with the selected month highlighted."></svg></div>
+    <div class="out" id="fy-out" aria-live="polite"></div>
+  </div>
+  <div class="box fin"><span class="tag">💰 Why this matters for our project</span>
+    <p>NVIDIA's year ends in late January, so its "FY2024" revenue of <strong>$60.9B</strong> mostly happened in <strong>calendar 2023</strong>. AMD and Intel use calendar years. A careful agent says which periods it is comparing — and production systems convert everything to calendar quarters <em>before</em> the LLM ever sees it.</p>
+  </div>
+
+  <h4>Five rules production teams follow</h4>
+  <ol class="walk">
+    <li><strong>Use APIs when they exist</strong> — don't scrape what you can query.</li>
+    <li><strong>Score your confidence</strong> in extracted values; send low-confidence ones for checking.</li>
+    <li><strong>Normalise units and periods early</strong>, in code. Don't leave it to the LLM — it will slip.</li>
+    <li><strong>Cache aggressively</strong> — a filed quarter never changes.</li>
+    <li><strong>Hand the LLM clean data</strong>, not raw text:</li>
+  </ol>
+  <div class="twocol">
+    <div class="box warn" style="margin:0"><span class="tag">✗ Raw text to the LLM</span>
+      <p style="font:13px/1.55 'JetBrains Mono',monospace">"NVIDIA Corp 10-K FY2024... Revenue... see Note 3... $60,922M... includes revenue from... (in millions except per share data)..."</p></div>
+    <div class="box tip" style="margin:0"><span class="tag">✓ Clean, labelled data</span>
+      <p style="font:13px/1.55 'JetBrains Mono',monospace">{"ticker": "NVDA", "metric": "revenue", "period": "FY2024", "value": 60922, "unit": "millions_usd", "source": "10-K", "filing_date": "2024-02-21"}</p></div>
+  </div>
+  <p><strong>How tools get wired in</strong> — three patterns you'll meet: <strong>direct tools</strong> (one Python function per source — what our lab uses, simplest to read), a <strong>meta-tool</strong> (one <code>financial_search(query)</code> that routes internally to the right source — keeps the agent's tool list short), and <strong>MCP servers</strong> (standard plug-in tools any framework can discover — best for sharing across teams).</p>
+</section>
+
+<hr class="sec">
+<section id="s5b">
+  <p class="kicker">Section 5 · Part 2 — Build it, step by step</p>
+  <h2>The project: a research desk, written in Python</h2>
+
+  <h3 id="s5-project"><span class="num">5.4</span>The project &amp; its map</h3>
+  <p>Our agent gets one real research question from the portfolio manager:</p>
+  <div class="story">❓ <em>"Analyze NVIDIA's financial performance and competitive position in the AI chip market. Compare with AMD and Intel on revenue growth, profitability, and key risk factors. Produce a structured investment research memo."</em></div>
+  <p>Why can't one LLM call — or the basic RAG you built on AWS — answer this well? Because the question quietly hides <strong>five different jobs</strong>:</p>
+  <div class="gloss">
+    <div><b>Three companies</b>Each one needs its own numbers fetched.</div>
+    <div><b>Several data types</b>Financial statements, share prices, annual filings, news.</div>
+    <div><b>Maths</b>Growth, margins and P/E must be <em>calculated</em>, never guessed.</div>
+    <div><b>Cross-checking</b>Numbers from different places must agree.</div>
+    <div><b>A memo, not a paragraph</b>Fixed sections the PM can scan in two minutes.</div>
+  </div>
+
+  <h4>Three decisions before writing any code</h4>
+  <div class="gold3">
+    <div><b>① How we call the LLM</b><span class="tag3" style="background:var(--surface-2)">raw first</span>We build every piece with the plain OpenAI client, so you see exactly what happens. In the lab (5.11) we swap in PydanticAI — only the LLM calls change, nothing else.</div>
+    <div><b>② Where data comes from</b><span class="tag3" style="background:var(--surface-2)">3 sources</span><strong>Financial Datasets API</strong> for numbers and prices · <strong>SEC EDGAR</strong> for the risk section of annual reports · <strong>Tavily</strong> web search for news from trusted sites.</div>
+    <div><b>③ Who checks the numbers</b><span class="tag3" style="background:var(--surface-2)">code, not LLM</span>Plain Python checks: ranges, consistency, completeness. The LLM is used for planning, reasoning and writing — never to answer "does this number look right?"</div>
+  </div>
+
+  <div class="box analogy"><span class="tag">🧠 Analogy — the research desk at Future with Shivank Bank</span>
+    <p>Picture the desk on Monday morning. The <strong>desk head</strong> (planner) writes a to-do list on the whiteboard, with arrows meaning "do this after that". <strong>Runners</strong> (researcher + tools) grab every card that can start — all at once — and pin what they find to a shared board. A <strong>compliance checker</strong> (validator) walks the board with a calculator and a checklist. A <strong>memo writer</strong> (synthesizer) turns the board into the memo. The <strong>desk manager</strong> (orchestrator) decides: "good enough, write it" or "something's missing — plan again".</p>
+  </div>
+
+  <div class="tw"><table class="tbl">
+    <tr><th>Job</th><th>Desk role</th><th>File</th><th>Uses an LLM?</th></tr>
+    <tr><td>Turn the question into tasks</td><td>Desk head</td><td><code>planner.py</code></td><td>✅ yes — structured output</td></tr>
+    <tr><td>Fetch numbers, filings, news</td><td>Runners</td><td><code>tools/*.py</code></td><td>❌ no — plain API calls</td></tr>
+    <tr><td>Run the tasks in the right order</td><td>Runner coordinator</td><td><code>researcher.py</code></td><td>Only for "thinking" tasks 6 &amp; 7</td></tr>
+    <tr><td>Check the findings</td><td>Compliance</td><td><code>validator.py</code></td><td>❌ never</td></tr>
+    <tr><td>Write the memo</td><td>Memo writer</td><td><code>synthesizer.py</code></td><td>✅ yes — structured output</td></tr>
+    <tr><td>Run the loop, decide to retry</td><td>Desk manager</td><td><code>deep_search_agent.py</code></td><td>❌ no — a <code>for</code> loop</td></tr>
+  </table></div>
+  <div class="box tip"><span class="tag">💡 Count the ❌</span>
+    <p>Half of this "AI agent" is ordinary Python. That's on purpose: code is cheap, fast and gives the same answer every time. Use the LLM only where you need judgement or language.</p>
+  </div>
+
+  <h4>The map: one full run</h4>
+  <figure>
+    <div class="svgwrap"><svg viewBox="0 0 820 470" role="img" aria-label="Task graph: the question goes to the planner, which writes seven tasks. Tasks 1 to 5 run together; task 6 waits for 1, 2 and 3; task 7 waits for 4, 5 and 6. Then the validator checks, and either the synthesizer writes the memo or the loop goes back to the planner.">
+      <defs>
+        <marker id="dg-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" fill-opacity=".6"/></marker>
+        <marker id="dg-mh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--gold)"/></marker>
+      </defs>
+      <rect class="zone" x="178" y="22" width="236" height="356" rx="14"/>
+      <text class="t12 b" x="296" y="15" text-anchor="middle">Wave 1 · no dependencies → all at once</text>
+      <text class="t12 b" x="530" y="90" text-anchor="middle">Wave 2</text>
+      <text class="t12 b" x="730" y="195" text-anchor="middle">Wave 3</text>
+
+      <g class="nd soft" id="dg-q"><rect x="10" y="40" width="140" height="56" rx="10"/><text class="t13 b" x="80" y="63" text-anchor="middle">Your question</text><text class="t11 sub" x="80" y="80" text-anchor="middle">+ NVDA, AMD, INTC</text></g>
+      <line class="ar" id="dg-aq" x1="80" y1="96" x2="80" y2="148" marker-end="url(#dg-m)"/>
+      <g class="nd acc" id="dg-plan"><rect x="10" y="150" width="140" height="70" rx="10"/><text class="t13 b" x="80" y="179" text-anchor="middle">Planner</text><text class="t11 sub" x="80" y="197" text-anchor="middle">LLM writes 7 tasks</text></g>
+
+      <g class="nd" id="dg-t1"><rect x="190" y="30" width="210" height="56" rx="9"/><text class="t13 b" x="204" y="53">1 · NVIDIA metrics</text><text class="t11 sub mono" x="204" y="71">financial_api · needs —</text></g>
+      <g class="nd" id="dg-t2"><rect x="190" y="100" width="210" height="56" rx="9"/><text class="t13 b" x="204" y="123">2 · AMD metrics</text><text class="t11 sub mono" x="204" y="141">financial_api · needs —</text></g>
+      <g class="nd" id="dg-t3"><rect x="190" y="170" width="210" height="56" rx="9"/><text class="t13 b" x="204" y="193">3 · Intel metrics</text><text class="t11 sub mono" x="204" y="211">financial_api · needs —</text></g>
+      <g class="nd" id="dg-t4"><rect x="190" y="240" width="210" height="56" rx="9"/><text class="t13 b" x="204" y="263">4 · Risk factors (10-Ks)</text><text class="t11 sub mono" x="204" y="281">sec_filing · needs —</text></g>
+      <g class="nd" id="dg-t5"><rect x="190" y="310" width="210" height="56" rx="9"/><text class="t13 b" x="204" y="333">5 · AI-chip market news</text><text class="t11 sub mono" x="204" y="351">web_search · needs —</text></g>
+      <line class="ar" id="dg-p1" x1="150" y1="185" x2="188" y2="58" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-p2" x1="150" y1="185" x2="188" y2="128" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-p3" x1="150" y1="185" x2="188" y2="198" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-p4" x1="150" y1="185" x2="188" y2="268" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-p5" x1="150" y1="185" x2="188" y2="338" marker-end="url(#dg-m)"/>
+
+      <g class="nd" id="dg-t6"><rect x="450" y="100" width="160" height="70" rx="9"/><text class="t13 b" x="530" y="128" text-anchor="middle">6 · Compare</text><text class="t11 sub" x="530" y="146" text-anchor="middle">LLM · needs 1, 2, 3</text></g>
+      <line class="ar" id="dg-a16" x1="400" y1="58" x2="448" y2="118" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-a26" x1="400" y1="128" x2="448" y2="135" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-a36" x1="400" y1="198" x2="448" y2="152" marker-end="url(#dg-m)"/>
+
+      <g class="nd" id="dg-t7"><rect x="650" y="205" width="160" height="70" rx="9"/><text class="t13 b" x="730" y="233" text-anchor="middle">7 · Draft memo</text><text class="t11 sub" x="730" y="251" text-anchor="middle">LLM · needs 4, 5, 6</text></g>
+      <line class="ar" id="dg-a67" x1="610" y1="150" x2="648" y2="222" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-a47" x1="400" y1="268" x2="648" y2="240" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-a57" x1="400" y1="338" x2="648" y2="258" marker-end="url(#dg-m)"/>
+
+      <g class="nd acc" id="dg-val"><rect x="450" y="380" width="160" height="60" rx="10"/><text class="t13 b" x="530" y="405" text-anchor="middle">Validator</text><text class="t11 sub" x="530" y="423" text-anchor="middle">plain Python checks</text></g>
+      <g class="nd acc" id="dg-syn"><rect x="650" y="380" width="160" height="60" rx="10"/><text class="t13 b" x="730" y="405" text-anchor="middle">Synthesizer</text><text class="t11 sub" x="730" y="423" text-anchor="middle">LLM → the memo</text></g>
+      <polyline class="ar" id="dg-a7v" points="700,275 700,330 530,330 530,378" marker-end="url(#dg-m)"/>
+      <line class="ar" id="dg-avs" x1="610" y1="410" x2="648" y2="410" marker-end="url(#dg-m)"/>
+      <text class="alab" x="629" y="400" text-anchor="middle">valid</text>
+      <polyline class="ar" id="dg-arp" points="530,440 530,458 80,458 80,222" marker-end="url(#dg-m)" stroke-dasharray="6 5"/>
+      <text class="alab b" x="300" y="452" text-anchor="middle">gap or error → re-plan (up to 2 more tries)</text>
+    </svg></div>
+    <figcaption>The plan is a <strong>dependency graph</strong>: an arrow means "must finish first". Tasks 1–5 need nothing, so they run together. Task 6 can only compare once all three companies' numbers are in. Task 7 writes a draft once the comparison, risks and news are ready. The dashed arrow is the re-plan path.</figcaption>
+  </figure>
+
+  <div class="sim stepper" id="sim-run"><span class="tag">🧪 Simulation · follow one full run</span>
+    <h4>Click through the run and watch the variables change</h4>
+    <p style="margin-top:0">Gold on the map = what's happening at this step. The boxes in the panel are the <strong>real variable names</strong> from the code you're about to read — a gold box changed at this step.</p>
+    <div class="row"><button class="btn ghost" data-act="prev">◀ Back</button><button class="btn" data-act="next">Next step ▶</button><span class="counter"></span><div class="dots"></div></div>
+    <div class="panel" aria-live="polite"></div>
+  </div>
+
+  <h4>Why "all at once" matters</h4>
+  <div class="box analogy"><span class="tag">🧠 Analogy — one chef, five ovens</span>
+    <p>A chef with five ovens doesn't stand in front of oven 1 until the cake is done before putting the bread in oven 2. She fills all five, then waits for the slowest dish. Tool calls are the same: most of their time is spent <em>waiting for a server on the internet</em>. While one call waits, Python can start the others. That's what <code>async</code> / <code>await</code> and <code>asyncio.gather</code> give us.</p>
+  </div>
+  <div class="sim" id="sim-par"><span class="tag">🧪 Simulation · one after another vs all at once</span>
+    <p style="margin-top:0">Wave 1 has one metrics task per company (≈2 s each), plus the filings task (≈4 s) and the news task (≈5 s). Add companies and watch both timelines. <span class="muted">Timings are illustrative.</span></p>
+    <div class="slider"><label for="par-n">Companies to compare</label><input id="par-n" type="range" min="1" max="8" value="3"><b id="par-nv">3</b></div>
+    <div class="svgwrap"><svg id="par-svg" viewBox="0 0 760 250" role="img" aria-label="Two timelines: running wave-one tasks one after another versus all at once with asyncio.gather."></svg></div>
+    <div class="out" id="par-out" aria-live="polite"></div>
+  </div>
+  <div class="box warn"><span class="tag">⚠️ Real-world catch: rate limits</span>
+    <p>APIs limit how many calls you may make per second. With 50 companies, "all at once" can earn you <code>429 Too Many Requests</code>. The usual fix is a small "only N at a time" gate called <code>asyncio.Semaphore</code> — like letting only five customers into the bank branch at once.</p>
+  </div>
+</section>
+
+<hr class="sec">
+
+<section id="s5c">
+  <h3 id="s5-models"><span class="num">5.5</span>The data models — the forms everyone fills in</h3>
+  <div class="box analogy"><span class="tag">🧠 Analogy — bank forms</span>
+    <p>Banks run on forms. A loan application has fixed boxes — name, amount, tenure — and the clerk won't accept "amount: banana". <strong>Pydantic models are the agent's forms.</strong> Every part hands the next part a filled-in form, and Python refuses a form with a missing or wrong box. That's what stops one confused component from quietly poisoning the next.</p>
+  </div>
+
+  <figure>
+    <div class="svgwrap"><svg viewBox="0 0 820 190" role="img" aria-label="Which form travels between which component: Planner hands a ResearchPlan to the Researcher, which hands a results dictionary to the Validator, which hands a ValidationResult to the Synthesizer, which produces a ResearchReport.">
+      <defs><marker id="fm-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor" fill-opacity=".6"/></marker></defs>
+      <g class="nd acc"><rect x="10" y="14" width="140" height="50" rx="10"/><text class="t13 b" x="80" y="44" text-anchor="middle">Planner</text></g>
+      <g class="nd soft"><rect x="196" y="18" width="170" height="42" rx="21"/><text class="t12 b mono" x="281" y="44" text-anchor="middle">ResearchPlan</text></g>
+      <g class="nd acc"><rect x="412" y="14" width="140" height="50" rx="10"/><text class="t13 b" x="482" y="44" text-anchor="middle">Researcher</text></g>
+      <g class="nd soft"><rect x="598" y="18" width="212" height="42" rx="21"/><text class="t12 b mono" x="704" y="44" text-anchor="middle">results: dict[int, str]</text></g>
+      <line class="ar" x1="150" y1="39" x2="194" y2="39" marker-end="url(#fm-m)"/>
+      <line class="ar" x1="366" y1="39" x2="410" y2="39" marker-end="url(#fm-m)"/>
+      <line class="ar" x1="552" y1="39" x2="596" y2="39" marker-end="url(#fm-m)"/>
+      <text class="t11 sub" x="281" y="78" text-anchor="middle">7 × SubTask inside</text>
+      <text class="t11 sub" x="704" y="78" text-anchor="middle">CompanyMetrics → JSON text inside</text>
+      <polyline class="ar" points="704,84 704,100 80,100 80,118" marker-end="url(#fm-m)"/>
+      <g class="nd acc"><rect x="10" y="120" width="140" height="50" rx="10"/><text class="t13 b" x="80" y="150" text-anchor="middle">Validator</text></g>
+      <g class="nd soft"><rect x="196" y="124" width="170" height="42" rx="21"/><text class="t12 b mono" x="281" y="150" text-anchor="middle">ValidationResult</text></g>
+      <g class="nd acc"><rect x="412" y="120" width="140" height="50" rx="10"/><text class="t13 b" x="482" y="150" text-anchor="middle">Synthesizer</text></g>
+      <g class="nd soft"><rect x="598" y="124" width="212" height="42" rx="21"/><text class="t12 b mono" x="704" y="150" text-anchor="middle">ResearchReport</text></g>
+      <line class="ar" x1="150" y1="145" x2="194" y2="145" marker-end="url(#fm-m)"/>
+      <line class="ar" x1="366" y1="145" x2="410" y2="145" marker-end="url(#fm-m)"/>
+      <line class="ar" x1="552" y1="145" x2="596" y2="145" marker-end="url(#fm-m)"/>
+      <text class="t11 sub" x="281" y="184" text-anchor="middle">errors · warnings · gaps</text>
+      <text class="t11 sub" x="704" y="184" text-anchor="middle">the memo — saved as JSON</text>
+    </svg></div>
+    <figcaption>Pills = forms (Pydantic models), boxes = the parts that fill them in. Read it like a relay race: each runner hands over a baton of a fixed shape.</figcaption>
+  </figure>
+
+  <div class="code"><div class="head">Python · common.py · all the forms in one file</div><pre><code class="language-python"># common.py — the "forms" that every part of the agent fills in
+from enum import Enum
+from pydantic import BaseModel, Field
+
+
+class TaskStatus(str, Enum):         # the 4 stickers a task can wear
+    PENDING = "pending"              # not started yet
+    RUNNING = "running"              # a tool is working on it
+    COMPLETED = "completed"          # finished, result saved
+    FAILED = "failed"                # the tool raised an error
+
+
+class SubTask(BaseModel):
+    """A single research sub-task within a plan."""
+    id: int                                          # 1, 2, 3 …
+    description: str                                 # the job, in plain English
+    data_sources: list[str] = Field(
+        description="Tools: 'financial_api', 'sec_filing', 'web_search'"
+    )
+    dependencies: list[int] = Field(default_factory=list)  # ids to wait for
+    status: TaskStatus = TaskStatus.PENDING          # only OUR code changes this
+
+
+class ResearchPlan(BaseModel):                       # what the planner returns
+    question: str
+    sub_tasks: list[SubTask]
+
+
+class CompanyMetrics(BaseModel):                     # one company, clean numbers
+    ticker: str
+    revenue: float | None = None             # $ millions
+    revenue_growth: float | None = None      # % vs the year before
+    eps: float | None = None                 # earnings per share, $
+    gross_margin: float | None = None        # %
+    operating_margin: float | None = None    # %
+    pe_ratio: float | None = None            # price ÷ EPS
+    market_cap: float | None = None          # $
+
+
+class ValidationResult(BaseModel):                   # the checker's report card
+    is_valid: bool
+    errors: list[str] = Field(default_factory=list)     # impossible numbers
+    warnings: list[str] = Field(default_factory=list)   # odd but possible
+    gaps: list[str] = Field(default_factory=list)       # missing pieces
+
+
+class ResearchReport(BaseModel):                     # the final memo
+    title: str
+    executive_summary: str
+    key_metrics_table: str
+    competitive_analysis: str
+    risk_factors: list[str]
+    conclusion: str
+    sources: list[str]
+    confidence_score: float = Field(description="Between 0 and 1")</code></pre></div>
+  <ol class="walk">
+    <li><strong><code>TaskStatus(str, Enum)</code> — the four stickers.</strong> An <em>Enum</em> is a fixed menu of allowed values, so a typo like <code>TaskStatus.COMPLETD</code> crashes immediately instead of silently never matching. Mixing in <code>str</code> makes each sticker also a normal string, so it prints and saves to JSON as <code>"completed"</code>.</li>
+    <li><strong><code>Field(description=...)</code> on <code>data_sources</code></strong> isn't just a comment for humans: it's sent to the LLM as part of the form's instructions. That's how the planner learns the only three tool names it may use.</li>
+    <li><strong><code>default_factory=list</code></strong> means "if nobody fills this in, start with a fresh empty list". An empty <code>dependencies</code> list means "this task can start straight away".</li>
+    <li><strong><code>status</code> defaults to <code>PENDING</code>.</strong> The LLM simply writes <code>"pending"</code>; from then on only <em>our</em> code moves the sticker forward.</li>
+    <li><strong><code>float | None = None</code></strong> reads "a number, or honestly unknown". A missing value stays <code>None</code> — never <code>0</code>. An unknown margin and a 0% margin are very different facts, and the validator treats them differently.</li>
+    <li><strong><code>ValidationResult</code></strong> has three buckets — <em>errors</em>, <em>warnings</em>, <em>gaps</em> — that you'll meet in 5.9. <strong><code>ResearchReport</code></strong> is the memo template: every memo has the same sections, so the PM always knows where to look.</li>
+  </ol>
+
+  <h4>What a filled-in plan looks like</h4>
+  <p>This is the kind of <code>ResearchPlan</code> the planner returns for our question (shown as JSON; wording varies run to run):</p>
+  <div class="code"><div class="head">JSON · the plan for our question (illustrative)</div><pre><code class="language-json">{
+  "question": "Analyze NVIDIA's financial performance ... research memo.",
+  "sub_tasks": [
+    {"id": 1, "description": "Fetch NVIDIA (NVDA) revenue, growth, margins and P/E",
+     "data_sources": ["financial_api"], "dependencies": [], "status": "pending"},
+    {"id": 2, "description": "Fetch AMD revenue, growth, margins and P/E",
+     "data_sources": ["financial_api"], "dependencies": [], "status": "pending"},
+    {"id": 3, "description": "Fetch Intel (INTC) revenue, growth, margins and P/E",
+     "data_sources": ["financial_api"], "dependencies": [], "status": "pending"},
+    {"id": 4, "description": "Extract key risk factors from the latest 10-Ks of NVIDIA, AMD and Intel",
+     "data_sources": ["sec_filing"], "dependencies": [], "status": "pending"},
+    {"id": 5, "description": "Find recent AI-chip market news on NVIDIA, AMD and Intel",
+     "data_sources": ["web_search"], "dependencies": [], "status": "pending"},
+    {"id": 6, "description": "Compare revenue growth, profitability and valuation",
+     "data_sources": [], "dependencies": [1, 2, 3], "status": "pending"},
+    {"id": 7, "description": "Draft the investment memo from metrics, risks and news",
+     "data_sources": [], "dependencies": [4, 5, 6], "status": "pending"}
+  ]
+}</code></pre></div>
+  <div class="box tip"><span class="tag">💡 How to read <code>dependencies</code></span>
+    <p><code>"dependencies": [1, 2, 3]</code> on task 6 means "task 6 may start only after tasks 1, 2 <em>and</em> 3 are COMPLETED". An empty list <code>[]</code> means "no waiting — start now". Compare this JSON with the map above: it's the same graph, written as text.</p>
+  </div>
+
+  <h3 id="s5-planner"><span class="num">5.6</span>Step 1 · The planner — from one question to a to-do list</h3>
+  <div class="box analogy"><span class="tag">🧠 Analogy — the desk head's whiteboard</span>
+    <p>A good desk head doesn't start researching. She <em>writes the cards</em>: one card per job, which source to use, and arrows for what must wait. A good plan is <strong>boring and repeatable</strong> — ask the same question twice, get the same cards. That's why the planner runs at temperature 0.</p>
+  </div>
+  <div class="code"><div class="head">Python · planner.py · create_research_plan</div><pre><code class="language-python"># planner.py — turns ONE question into a to-do list (a ResearchPlan)
+from openai import AsyncOpenAI
+from common import ResearchPlan
+
+PLANNER_PROMPT = """You are a financial research planner. Given a research
+question, decompose it into concrete sub-tasks that can be executed by tools.
+
+Available data sources:
+- financial_api: Structured financial metrics (revenue, EPS, margins, P/E, market cap)
+- sec_filing: SEC filing content (risk factors, business descriptions, MD&amp;A)
+- web_search: Recent news, competitive intelligence, analyst commentary
+
+Rules:
+1. Each sub-task must have a clear, measurable outcome.
+2. Specify which data_sources each sub-task should use.
+3. Mark dependencies — which tasks must complete before others can start.
+4. Tasks with no dependencies can run in parallel.
+5. Always include a final synthesis task that depends on all data-gathering tasks.
+6. For multi-company comparisons, create parallel tasks for each company.
+
+Respond with a JSON object matching the ResearchPlan schema."""
+
+
+async def create_research_plan(question: str) -&gt; ResearchPlan:
+    """Generate a structured research plan from a question."""
+    client = AsyncOpenAI()                            # ① reads OPENAI_API_KEY
+    response = await client.chat.completions.parse(   # ② ask, and force the shape
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": PLANNER_PROMPT},
+            {"role": "user", "content": question},
+        ],
+        response_format=ResearchPlan,                 # ③ "fill in THIS form"
+        temperature=0,                                # ④ same question → same plan
+    )
+    return response.choices[0].message.parsed         # ⑤ a ResearchPlan object</code></pre></div>
+
+  <h4>How the prompt's six rules show up in the plan</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Rule in the prompt</th><th>What you see in the plan</th></tr>
+    <tr><td>1 · Clear, measurable outcome</td><td>"Fetch AMD revenue, growth, margins and P/E" — not "look into AMD"</td></tr>
+    <tr><td>2 · Name the data sources</td><td><code>"data_sources": ["financial_api"]</code> on tasks 1–3</td></tr>
+    <tr><td>3 · Mark dependencies</td><td><code>"dependencies": [1, 2, 3]</code> on task 6</td></tr>
+    <tr><td>4 · No dependencies → parallel</td><td>Tasks 1–5 all have <code>[]</code>, so they form wave 1</td></tr>
+    <tr><td>5 · A final synthesis task</td><td>Task 7 waits for 4, 5 and 6</td></tr>
+    <tr><td>6 · One task per company</td><td>Three separate tasks 1, 2, 3 — not one "fetch all three" task, so they can run side by side and fail independently</td></tr>
+  </table></div>
+
+  <h4>The code, line by line</h4>
+  <ol class="walk">
+    <li><strong><code>AsyncOpenAI()</code></strong> creates the <em>async</em> version of the OpenAI client. It finds your key in the <code>OPENAI_API_KEY</code> environment variable — never paste keys into code.</li>
+    <li><strong><code>await client.chat.completions.parse(...)</code></strong> — <code>await</code> means "start this, and while we wait for OpenAI's reply, Python may get on with other jobs". We use <code>.parse</code> (not <code>.create</code>) because it's the structured-output version.</li>
+    <li><strong><code>response_format=ResearchPlan</code></strong> — the magic line. The SDK turns our class into a JSON schema, the model is constrained to reply in exactly that shape, and the SDK turns the reply back into a real <code>ResearchPlan</code> object.</li>
+    <li><strong><code>temperature=0</code></strong> — the creativity dial at minimum. Same question → (almost) the same plan, which makes runs easy to compare and debug.</li>
+    <li><strong><code>response.choices[0].message.parsed</code></strong> — unwrapping the parcel: <code>response</code> is the whole reply envelope → <code>choices[0]</code> the first (and only) answer → <code>message</code> → <code>parsed</code>, our ready-made object.</li>
+  </ol>
+  <div class="trail" style="margin:12px 0 4px"><span class="c done">class ResearchPlan</span><i>→</i><span class="c done">JSON schema</span><i>→</i><span class="c now">LLM fills it in</span><i>→</i><span class="c done">JSON text</span><i>→</i><span class="c done">ResearchPlan object</span></div>
+  <p class="muted" style="font-size:14px">What <code>.parse</code> does for you behind the scenes. You write the first and get the last; the middle three steps are automatic.</p>
+
+  <div class="tw"><table class="tbl">
+    <tr><th>Variable</th><th>Type</th><th>What it holds</th></tr>
+    <tr><td><code>question</code></td><td><code>str</code></td><td>"Analyze NVIDIA's financial performance…"</td></tr>
+    <tr><td><code>client</code></td><td><code>AsyncOpenAI</code></td><td>A connection to OpenAI, with your key</td></tr>
+    <tr><td><code>response</code></td><td>completion envelope</td><td>id, token usage, <code>choices</code> list…</td></tr>
+    <tr><td><code>response.choices[0].message.parsed</code></td><td><code>ResearchPlan</code></td><td>The question + 7 <code>SubTask</code> objects — returned to the caller as <code>plan</code></td></tr>
+  </table></div>
+  <div class="box warn"><span class="tag">⚠️ Two production habits</span>
+    <ul>
+      <li>If the model refuses (rare), <code>parsed</code> is <code>None</code> and the reason sits in <code>message.refusal</code>. Check for it before using the plan.</li>
+      <li>Save every plan to a log file. When a memo looks odd next week, the plan is the first thing compliance will ask to see.</li>
+    </ul>
+  </div>
+</section>
+
+<hr class="sec">
+<section id="s5d">
+  <h3 id="s5-tools"><span class="num">5.7</span>Step 2 · The tools — couriers who also translate</h3>
+  <div class="box analogy"><span class="tag">🧠 Analogy — a courier who also translates</span>
+    <p>Each data source is a different office with its own address, its own password and its own paperwork. A tool function is a <strong>courier</strong> who knows one office: it goes there, shows the password, collects the parcel — and then <strong>translates the paperwork into our bank's standard form</strong> before handing it back. The rest of the agent never sees the office's messy format.</p>
+  </div>
+  <div class="tw"><table class="tbl">
+    <tr><th>Tool</th><th>Goes to</th><th>Needs</th><th>Brings back</th><th>Typical failures</th></tr>
+    <tr><td><code>get_financial_metrics(ticker)</code></td><td>Financial Datasets API</td><td>API key</td><td>A clean <code>CompanyMetrics</code> form</td><td>wrong key (401), unknown ticker (404), too many calls (429)</td></tr>
+    <tr><td><code>get_risk_factors(ticker)</code></td><td>SEC EDGAR (free, official)</td><td>your email</td><td>"Item 1A · Risk Factors" text from the latest 10-K</td><td>blocked without an email header; very long text</td></tr>
+    <tr><td><code>search_financial_news(query)</code></td><td>Tavily web search</td><td>API key</td><td>5 recent articles from trusted sites</td><td>stale or off-topic results</td></tr>
+  </table></div>
+
+  <h4>Tool 1 · get_financial_metrics — the most important one</h4>
+  <div class="code"><div class="head">Python · tools/financial_data.py · get_financial_metrics</div><pre><code class="language-python"># tools/financial_data.py — fetch ONE company's numbers and clean them up
+import os
+import httpx
+from common import CompanyMetrics
+
+BASE_URL = "https://api.financialdatasets.ai"
+
+
+def _pct(part, whole):
+    """part ÷ whole as a percent (1 decimal), or None if we can't work it out."""
+    if part is None or not whole:
+        return None
+    return round(part / whole * 100, 1)
+
+
+async def get_financial_metrics(ticker: str) -&gt; CompanyMetrics:
+    headers = {"X-API-KEY": os.environ["FINANCIAL_DATASETS_API_KEY"]}   # ① password
+    async with httpx.AsyncClient(base_url=BASE_URL, headers=headers,
+                                 timeout=30) as client:                 # ② open line
+        income_resp = await client.get(                                 # ③ 2 years
+            "/financials/income-statements",
+            params={"ticker": ticker, "period": "annual", "limit": 2},
+        )
+        price_resp = await client.get("/prices/snapshot",               # ④ price
+                                      params={"ticker": ticker})
+    income_resp.raise_for_status()           # ⑤ 401 / 404 / 429 / 500 → error
+    price_resp.raise_for_status()
+
+    statements = income_resp.json()["income_statements"]   # ⑥ newest year first
+    latest = statements[0]
+    prior = statements[1] if len(statements) &gt; 1 else None
+    snapshot = price_resp.json()["snapshot"]
+    price = snapshot.get("price") or snapshot.get("close")
+
+    revenue = latest.get("revenue")                          # in plain dollars
+    eps = latest.get("earnings_per_share")
+    growth = None
+    if revenue and prior and prior.get("revenue"):           # ⑦ growth needs 2 years
+        growth = round((revenue / prior["revenue"] - 1) * 100, 1)
+
+    return CompanyMetrics(                                   # ⑧ the clean form
+        ticker=ticker,
+        revenue=round(revenue / 1_000_000, 1) if revenue else None,  # → $ millions
+        revenue_growth=growth,
+        eps=eps,
+        gross_margin=_pct(latest.get("gross_profit"), revenue),
+        operating_margin=_pct(latest.get("operating_income"), revenue),
+        pe_ratio=round(price / eps, 1) if price and eps and eps &gt; 0 else None,
+        market_cap=snapshot.get("market_cap"),
+    )</code></pre></div>
+  <ol class="walk">
+    <li><strong>The password.</strong> <code>headers</code> is a small dictionary sent with every request. The key comes from the environment, never from the code.</li>
+    <li><strong><code>async with httpx.AsyncClient(...) as client:</code></strong> opens a connection — think of it as a phone call. The <code>with</code> block hangs up automatically when it ends, even if something goes wrong inside. <code>base_url</code> saves typing the address twice; <code>timeout=30</code> means "give up after 30 seconds instead of waiting forever".</li>
+    <li><strong>Two years of income statements</strong> (<code>limit=2</code>). Why two? Growth needs this year <em>and</em> last year.</li>
+    <li><strong>Today's price</strong> from the price snapshot — needed for P/E.</li>
+    <li><strong><code>raise_for_status()</code></strong> turns an HTTP failure (401, 404, 429, 500…) into a Python error. That sounds bad, but it's exactly what we want: the error travels up to <code>run_task</code>, which marks the task FAILED (5.8), which the validator turns into a gap (5.9), which triggers a re-plan. <em>Silent failures are the dangerous ones.</em></li>
+    <li><strong>Unpack the parcel.</strong> <code>.json()</code> turns the reply into a Python dictionary. <code>statements[0]</code> is the newest year, <code>statements[1]</code> the year before. <code>snapshot.get("price") or snapshot.get("close")</code> means "use <code>price</code>; if it's missing, use <code>close</code>".</li>
+    <li><strong>Growth</strong> is only calculated if both years have revenue — otherwise it stays <code>None</code>.</li>
+    <li><strong>Translate into our form.</strong> Dollars → millions, ratios → percentages, P/E only if earnings are positive.</li>
+  </ol>
+
+  <div class="twocol">
+    <div>
+      <p style="margin:0 0 6px; font-weight:700; font-size:14px">Before: what the API sends (trimmed)</p>
+<div class="shape" style="font-size:12.5px">{ <span class="s">"income_statements"</span>: [
+    { <span class="s">"revenue"</span>: <span class="g">60922000000</span>,
+      <span class="s">"gross_profit"</span>: 44301000000,
+      <span class="s">"operating_income"</span>: 32972000000,
+      <span class="s">"earnings_per_share"</span>: 11.93, … },
+    { <span class="s">"revenue"</span>: <span class="g">26974000000</span>, … }
+] }
+{ <span class="s">"snapshot"</span>: { <span class="s">"price"</span>: 817.2, … } }</div>
+    </div>
+    <div>
+      <p style="margin:0 0 6px; font-weight:700; font-size:14px">After: what the rest of the agent sees</p>
+<div class="shape" style="font-size:12.5px">CompanyMetrics(
+  ticker=<span class="s">"NVDA"</span>,
+  revenue=<span class="g">60922.0</span>,        <span class="m"># $ millions</span>
+  revenue_growth=<span class="g">125.9</span>,   <span class="m"># %</span>
+  eps=11.93,
+  gross_margin=72.7,       <span class="m"># %</span>
+  operating_margin=54.1,   <span class="m"># %</span>
+  pe_ratio=68.5,
+  market_cap=None)         <span class="m"># not sent → unknown</span></div>
+    </div>
+  </div>
+  <p class="muted" style="font-size:14px">Illustrative values for NVIDIA's fiscal year 2024 (which ended in January 2024 — remember the fiscal calendar in 5.3).</p>
+
+  <div class="tw"><table class="tbl">
+    <tr><th>Number</th><th>Formula in the code</th><th>Worked example (NVIDIA)</th></tr>
+    <tr><td>Revenue growth</td><td><code>(revenue / prior - 1) * 100</code></td><td>(60,922 ÷ 26,974 − 1) × 100 = <b>125.9%</b></td></tr>
+    <tr><td>Gross margin</td><td><code>gross_profit / revenue * 100</code></td><td>44,301 ÷ 60,922 × 100 = <b>72.7%</b></td></tr>
+    <tr><td>Operating margin</td><td><code>operating_income / revenue * 100</code></td><td>32,972 ÷ 60,922 × 100 = <b>54.1%</b></td></tr>
+    <tr><td>P/E</td><td><code>price / eps</code></td><td>817.2 ÷ 11.93 = <b>68.5×</b></td></tr>
+  </table></div>
+
+  <details class="opt"><summary>💰 Finance corner: the four numbers in plain words <span class="optb">optional · glance over</span></summary><div class="inner">
+    <p>Imagine a sweet shop. <strong>Revenue</strong> is everything customers paid. <strong>Gross margin</strong> is what's left after paying for the sugar and milk, as a % of revenue. <strong>Operating margin</strong> is what's left after <em>also</em> paying rent, salaries and electricity — so it is always smaller than gross margin. <strong>Revenue growth</strong> compares this year's sales with last year's. <strong>P/E</strong> asks: "how many years of today's profit would I pay to buy one share?" A P/E of 68 means investors pay 68 years' worth of current profits — they expect profits to grow a lot.</p>
+  </div></details>
+
+  <div class="box warn"><span class="tag">⚠️ Three things that bite beginners</span>
+    <ul>
+      <li><strong>P/E only when EPS &gt; 0.</strong> A loss-making company has negative earnings, and "price ÷ negative number" is meaningless. We store <code>None</code> instead.</li>
+      <li><strong>Field names change.</strong> APIs rename fields (<code>price</code> vs <code>close</code>). Before trusting any tool, print one raw response and read it.</li>
+      <li><strong>The two calls run one after the other.</strong> They could also run together with <code>asyncio.gather</code> — a nice small exercise once you've finished 5.8.</li>
+    </ul>
+  </div>
+
+  <h4>What happens when a call fails — the error's journey</h4>
+  <div class="trail" style="margin:10px 0"><span class="c">API says 503</span><i>→</i><span class="c">raise_for_status() raises</span><i>→</i><span class="c">run_task catches it</span><i>→</i><span class="c now">task.status = FAILED</span><i>→</i><span class="c">validator: a gap</span><i>→</i><span class="c">orchestrator: re-plan</span></div>
+  <p>One failed courier never crashes the desk. It turns into a <em>note</em> that travels up until someone with the authority to act — the desk manager — decides what to do. You'll make AMD fail on purpose in the simulation in 5.8.</p>
+
+  <h4>Tool 2 · search_financial_news</h4>
+  <div class="code"><div class="head">Python · tools/web_search.py · search_financial_news</div><pre><code class="language-python"># tools/web_search.py — recent news, from trusted publishers only
+import os
+from tavily import AsyncTavilyClient
+
+TRUSTED = ["reuters.com", "bloomberg.com", "wsj.com",
+           "cnbc.com", "seekingalpha.com", "ft.com"]
+
+
+async def search_financial_news(query: str) -&gt; str:
+    client = AsyncTavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+    response = await client.search(
+        query,
+        topic="news",                # news search, not the whole web
+        include_domains=TRUSTED,     # only these publishers
+        max_results=5,
+    )
+    # a list of hits → one readable block of text for the LLM
+    return "\n\n".join(
+        f"{hit['title']} ({hit['url']})\n{hit['content']}"
+        for hit in response["results"]
+    )</code></pre></div>
+  <p><code>include_domains=TRUSTED</code> is the important line: it keeps the agent away from random blogs and forums. The last statement is a <em>generator expression</em> inside <code>"\n\n".join(...)</code> — read it as "for every hit, write title (link) and summary, and glue them together with blank lines". The LLM gets one tidy block of text with sources it can cite.</p>
+
+  <h4>Tool 3 · get_risk_factors (in words)</h4>
+  <p>SEC EDGAR is the US regulator's free filing system. The tool finds the company's latest annual report (the <strong>10-K</strong>) and pulls out section <strong>Item 1A · Risk Factors</strong> — where companies must list what could hurt them (supply chains, export rules, key customers…). Two rules: EDGAR wants a contact email in the request's <code>User-Agent</code> header (that's why <code>.env</code> has <code>SEC_EDGAR_EMAIL</code>), and it allows roughly 10 requests per second. Filings run to 100+ pages, so the tool trims the text before returning it — fewer tokens, lower cost.</p>
+
+  <h3 id="s5-researcher"><span class="num">5.8</span>Step 3 · The researcher — run the plan in waves</h3>
+  <div class="box analogy"><span class="tag">🧠 Analogy — the kitchen ticket rail</span>
+    <p>In a restaurant kitchen, orders hang on a rail. Every round, the head chef looks at the rail and asks one question: <strong>"which tickets can I cook right now?"</strong> — the ones whose ingredients are ready. She fires all of them at once, waits for that round to finish, then looks at the rail again. When no ticket is left, service is over. If some tickets are stuck waiting for an ingredient that will never arrive, she stops instead of staring at the rail forever.</p>
+  </div>
+  <div class="code"><div class="head">Python · researcher.py · execute_plan (the loop)</div><pre><code class="language-python"># researcher.py — run the whole plan, wave by wave
+import asyncio
+from common import ResearchPlan, TaskStatus
+
+
+async def execute_plan(plan: ResearchPlan) -&gt; dict[int, str]:
+    results: dict[int, str] = {}                      # ① the shared notebook
+    tasks_by_id = {t.id: t for t in plan.sub_tasks}   # ② id → task lookup
+
+    while any(t.status == TaskStatus.PENDING for t in plan.sub_tasks):   # ③
+        ready = [                                     # ④ who can start now?
+            t for t in plan.sub_tasks
+            if t.status == TaskStatus.PENDING
+            and all(tasks_by_id[d].status == TaskStatus.COMPLETED
+                    for d in t.dependencies)
+        ]
+        if not ready:                                 # ⑤ stuck → stop the loop
+            break
+        completed = await asyncio.gather(             # ⑥ run the wave together
+            *[run_task(t, results) for t in ready]
+        )
+        for task_id, result in completed:             # ⑦ write it all down
+            results[task_id] = result
+
+    return results</code></pre></div>
+  <ol class="walk">
+    <li><strong><code>results</code> — the shared notebook.</strong> A dictionary: key = task id, value = what that task found (as text). It starts empty; by the end it looks like <code>{1: '{"ticker": "NVDA", …}', 2: …, 7: "Draft memo…"}</code>.</li>
+    <li><strong><code>tasks_by_id</code> — a phone book.</strong> This is a <em>dict comprehension</em>; read it as "for every task <code>t</code> in the plan, file it under <code>t.id</code>". Now <code>tasks_by_id[3]</code> instantly gives task 3, so we can ask "is task 3 done?" in one step.</li>
+    <li><strong><code>while any(...)</code></strong> — <code>any()</code> asks "is at least one of these true?". Keep going while at least one task still wears the PENDING sticker.</li>
+    <li><strong><code>ready</code> — who can start now?</strong> Read it aloud: <em>"every task <code>t</code> that is PENDING <strong>and</strong> whose every dependency <code>d</code> is COMPLETED"</em>.</li>
+    <li><strong><code>if not ready: break</code> — the safety exit.</strong> Tasks are still pending, but none can start: they're waiting for a task that failed. Without this line the loop would spin forever.</li>
+    <li><strong><code>asyncio.gather(*[...])</code> — fire the whole wave.</strong> The list <code>[run_task(t, results) for t in ready]</code> builds one "job" per ready task (nothing runs yet) — <code>run_task</code> is the one-task worker you'll read just below. The <code>*</code> unpacks the list into separate arguments: <code>gather(job1, job2, job3, …)</code>. <code>gather</code> runs them together and waits for the slowest. It returns their answers <strong>in the same order as the jobs</strong>, not in finishing order.</li>
+    <li><strong><code>for task_id, result in completed</code></strong> — each answer is a pair like <code>(2, '{"ticker": "AMD", …}')</code>. Python splits the pair into two variables (<em>tuple unpacking</em>), and we write it into the notebook.</li>
+  </ol>
+  <div class="box tip"><span class="tag">💡 The tiny Python fact that makes it work: <code>all([])</code> is <code>True</code></span>
+    <p>Tasks 1–5 have no dependencies, so <code>all(... for d in [])</code> checks an empty list. Python says "all of zero things are done" → <code>True</code>. That's why tasks with no dependencies are ready in the very first round — no special case needed.</p>
+  </div>
+
+  <h4>Round by round, for our plan</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Round</th><th><code>ready</code></th><th>After <code>gather</code></th><th>Keys in <code>results</code></th></tr>
+    <tr><td>1</td><td><code>[1, 2, 3, 4, 5]</code></td><td>tasks 1–5 COMPLETED</td><td><code>1 2 3 4 5</code></td></tr>
+    <tr><td>2</td><td><code>[6]</code> — its deps 1, 2, 3 are done</td><td>task 6 COMPLETED</td><td><code>1 … 6</code></td></tr>
+    <tr><td>3</td><td><code>[7]</code> — deps 4, 5, 6 are done</td><td>task 7 COMPLETED</td><td><code>1 … 7</code></td></tr>
+    <tr><td>4</td><td colspan="3"><code>while any(... PENDING ...)</code> is now <code>False</code> → loop ends → <code>return results</code></td></tr>
+  </table></div>
+
+  <h4>What one runner does: run_task</h4>
+  <div class="code"><div class="head">Python · researcher.py · run_task and helpers (simplified sketch)</div><pre><code class="language-python"># researcher.py — run ONE task with the right tool (same file as execute_plan)
+from openai import AsyncOpenAI
+from common import SubTask, TaskStatus
+from tools.financial_data import get_financial_metrics
+from tools.sec_filings import get_risk_factors
+from tools.web_search import search_financial_news
+
+NAMES = {"NVDA": "NVIDIA", "AMD": "AMD", "INTC": "INTEL"}
+
+
+def extract_tickers(text: str) -&gt; list[str]:
+    """'Fetch Intel metrics' → ['INTC']"""
+    up = text.upper()
+    return [tk for tk, name in NAMES.items() if tk in up or name in up]
+
+
+async def analyze_with_llm(instruction: str, context: str) -&gt; str:
+    """For 'thinking' tasks (6 and 7): reason over earlier results."""
+    response = await AsyncOpenAI().chat.completions.create(
+        model="gpt-4o",
+        temperature=0,
+        messages=[
+            {"role": "system", "content": "You are a financial analyst. "
+             "Use ONLY the data given. Quote numbers exactly."},
+            {"role": "user", "content": f"{instruction}\n\nDATA:\n{context}"},
+        ],
+    )
+    return response.choices[0].message.content
+
+
+async def run_task(task: SubTask, results: dict[int, str]) -&gt; tuple[int, str]:
+    task.status = TaskStatus.RUNNING
+    try:
+        if task.dependencies:                                # ① a thinking task
+            context = "\n\n".join(f"[Task {d}] {results[d]}"
+                                  for d in task.dependencies)
+            output = await analyze_with_llm(task.description, context)
+        elif "financial_api" in task.data_sources:           # ② numbers
+            ticker = extract_tickers(task.description)[0]
+            metrics = await get_financial_metrics(ticker)
+            output = metrics.model_dump_json()
+        elif "sec_filing" in task.data_sources:              # ③ filings
+            tickers = extract_tickers(task.description)
+            output = "\n\n".join([await get_risk_factors(t) for t in tickers])
+        else:                                                # ④ news
+            output = await search_financial_news(task.description)
+        task.status = TaskStatus.COMPLETED
+    except Exception as e:                                   # ⑤ never crash
+        task.status = TaskStatus.FAILED
+        output = f"ERROR: {e}"
+    return task.id, output</code></pre></div>
+  <ol class="walk">
+    <li><strong>Has dependencies → a "thinking" task</strong> (tasks 6 and 7). It collects the earlier results it depends on, labels each one <code>[Task 1] …</code>, and asks the LLM to reason over them. No tool call — just analysis.</li>
+    <li><strong><code>financial_api</code> → numbers.</strong> <code>extract_tickers</code> finds the ticker in the description, the tool fetches a <code>CompanyMetrics</code>, and <code>.model_dump_json()</code> turns the form into JSON text — because the notebook stores text.</li>
+    <li><strong><code>sec_filing</code> → filings</strong> for every company named in the description.</li>
+    <li><strong>Anything else → news search</strong>, using the task description as the search query.</li>
+    <li><strong><code>try / except</code> — never crash.</strong> Any error sets the sticker to FAILED and returns <code>"ERROR: …"</code> as the result. Why so careful? If one job inside <code>gather</code> raises an error, <code>gather</code> raises it immediately and you lose the whole round's results. Catching the error <em>inside</em> each job means one broken courier never ruins the round.</li>
+  </ol>
+  <div class="box analogy"><span class="tag">🧠 Two bookmarks, one page</span>
+    <p><code>run_task</code> changes <code>task.status</code>, and somehow <code>execute_plan</code> sees the change. How? <code>plan.sub_tasks[1]</code>, <code>tasks_by_id[2]</code> and the <code>task</code> inside <code>run_task</code> are <strong>the same object</strong> — three bookmarks pointing at one page. Python variables are name tags, not photocopies. Change the page through one bookmark, and every bookmark shows it.</p>
+  </div>
+  <div class="box warn"><span class="tag">⚠️ Simplifications to upgrade later</span>
+    <ul>
+      <li><code>extract_tickers</code> is a simple name lookup: "Advanced Micro Devices" would be missed. Sturdier: add a <code>ticker</code> field to <code>SubTask</code> and let the planner fill it in.</li>
+      <li>Task 4 calls the SEC once per company, one after another. Those calls could be gathered too.</li>
+    </ul>
+  </div>
+
+  <div class="sim" id="sim-board"><span class="tag">🧪 Simulation · the task board</span>
+    <h4>Run the plan round by round — then break something</h4>
+    <p style="margin-top:0">Each click does exactly one thing the code does. Gold rows = this round's <code>ready</code> list. Try the healthy run first, then make the AMD data API fail and watch the whole safety chain work: <em>FAILED → stuck tasks → <code>break</code> → validator gaps → re-plan</em>.</p>
+    <div class="selrow"><label for="bd-scn"><b>AMD's data API:</b></label>
+      <select id="bd-scn">
+        <option value="ok">✅ healthy</option>
+        <option value="once">💥 fails on the first attempt only</option>
+        <option value="down">💥 down all day</option>
+      </select>
+      <button class="btn ghost" type="button" id="bd-back">◀ Back</button>
+      <button class="btn" type="button" id="bd-next">Next ▶</button>
+      <span class="counter" id="bd-count" style="font-size:13px; font-weight:700; color:var(--muted)"></span>
+    </div>
+    <div class="tw" style="margin:8px 0"><table class="board" id="bd-table" aria-live="polite"></table></div>
+    <div class="state" id="bd-state"></div>
+    <div class="codeline" id="bd-code"></div>
+    <div class="out" id="bd-msg" aria-live="polite"></div>
+  </div>
+</section>
+
+<hr class="sec">
+<section id="s5e">
+  <h3 id="s5-validator"><span class="num">5.9</span>Step 4 · The validator — a checklist, not an opinion</h3>
+  <div class="box analogy"><span class="tag">🧠 Analogy — the compliance checker</span>
+    <p>Before any memo leaves Future with Shivank Bank, a compliance officer walks the research board with a <strong>checklist and a calculator</strong>. She never says "looks fine to me". She asks yes/no questions: <em>Is every card done? Is every company covered? Is this margin even possible?</em> Same questions, same answers, every single time. That's our validator — and it contains <strong>no LLM at all</strong>.</p>
+  </div>
+  <div class="code"><div class="head">Python · validator.py · validate_research</div><pre><code class="language-python"># validator.py — plain Python checks. No LLM anywhere in this file.
+from common import CompanyMetrics, TaskStatus, ValidationResult
+
+
+def validate_research(plan, results, required_tickers) -&gt; ValidationResult:
+    errors, warnings, gaps = [], [], []                  # ① three empty buckets
+
+    # Check 1: did every task finish?
+    for t in plan.sub_tasks:
+        if t.status != TaskStatus.COMPLETED:
+            gaps.append(f"Task {t.id} {t.status.value}: {t.description}")
+
+    # Check 2: does every company appear somewhere in the findings?
+    for ticker in required_tickers:
+        if not any(ticker.upper() in r.upper() for r in results.values()):
+            gaps.append(f"Missing data for {ticker}")
+
+    # Check 3: are the numbers possible? are they plausible?
+    for text in results.values():
+        try:
+            m = CompanyMetrics.model_validate_json(text)     # ② is it a metrics form?
+        except ValueError:
+            continue                                     #    news, filings… skip
+        if m.gross_margin is not None and not -50 &lt;= m.gross_margin &lt;= 100:
+            errors.append(f"{m.ticker}: gross margin {m.gross_margin}% is impossible")
+        if (m.gross_margin is not None and m.operating_margin is not None
+                and m.operating_margin &gt; m.gross_margin):
+            errors.append(f"{m.ticker}: operating margin is above gross margin")
+        if m.pe_ratio is not None and not 0 &lt; m.pe_ratio &lt;= 150:
+            warnings.append(f"{m.ticker}: P/E of {m.pe_ratio} is extreme"
+                            " - check earnings")
+        if m.revenue_growth is not None and abs(m.revenue_growth) &gt; 300:
+            warnings.append(f"{m.ticker}: revenue growth {m.revenue_growth}% - unit error?")
+
+    return ValidationResult(                             # ③ the verdict
+        is_valid=not errors and not gaps,
+        errors=errors, warnings=warnings, gaps=gaps,
+    )</code></pre></div>
+
+  <h4>Three buckets, three consequences</h4>
+  <div class="gold3">
+    <div class="bad"><b>Errors</b><span class="tag3">blocks the memo</span>Numbers that are <em>impossible</em>: a 727% margin, operating profit bigger than gross profit. Something upstream is broken; the data can't be trusted.</div>
+    <div><b>Warnings</b><span class="tag3" style="background:var(--gold-soft); color:var(--gold)">passed on</span>Numbers that are <em>possible but unusual</em>: AMD's P/E of 195. The run continues, and the memo must mention it.</div>
+    <div class="bad"><b>Gaps</b><span class="tag3">triggers a re-plan</span>Things that are <em>missing</em>: a failed task, a stuck task, a company nobody fetched. Go back and get them.</div>
+  </div>
+
+  <h4>The code, line by line</h4>
+  <ol class="walk">
+    <li><strong>Three empty lists</strong> — one per bucket. Each check drops messages into them.</li>
+    <li><strong>Check 1: <code>!= COMPLETED</code>, not <code>== FAILED</code>.</strong> When AMD's task fails, tasks 6 and 7 never run — they stay PENDING forever. A check for "failed" would miss them. "Anything not completed is a gap" catches both. <code>t.status.value</code> turns the sticker into its text, <code>"failed"</code> or <code>"pending"</code>.</li>
+    <li><strong>Check 2: is every ticker mentioned somewhere?</strong> For each ticker, look through all results (uppercased so case doesn't matter). <code>any(...)</code> stops at the first hit.</li>
+    <li><strong>Check 3, the trick:</strong> <code>CompanyMetrics.model_validate_json(text)</code> means "try to read this text as a metrics form". News and filing text isn't that JSON, so it raises an error (a kind of <code>ValueError</code>) and <code>continue</code> skips to the next result. The form itself tells us which results are metrics!</li>
+    <li><strong>The verdict:</strong> <code>is_valid = not errors and not gaps</code>. Notice: <em>warnings never block</em>. They're information for the reader, not a reason to redo the work.</li>
+  </ol>
+
+  <div class="tw"><table class="tbl">
+    <tr><th>Rule</th><th>Why it's there</th><th>Bucket</th><th>Example it catches</th></tr>
+    <tr><td>Gross margin outside −50%…100%</td><td>Above 100% would mean costs were negative. Usually a decimal slipped.</td><td>error</td><td>NVDA 727.0 instead of 72.7</td></tr>
+    <tr><td>Operating margin &gt; gross margin</td><td>Operating profit = gross profit <em>minus more costs</em>. It can't be bigger.</td><td>error</td><td>Intel: gross 41.5%, operating 48.0%</td></tr>
+    <tr><td>P/E ≤ 0 or above 150</td><td>Possible when earnings collapse — but the reader must know.</td><td>warning</td><td>AMD 195.3 after a weak year</td></tr>
+    <tr><td>Revenue growth beyond ±300%</td><td>Possible, but far more often a units bug (thousands vs millions).</td><td>warning</td><td>1259% instead of 125.9%</td></tr>
+    <tr><td><em>Negative operating margin</em></td><td><strong>Not flagged on purpose.</strong> Loss-making companies are real.</td><td>—</td><td>A chipmaker in a bad year</td></tr>
+  </table></div>
+
+  <div class="box warn"><span class="tag">⚠️ Why check 2 alone is not enough</span>
+    <p>We tested this. When AMD's metrics fetch failed, check 2 <strong>still passed</strong> for AMD: the news result says "AMD MI300 ramps", and even the error message contains the URL <code>…?ticker=AMD</code>. A simple text search can be fooled. Check 1 caught the problem instead. That's why good validators <strong>layer several simple checks</strong> — each one covers another's blind spot.</p>
+  </div>
+  <div class="box tip"><span class="tag">💡 Why not just ask the LLM "does this look right?"</span>
+    <p>Remember the three-attempt story from 5.2: the LLM checker approved invented numbers and rejected correct ones. The Python checker runs in about a millisecond, costs nothing, and gives the same answer every time. <strong>Use code for facts; use the LLM for words.</strong></p>
+  </div>
+
+  <div class="sim" id="sim-val"><span class="tag">🧪 Simulation · be the data, fool the validator</span>
+    <h4>Change the numbers — the same rules as the Python code run instantly</h4>
+    <p style="margin-top:0">Start with a preset, then edit any box. Leave a box empty for "unknown" (<code>None</code>). Untick "Fetched?" to make that company's task fail.</p>
+    <div class="row" id="vl-presets">
+      <button class="btn ghost on" type="button" data-p="sample">Sample run</button>
+      <button class="btn ghost" type="button" data-p="units">Units bug</button>
+      <button class="btn ghost" type="button" data-p="margins">Impossible margins</button>
+      <button class="btn ghost" type="button" data-p="fail">AMD fetch failed</button>
+      <button class="btn ghost" type="button" data-p="loss">Loss-maker</button>
+    </div>
+    <div class="tw"><table class="vtab" id="vl-table">
+      <tr><th><span class='full'>Company</span><span class='short'>Co.</span></th><th><span class='full'>Fetched?</span><span class='short'>OK?</span></th><th>Growth %</th><th><span class='full'>Gross margin %</span><span class='short'>Gross %</span></th><th><span class='full'>Operating margin %</span><span class='short'>Oper. %</span></th><th>P/E</th></tr>
+    </table></div>
+    <div class="row"><label style="font-size:14.5px"><input type="checkbox" id="vl-news" checked> Other results mention all three names (the news text — and, as we saw, even error messages can)</label></div>
+    <div class="out" id="vl-out" aria-live="polite"></div>
+  </div>
+
+  <h3 id="s5-synth"><span class="num">5.10</span>Step 5 · The synthesizer and the orchestrator</h3>
+  <div class="box analogy"><span class="tag">🧠 Analogy — the memo writer's folder</span>
+    <p>The memo writer receives a folder: every finding, labelled by task, plus the compliance officer's <strong>sticky notes</strong> ("AMD's P/E is extreme — mention it"). She must fill in the bank's memo template, quote numbers exactly, and say how confident she is. A thin folder or lots of sticky notes → lower confidence.</p>
+  </div>
+  <div class="code"><div class="head">Python · synthesizer.py · synthesize_report (simplified sketch)</div><pre><code class="language-python"># synthesizer.py — findings + the checker's notes → the final memo
+from openai import AsyncOpenAI
+from common import ResearchReport, ValidationResult
+
+SYNTH_PROMPT = """You are a senior equity research analyst.
+Write an investment research memo using ONLY the findings provided.
+- Quote numbers exactly as given. Never invent a number.
+- If data is missing, say so plainly.
+- Mention every validation warning where it is relevant.
+- confidence_score (0 to 1) must reflect how complete and clean the data is."""
+
+
+async def synthesize_report(question: str, results: dict[int, str],
+                            validation: ValidationResult) -&gt; ResearchReport:
+    findings = "\n\n".join(f"[Task {tid}]\n{text}"           # ① the research folder
+                           for tid, text in sorted(results.items()))
+    notes = "\n".join(                                        # ② the checker's notes
+        [f"WARNING: {w}" for w in validation.warnings]
+        + [f"GAP: {g}" for g in validation.gaps]
+        + [f"ERROR: {e}" for e in validation.errors]
+    ) or "No issues found."
+    response = await AsyncOpenAI().chat.completions.parse(    # ③ fill the memo form
+        model="gpt-4o",
+        temperature=0,
+        messages=[
+            {"role": "system", "content": SYNTH_PROMPT},
+            {"role": "user", "content": f"QUESTION:\n{question}\n\n"
+             f"FINDINGS:\n{findings}\n\nVALIDATION NOTES:\n{notes}"},
+        ],
+        response_format=ResearchReport,
+    )
+    return response.choices[0].message.parsed</code></pre></div>
+  <ol class="walk">
+    <li><strong>The folder.</strong> <code>sorted(results.items())</code> lists the notebook in task order 1 → 7. Each finding gets a <code>[Task n]</code> label, so the memo can point back to where a number came from.</li>
+    <li><strong>The sticky notes.</strong> Three list comprehensions build lines like <code>WARNING: AMD: P/E of 195.3 is extreme…</code>, and <code>+</code> glues the lists together. If there are no notes at all, the joined text is empty — and an empty string counts as "false" in Python, so <code>or</code> swaps in <code>"No issues found."</code>.</li>
+    <li><strong>Fill the memo form.</strong> The same <code>.parse(..., response_format=...)</code> trick as the planner, this time with <code>ResearchReport</code>. The LLM can't hand back a memo with a missing section.</li>
+  </ol>
+  <div class="box tip"><span class="tag">💡 Hiding problems is the real danger</span>
+    <p>Passing the warnings into the prompt is what makes the memo <em>honest</em>: it says "AMD's P/E of 195 reflects depressed earnings after a weak year" instead of quietly presenting 195 as normal. In our sample run the memo came back with 85% confidence because of that one warning. Many teams go one step further and compute the confidence score in code (e.g. start at 100% and subtract for each warning and gap) — the same "code for facts" lesson again.</p>
+  </div>
+
+  <h4>The orchestrator — the desk manager</h4>
+  <div class="code"><div class="head">Python · deep_search_agent.py · the whole loop</div><pre><code class="language-python"># deep_search_agent.py — the manager that runs the whole loop
+import asyncio
+from pathlib import Path
+from common import ResearchReport
+from planner import create_research_plan
+from researcher import execute_plan
+from validator import validate_research
+from synthesizer import synthesize_report
+
+MAX_REPLAN_ATTEMPTS = 2
+
+
+async def deep_search(question: str, tickers: list[str]) -&gt; ResearchReport:
+    for attempt in range(MAX_REPLAN_ATTEMPTS + 1):              # attempt = 0, 1, 2
+        plan = await create_research_plan(question)             # Phase 1: plan
+        results = await execute_plan(plan)                      # Phase 2: execute
+        validation = validate_research(plan, results, tickers)  # Phase 3: check
+        if validation.is_valid:
+            break                                               # all good → leave
+        elif attempt &lt; MAX_REPLAN_ATTEMPTS:                     # tries left → re-plan
+            problems = validation.gaps + validation.errors
+            question += "\nAddress these gaps:\n" + "\n".join(problems)
+    return await synthesize_report(question, results, validation)   # Phase 4
+
+
+if __name__ == "__main__":
+    QUESTION = (
+        "Analyze NVIDIA's financial performance and competitive position in "
+        "the AI chip market. Compare with AMD and Intel on revenue growth, "
+        "profitability, and key risk factors. Produce a structured "
+        "investment research memo."
+    )
+    report = asyncio.run(deep_search(QUESTION, ["NVDA", "AMD", "INTC"]))
+    Path("output").mkdir(exist_ok=True)
+    Path("output/report.json").write_text(report.model_dump_json(indent=2))
+    print(report.title)
+    print(report.executive_summary)
+    print(f"Confidence: {report.confidence_score:.0%}")</code></pre></div>
+  <ol class="walk">
+    <li><strong><code>range(MAX_REPLAN_ATTEMPTS + 1)</code></strong> is <code>range(3)</code>, so <code>attempt</code> takes the values 0, 1, 2: <strong>one first try plus two re-plans</strong>.</li>
+    <li><strong>Each attempt runs three phases</strong> in order: plan → execute → validate. Each phase's output is the next phase's input — exactly the relay race from 5.5.</li>
+    <li><strong><code>if validation.is_valid: break</code></strong> — happy path. <code>break</code> jumps straight out of the loop to the synthesizer.</li>
+    <li><strong><code>elif attempt &lt; MAX_REPLAN_ATTEMPTS</code></strong> — not valid, but tries are left. We <em>add the problems to the question</em>. Why the question? The planner has no memory between calls — <strong>the question text is its memory</strong>. It's like sending the desk head a sticky note: "Last time: AMD numbers missing, tasks 6 and 7 stuck."</li>
+    <li><strong>Why <code>gaps + errors</code>?</strong> If we sent only the gaps, a run with errors but no gaps would hand the planner an empty "Address these gaps:" list — and it would make the same plan again.</li>
+    <li><strong>The synthesizer runs after the loop, always.</strong> A small Python fact makes this work: variables created inside a <code>for</code> loop still exist after it ends. So <code>results</code> and <code>validation</code> hold the <em>last</em> attempt's values. Even when all three attempts fail, the PM still gets a memo — one that lists the gaps and carries a lower confidence score.</li>
+    <li><strong>The <code>__main__</code> block</strong> runs only when you start the file directly. <code>asyncio.run(...)</code> starts the async world, and <code>model_dump_json(indent=2)</code> saves the memo as readable JSON in <code>output/</code>.</li>
+  </ol>
+  <div class="box warn"><span class="tag">⚠️ An honest limitation</span>
+    <p>Each new attempt starts from scratch: it re-plans and re-fetches <em>everything</em>, even the tasks that worked. A cheaper upgrade keeps the successful results and re-runs only what failed. Fine for learning; worth fixing before you run this on 500 companies a day.</p>
+  </div>
+
+  <h4>The three possible endings</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Situation</th><th>Attempts</th><th>What the PM receives</th></tr>
+    <tr><td>Everything works</td><td>1</td><td>Memo at ~85% confidence; the AMD P/E warning is mentioned</td></tr>
+    <tr><td>AMD's API hiccups once</td><td>2 — the second plan "knows" about the gap</td><td>The same full memo, about 30 seconds later</td></tr>
+    <tr><td>AMD's API is down all day</td><td>3 (the maximum)</td><td>A memo that openly lists the missing AMD data, with a clearly lower confidence score</td></tr>
+  </table></div>
+  <p class="muted" style="font-size:14.5px">We ran all three scenarios with mock data APIs and a mock LLM to check the loop behaves exactly like this.</p>
+
+  <h4>Variable cheat-sheet — the whole run on one card</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Variable</th><th>Type</th><th>Made by</th><th>Used by</th><th>Example</th></tr>
+    <tr><td><code>question</code></td><td><code>str</code></td><td>you (grows on each re-plan)</td><td>planner, synthesizer</td><td>"Analyze NVIDIA's…"</td></tr>
+    <tr><td><code>tickers</code></td><td><code>list[str]</code></td><td>you</td><td>validator</td><td><code>["NVDA", "AMD", "INTC"]</code></td></tr>
+    <tr><td><code>attempt</code></td><td><code>int</code></td><td>the <code>for</code> loop</td><td>the <code>elif</code></td><td>0, 1 or 2</td></tr>
+    <tr><td><code>plan</code></td><td><code>ResearchPlan</code></td><td>planner</td><td>researcher, validator</td><td>7 sub-tasks</td></tr>
+    <tr><td><code>ready</code></td><td><code>list[SubTask]</code></td><td>researcher, each round</td><td><code>gather</code></td><td>tasks 1–5, then 6, then 7</td></tr>
+    <tr><td><code>results</code></td><td><code>dict[int, str]</code></td><td>researcher</td><td>validator, synthesizer</td><td><code>{1: '{"ticker":"NVDA",…}', …}</code></td></tr>
+    <tr><td><code>validation</code></td><td><code>ValidationResult</code></td><td>validator</td><td>orchestrator, synthesizer</td><td>valid · 1 warning</td></tr>
+    <tr><td><code>report</code></td><td><code>ResearchReport</code></td><td>synthesizer</td><td>you, <code>output/report.json</code></td><td>the memo, 85% confidence</td></tr>
+  </table></div>
+
+  <h4>What comes out — a sample memo (shortened)</h4>
+<div class="brief"><b># NVIDIA vs AMD vs Intel: AI Chip Market Investment Analysis</b>
+
+<b>## Executive Summary</b>
+NVIDIA maintains dominant positioning in the AI accelerator market with
+80%+ data center GPU share. FY2024 revenue reached $60.9B (+125.9% YoY).
+AMD's MI300 series is gaining traction as the primary alternative, while
+Intel focuses on foundry services.
+
+<b>## Key Metrics Comparison</b>
+| Metric         | NVDA    | AMD     | INTC    |
+|----------------|---------|---------|---------|
+| Revenue        | $60.9B  | $22.7B  | $54.2B  |
+| Revenue Growth | +125.9% | -3.9%   | -14.0%  |
+| Gross Margin   | 72.7%   | 46.1%   | 41.5%   |
+| P/E Ratio      | 68.5x   | <span class="hl">195.3x</span>  | 95.2x   |
+
+<b>## Competitive Analysis</b> (excerpt)
+… <span class="hl">AMD's P/E of 195.3x is extreme: it reflects earnings that were
+depressed after a weak year, not an unusually high price.</span> …
+
+… ranked risk factors · conclusion · sources …
+<b>Confidence: 85%</b></div>
+  <p class="muted" style="font-size:14px">Sample output from one run — wording and figures change with live data. The highlighted line exists only because the validator's warning was passed into the synthesizer's prompt.</p>
+</section>
+
+<hr class="sec">
+<section id="s5f">
+  <p class="kicker">Section 5 · Part 3 — Make it yours</p>
+  <h2>Hands-on lab, production lessons and the wider world</h2>
+
+  <h3 id="s5-lab"><span class="num">5.11</span>Lab · the same agent, rebuilt with PydanticAI</h3>
+  <p>You've built every part with the raw OpenAI client, so nothing is magic any more. Now we swap in <strong>PydanticAI</strong> (you met it in Section 3) for the two LLM calls. You get automatic retries when the LLM's answer doesn't fit the form, and you can switch between OpenAI and Anthropic by changing one string. <strong>The tools, the researcher loop and the validator don't change at all.</strong></p>
+
+  <h4>1 · Set up</h4>
+  <div class="code"><div class="head">Terminal · install (Python 3.11+)</div><pre><code class="language-bash">pip install pydantic-ai httpx pydantic python-dotenv tavily-python
+
+# optional: cost tracking across the whole pipeline
+pip install "pydantic-deep[middleware]"</code></pre></div>
+  <div class="code"><div class="head">.env · in the src/ folder (never commit this file)</div><pre><code class="language-bash">OPENAI_API_KEY=sk-...
+FINANCIAL_DATASETS_API_KEY=...
+TAVILY_API_KEY=tvly-...
+SEC_EDGAR_EMAIL=your-email@example.com</code></pre></div>
+  <h4>2 · The project folder</h4>
+<div class="shape">src/
+├── common.py              <span class="m"># the forms (5.5) + model names</span>
+├── tools/
+│   ├── financial_data.py  <span class="m"># get_financial_metrics      (5.7, unchanged)</span>
+│   ├── sec_filings.py     <span class="m"># get_risk_factors           (5.7, unchanged)</span>
+│   └── web_search.py      <span class="m"># search_financial_news      (5.7, unchanged)</span>
+├── planner.py             <span class="m"># <span class="k">PydanticAI Agent</span> → ResearchPlan</span>
+├── researcher.py          <span class="m"># execute_plan + run_task    (5.8, unchanged)</span>
+├── validator.py           <span class="m"># plain Python checks        (5.9, unchanged)</span>
+├── synthesizer.py         <span class="m"># <span class="k">PydanticAI Agent</span> → ResearchReport</span>
+├── deep_search_agent.py   <span class="m"># the loop                   (5.10, unchanged)</span>
+└── output/                <span class="m"># saved memos (JSON)</span></div>
+  <div class="code"><div class="head">Terminal · run it</div><pre><code class="language-bash">cd src
+python deep_search_agent.py</code></pre></div>
+
+  <h4>3 · What changes: only the LLM calls</h4>
+  <div class="code"><div class="head">Python · common.py · lab additions</div><pre><code class="language-python"># common.py — lab version: add these lines at the top
+from dotenv import load_dotenv
+
+load_dotenv()                          # copies the .env values into os.environ
+
+PLANNING_MODEL = "openai:gpt-4o"       # "provider:model" in one string
+SYNTHESIS_MODEL = "openai:gpt-4o"
+# Prefer Claude? Set ANTHROPIC_API_KEY and use "anthropic:&lt;model name&gt;",
+# e.g. "anthropic:claude-sonnet-5-5" — check your provider's current names.</code></pre></div>
+  <div class="code"><div class="head">Python · planner.py · lab version</div><pre><code class="language-python"># planner.py — lab version, with PydanticAI
+from pydantic_ai import Agent
+from common import PLANNING_MODEL, ResearchPlan
+
+PLANNER_SYSTEM_PROMPT = """You are a financial research planner. ...
+(exactly the same text as PLANNER_PROMPT above)"""
+
+planner_agent = Agent(
+    model=PLANNING_MODEL,
+    system_prompt=PLANNER_SYSTEM_PROMPT,
+    output_type=ResearchPlan,             # the form the answer must fit
+    retries=2,                            # wrong shape? sent back, up to 2 times
+    model_settings={"temperature": 0},
+)
+
+
+async def create_research_plan(question: str) -&gt; ResearchPlan:
+    result = await planner_agent.run(question)
+    return result.output                  # already a ResearchPlan object</code></pre></div>
+  <div class="tw"><table class="tbl">
+    <tr><th></th><th>Step-by-step version (5.6)</th><th>Lab version</th></tr>
+    <tr><td>Who makes the call</td><td><code>AsyncOpenAI().chat.completions.parse(...)</code></td><td><code>planner_agent.run(question)</code></td></tr>
+    <tr><td>How you say the shape</td><td><code>response_format=ResearchPlan</code></td><td><code>output_type=ResearchPlan</code></td></tr>
+    <tr><td>Getting the object out</td><td><code>response.choices[0].message.parsed</code></td><td><code>result.output</code></td></tr>
+    <tr><td>Answer doesn't fit the form</td><td>you handle it</td><td>sent back to the LLM with the error, up to <code>retries=2</code> times</td></tr>
+    <tr><td>Switch to Claude</td><td>rewrite with another SDK</td><td>change one string in <code>common.py</code></td></tr>
+  </table></div>
+  <div class="box analogy"><span class="tag">🧠 What <code>retries=2</code> feels like</span>
+    <p>A clerk hands back a loan form with a red circle: "tenure must be a number — please fix". PydanticAI does exactly that: if the LLM's JSON fails the Pydantic check, it sends the error message back and asks for a corrected answer — up to two times — before giving up.</p>
+  </div>
+  <div class="code"><div class="head">Python · synthesizer.py · lab version (the same idea)</div><pre><code class="language-python"># synthesizer.py — lab version: only the LLM call changes
+from pydantic_ai import Agent
+from common import SYNTHESIS_MODEL, ResearchReport, ValidationResult
+
+synth_agent = Agent(
+    model=SYNTHESIS_MODEL,
+    system_prompt=SYNTH_PROMPT,           # same prompt as before
+    output_type=ResearchReport,
+    retries=2,
+    model_settings={"temperature": 0},
+)
+
+
+async def synthesize_report(question: str, results: dict[int, str],
+                            validation: ValidationResult) -&gt; ResearchReport:
+    findings = ...                        # same two lines as before
+    notes = ...
+    result = await synth_agent.run(
+        f"QUESTION:\n{question}\n\nFINDINGS:\n{findings}"
+        f"\n\nVALIDATION NOTES:\n{notes}"
+    )
+    return result.output</code></pre></div>
+
+  <div class="box tip"><span class="tag">💡 Test the wiring for free, before spending a cent</span>
+    <p>PydanticAI ships a fake model, <code>TestModel</code>, that returns dummy-but-valid data in the right shape. Use it to check your imports and plumbing without calling a real LLM. (Your <code>.env</code> still needs an <code>OPENAI_API_KEY</code> line so the agent can be created — but no request is sent and no tokens are used.)</p>
+  </div>
+  <div class="code"><div class="head">Python · try_planner.py · a free dry run</div><pre><code class="language-python"># try_planner.py — test the wiring for free: no real LLM call
+import asyncio
+from pydantic_ai.models.test import TestModel
+from planner import planner_agent, create_research_plan
+
+
+async def main():
+    with planner_agent.override(model=TestModel()):    # a fake, free "LLM"
+        plan = await create_research_plan("Compare NVIDIA with AMD")
+    print(plan)            # dummy text, but a perfectly valid ResearchPlan
+
+
+asyncio.run(main())</code></pre></div>
+
+  <h4>4 · What a run does — the eight steps</h4>
+  <ol class="walk">
+    <li>Takes the research question (default: the NVIDIA vs AMD vs Intel question).</li>
+    <li>Plans: <code>planner_agent</code> returns a <code>ResearchPlan</code>.</li>
+    <li>Executes the sub-tasks in waves — in parallel where the graph allows.</li>
+    <li>Validates the findings with plain Python checks.</li>
+    <li>Re-plans if gaps or errors are found — up to two more tries.</li>
+    <li>Synthesizes a structured memo: <code>synth_agent</code> returns a <code>ResearchReport</code>.</li>
+    <li>Prints a cost summary (only if the optional <code>pydantic-deep[middleware]</code> is installed).</li>
+    <li>Saves the memo to <code>output/</code> — about 30 seconds after you pressed Enter.</li>
+  </ol>
+
+  <div class="box fin"><span class="tag">🛠️ Homework — pick one extension</span>
+    <ul>
+      <li><strong>Dynamic peers:</strong> given only "Analyze NVIDIA", let the planner add AMD, Intel, Broadcom and Qualcomm itself.</li>
+      <li><strong>History:</strong> compare today's margins with the 3-year and 5-year averages.</li>
+      <li><strong>Human-in-the-loop gate:</strong> pause after planning so an analyst approves the plan before any data is fetched.</li>
+      <li><strong>Browser tool:</strong> use Playwright to read investor-relations pages that block API access.</li>
+      <li><strong>JSON for other systems:</strong> feed the <code>ResearchReport</code> into a risk dashboard.</li>
+      <li><strong>MCP:</strong> wrap the three tools as MCP servers (Section 3) so other teams can reuse them.</li>
+      <li><strong>Sub-agents:</strong> replace the hand-written loop with <code>create_deep_agent</code> from <code>pydantic-deep</code>.</li>
+      <li><strong>A Claude skill:</strong> write a <code>SKILL.md</code> that runs <code>python deep_search_agent.py</code> with the analyst's question, so analysts can just type "research NVIDIA vs AMD".</li>
+    </ul>
+  </div>
+
+  <h3 id="s5-prod"><span class="num">5.12</span>From demo to production</h3>
+  <div class="box fin"><span class="tag">💬 The one sentence to remember</span>
+    <p style="font-size:18px; font-weight:650">"The model is not your product. The experience around the model is your product."</p>
+    <p class="muted" style="font-size:14px">— Nicolas Bustamante, founder of the financial research platform Fintool</p>
+  </div>
+  <p>The LLM is one component. Whether analysts actually trust and use the tool depends on everything around it. Six lessons from teams running deep search in production:</p>
+  <div class="lesson">
+    <div><b>1 · Every user gets a sealed room</b>Each research session runs in isolation; users can only reach their own data. In a bank this is non-negotiable — it keeps the information barriers between teams that regulators require.</div>
+    <div><b>2 · Skills, not code</b>Analysts describe a method in a Markdown file ("Earnings surprise: fetch consensus EPS, compare with reported, compute surprise %"). The agent reads it as a plan. New method → new file, no code change.</div>
+    <div><b>3 · Store everything, durably</b>Every intermediate result goes to cloud storage (e.g. Amazon S3) first, then into a database. You can replay and audit any run.</div>
+    <div><b>4 · Survive crashes</b>Runs take 30 seconds to several minutes. A workflow engine such as Temporal saves progress, so a crash resumes where it stopped instead of starting over.</div>
+    <div><b>5 · Test on every change</b>Run a large suite of finance test questions (Fintool runs about 2,000) on every code change, and block the change if scores drop by more than 5%.</div>
+    <div><b>6 · Small model for small jobs</b>Send simple extraction ("what was AMD's revenue?") to a small, cheap model and hard reasoning to a large one. Reported savings: 60–70%, with no measurable loss in quality.</div>
+  </div>
+
+  <h4>Context: the agent's desk gets messy</h4>
+  <p>A multi-company study can pile up 50,000–100,000+ tokens of filings, transcripts and news. Four ways teams keep the desk clear:</p>
+  <div class="gloss">
+    <div><b>Summarise as you go</b>Squeeze 20,000 tokens of 10-K into 500 tokens of key facts with a cheap model before the next phase. <em>Like writing a one-page summary of a thick report.</em></div>
+    <div><b>File it away</b>Write results to files and read back only what's needed. <em>A filing cabinet instead of a cluttered desk.</em></div>
+    <div><b>Clear the desk</b>Keep only the N most recent tool results (one open-source agent keeps 5). <em>Old papers go in the drawer.</em></div>
+    <div><b>Send an intern</b>A sub-agent studies one 10-K in its own fresh context and returns only a summary. <em>The intern reads 200 pages; you read one.</em></div>
+  </div>
+
+  <h4>What does one research run cost?</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Step</th><th class="num">Tokens</th><th class="num">Cost (GPT-4o-class rates)</th></tr>
+    <tr><td>Planning</td><td class="num">~2,000</td><td class="num">~$0.01</td></tr>
+    <tr><td>Tool execution (5 calls)</td><td class="num">~15,000</td><td class="num">~$0.08</td></tr>
+    <tr><td>Validation</td><td class="num">~3,000</td><td class="num">~$0.02</td></tr>
+    <tr><td>Synthesis</td><td class="num">~8,000</td><td class="num">~$0.04</td></tr>
+    <tr><td><b>Total per research run</b></td><td class="num"><b>~28,000</b></td><td class="num"><b>~$0.15</b></td></tr>
+  </table></div>
+  <p class="muted" style="font-size:14px">Estimates assuming efficient prompts and model routing; prices change, so check your provider's current price list. Our validator itself uses no LLM — the validation line covers lighter LLM checks of report quality. Unoptimised setups often cost 3–5× more.</p>
+  <div class="sim" id="sim-cost"><span class="tag">🧪 Simulation · the monthly bill</span>
+    <div class="slider"><label for="cs-n">Research runs per day</label><input id="cs-n" type="range" min="10" max="1000" step="10" value="100"><b id="cs-nv">100</b></div>
+    <div class="out" id="cs-out" aria-live="polite"></div>
+  </div>
+  <div class="box tip"><span class="tag">💡 Five ways to cut the bill</span>
+    <ul>
+      <li><strong>Model tiering</strong> — cheap models for simple steps.</li>
+      <li><strong>Caching</strong> — a company's filed numbers for a quarter never change, so cache them forever.</li>
+      <li><strong>Shorter prompts</strong> — the planner prompt should be tight, not chatty.</li>
+      <li><strong>Share common context</strong> — explain the industry once, not once per company.</li>
+      <li><strong>Token budgets</strong> — cap each sub-task; summarise a 10,000-token filing to 500 tokens.</li>
+    </ul>
+  </div>
+
+  <h4>How do you know the memo is right?</h4>
+  <div class="tw"><table class="tbl">
+    <tr><th>Dimension</th><th>Question it asks</th><th>How to test it</th></tr>
+    <tr><td>Factual accuracy</td><td>Are the numbers correct?</td><td>Compare with known values from a database or benchmark</td></tr>
+    <tr><td>Completeness</td><td>Is every company, metric and section there?</td><td>A checklist — in code</td></tr>
+    <tr><td>Structure</td><td>Is it organised and coherent?</td><td>A separate LLM as judge</td></tr>
+    <tr><td>Citations</td><td>Can every claim be traced to a source?</td><td>Check links and attributions</td></tr>
+    <tr><td>Consistency</td><td>Does section 2 contradict section 4?</td><td>Cross-check numbers quoted in different places</td></tr>
+  </table></div>
+  <div class="box warn"><span class="tag">⚠️ Pretty is not the same as right</span>
+    <p>FinDeepResearch, a benchmark of 64 companies across 8 markets and 4 languages (15,808 grading items), found that even the best agents struggle to be <strong>well-structured and accurate at the same time</strong>. Beautifully formatted reports tended to contain invented numbers; careful ones tended to be messy. Never judge a memo by its formatting.</p>
+  </div>
+  <div class="box tip"><span class="tag">💡 Your first evaluation, this week</span>
+    <p>Write a <strong>golden set</strong> of 20–30 research questions whose answers a human analyst has checked. Run the agent on them after every prompt or model change. Check the numbers automatically first; use an LLM judge only for the writing quality. If scores drop, don't ship.</p>
+  </div>
+
+  <h3 id="s5-oss"><span class="num">5.13</span>Who else builds this</h3>
+  <p>Three open-source projects faced the same problems you just solved — and chose differently:</p>
+  <div class="gold3">
+    <div><b>Dexter</b><span class="tag3" style="background:var(--surface-2)">specialist agents</span>Four agents (plan, act, validate, answer). One <code>financial_search</code> tool routes internally to the right source, so the agent's tool list stays short. Logs every step to a JSONL "scratchpad" for audit, keeps only the 5 latest tool results when context fills up, and works with many LLM providers. Price: more tokens.</div>
+    <div><b>AI Alliance Deep Research Agent</b><span class="tag3" style="background:var(--surface-2)">orchestrator + MCP</span>The project behind the three-attempt story in 5.2: naive → over-engineered → right-sized. Plans a task graph up front, runs tools through MCP, checks each step with code and re-plans only on failure — the same design you just built.</div>
+    <div><b>ai-hedge-fund</b><span class="tag3" style="background:var(--surface-2)">many viewpoints</span>Around twenty analyst agents, each with a famous investing style, study the same stock; a portfolio-manager agent combines their views. Lesson: several lenses beat one — at the cost of many more LLM calls per stock.</div>
+  </div>
+  <div class="tw"><table class="tbl">
+    <tr><th>Persona (style inspired by)</th><th>Looks for</th></tr>
+    <tr><td>Damodaran · valuation</td><td>DCF, intrinsic value, growth vs value</td></tr>
+    <tr><td>Graham · value</td><td>Margin of safety, book value, conservative numbers</td></tr>
+    <tr><td>Ackman · activist</td><td>Fixable operations, hidden value, catalysts</td></tr>
+    <tr><td>Wood · innovation</td><td>Disruptive technology, market size, revenue growth</td></tr>
+    <tr><td>Burry · contrarian</td><td>Crowded trades, hidden risks, short ideas</td></tr>
+    <tr><td>Munger · quality</td><td>Moats, management quality, capital allocation</td></tr>
+  </table></div>
+
+  <h4>Commercial platforms, in one line each</h4>
+  <ul>
+    <li><strong>Fintool</strong> — reported 98% accuracy on a 100-question set from FinanceBench (a standard finance Q&amp;A test), against 45% for a leading general-purpose assistant, in the company's own benchmark. Its secret is the boring part: data normalisation, fiscal-period alignment and ~2,000 tests.</li>
+    <li><strong>AlphaSense</strong> — deep research agents over 500 million+ business documents and transcripts, for 7,000+ enterprise customers. Lesson: agents shine brightest on curated, private document collections.</li>
+    <li><strong>Google Finance Deep Search</strong> — deep search for everyday investors' questions, powered by Gemini. Deep search is becoming a mainstream expectation.</li>
+    <li><strong>Claude for Financial Services</strong> — Claude connected directly to data providers such as FactSet, Morningstar, PitchBook, S&amp;P Global and Daloopa, with links back to sources. Reported results: AIG made underwriting reviews 5× faster while raising data accuracy from 75% to over 90%; Norway's sovereign wealth fund (NBIM) estimated ~20% productivity gains, about 213,000 hours saved.</li>
+  </ul>
+  <p class="muted" style="font-size:14px">Figures are as reported by the companies themselves.</p>
+</section>
+
+<hr class="sec">
+
+<section id="wrap">
+  <p class="kicker">Wrap-up</p>
+  <h2>What to remember</h2>
+  <ol class="walk">
+    <li><strong>Deep search = plan → execute → validate → (re-plan) → synthesize.</strong> RAG answers a question; deep search does the research.</li>
+    <li><strong>The plan is a dependency graph.</strong> No dependencies → run together with <code>asyncio.gather</code>; dependencies → wait your turn.</li>
+    <li><strong>Pydantic models are the forms</strong> passed between parts. Unknown is <code>None</code>, never 0.</li>
+    <li><strong>Tools translate.</strong> Messy API data becomes clean, labelled numbers in millions and percentages before any LLM sees it.</li>
+    <li><strong>Failures become notes, not crashes:</strong> FAILED → gap → re-plan, at most twice, and the memo admits what's missing.</li>
+    <li><strong>Code checks facts, the LLM writes words.</strong> Errors block, warnings travel into the memo, gaps trigger a re-plan.</li>
+    <li><strong>80% of the work is data:</strong> units, fiscal calendars, footnotes. The model is not the product.</li>
+  </ol>
+  <div class="box skip"><span class="tag">Disclaimer</span><p>Everything on this page is for learning. Nothing here is investment advice or a recommendation to buy or sell any security.</p></div>
+
+  <h3><span class="num">Quiz</span>Check yourself</h3>
+  <div id="quiz"></div>
+</section>
+</main>
+</div>
+<footer>
+  <strong>Future with Shivank</strong> · AI Agents in Finance · Section 5<br>
+  For learning only — nothing here is investment advice. Sample outputs vary run to run; prices, ratios and news are live.
+</footer>
+
+<script>
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(e){var n=/(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i,t=0,r={},a={manual:e.Prism&&e.Prism.manual,disableWorkerMessageHandler:e.Prism&&e.Prism.disableWorkerMessageHandler,util:{encode:function e(n){return n instanceof i?new i(n.type,e(n.content),n.alias):Array.isArray(n)?n.map(e):n.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).slice(8,-1)},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function e(n,t){var r,i;switch(t=t||{},a.util.type(n)){case"Object":if(i=a.util.objId(n),t[i])return t[i];for(var l in r={},t[i]=r,n)n.hasOwnProperty(l)&&(r[l]=e(n[l],t));return r;case"Array":return i=a.util.objId(n),t[i]?t[i]:(r=[],t[i]=r,n.forEach((function(n,a){r[a]=e(n,t)})),r);default:return n}},getLanguage:function(e){for(;e;){var t=n.exec(e.className);if(t)return t[1].toLowerCase();e=e.parentElement}return"none"},setLanguage:function(e,t){e.className=e.className.replace(RegExp(n,"gi"),""),e.classList.add("language-"+t)},currentScript:function(){if("undefined"==typeof document)return null;if("currentScript"in document)return document.currentScript;try{throw new Error}catch(r){var e=(/at [^(\r\n]*\((.*):[^:]+:[^:]+\)$/i.exec(r.stack)||[])[1];if(e){var n=document.getElementsByTagName("script");for(var t in n)if(n[t].src==e)return n[t]}return null}},isActive:function(e,n,t){for(var r="no-"+n;e;){var a=e.classList;if(a.contains(n))return!0;if(a.contains(r))return!1;e=e.parentElement}return!!t}},languages:{plain:r,plaintext:r,text:r,txt:r,extend:function(e,n){var t=a.util.clone(a.languages[e]);for(var r in n)t[r]=n[r];return t},insertBefore:function(e,n,t,r){var i=(r=r||a.languages)[e],l={};for(var o in i)if(i.hasOwnProperty(o)){if(o==n)for(var s in t)t.hasOwnProperty(s)&&(l[s]=t[s]);t.hasOwnProperty(o)||(l[o]=i[o])}var u=r[e];return r[e]=l,a.languages.DFS(a.languages,(function(n,t){t===u&&n!=e&&(this[n]=l)})),l},DFS:function e(n,t,r,i){i=i||{};var l=a.util.objId;for(var o in n)if(n.hasOwnProperty(o)){t.call(n,o,n[o],r||o);var s=n[o],u=a.util.type(s);"Object"!==u||i[l(s)]?"Array"!==u||i[l(s)]||(i[l(s)]=!0,e(s,t,o,i)):(i[l(s)]=!0,e(s,t,null,i))}}},plugins:{},highlightAll:function(e,n){a.highlightAllUnder(document,e,n)},highlightAllUnder:function(e,n,t){var r={callback:t,container:e,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};a.hooks.run("before-highlightall",r),r.elements=Array.prototype.slice.apply(r.container.querySelectorAll(r.selector)),a.hooks.run("before-all-elements-highlight",r);for(var i,l=0;i=r.elements[l++];)a.highlightElement(i,!0===n,r.callback)},highlightElement:function(n,t,r){var i=a.util.getLanguage(n),l=a.languages[i];a.util.setLanguage(n,i);var o=n.parentElement;o&&"pre"===o.nodeName.toLowerCase()&&a.util.setLanguage(o,i);var s={element:n,language:i,grammar:l,code:n.textContent};function u(e){s.highlightedCode=e,a.hooks.run("before-insert",s),s.element.innerHTML=s.highlightedCode,a.hooks.run("after-highlight",s),a.hooks.run("complete",s),r&&r.call(s.element)}if(a.hooks.run("before-sanity-check",s),(o=s.element.parentElement)&&"pre"===o.nodeName.toLowerCase()&&!o.hasAttribute("tabindex")&&o.setAttribute("tabindex","0"),!s.code)return a.hooks.run("complete",s),void(r&&r.call(s.element));if(a.hooks.run("before-highlight",s),s.grammar)if(t&&e.Worker){var c=new Worker(a.filename);c.onmessage=function(e){u(e.data)},c.postMessage(JSON.stringify({language:s.language,code:s.code,immediateClose:!0}))}else u(a.highlight(s.code,s.grammar,s.language));else u(a.util.encode(s.code))},highlight:function(e,n,t){var r={code:e,grammar:n,language:t};if(a.hooks.run("before-tokenize",r),!r.grammar)throw new Error('The language "'+r.language+'" has no grammar.');return r.tokens=a.tokenize(r.code,r.grammar),a.hooks.run("after-tokenize",r),i.stringify(a.util.encode(r.tokens),r.language)},tokenize:function(e,n){var t=n.rest;if(t){for(var r in t)n[r]=t[r];delete n.rest}var a=new s;return u(a,a.head,e),o(e,a,n,a.head,0),function(e){for(var n=[],t=e.head.next;t!==e.tail;)n.push(t.value),t=t.next;return n}(a)},hooks:{all:{},add:function(e,n){var t=a.hooks.all;t[e]=t[e]||[],t[e].push(n)},run:function(e,n){var t=a.hooks.all[e];if(t&&t.length)for(var r,i=0;r=t[i++];)r(n)}},Token:i};function i(e,n,t,r){this.type=e,this.content=n,this.alias=t,this.length=0|(r||"").length}function l(e,n,t,r){e.lastIndex=n;var a=e.exec(t);if(a&&r&&a[1]){var i=a[1].length;a.index+=i,a[0]=a[0].slice(i)}return a}function o(e,n,t,r,s,g){for(var f in t)if(t.hasOwnProperty(f)&&t[f]){var h=t[f];h=Array.isArray(h)?h:[h];for(var d=0;d<h.length;++d){if(g&&g.cause==f+","+d)return;var v=h[d],p=v.inside,m=!!v.lookbehind,y=!!v.greedy,k=v.alias;if(y&&!v.pattern.global){var x=v.pattern.toString().match(/[imsuy]*$/)[0];v.pattern=RegExp(v.pattern.source,x+"g")}for(var b=v.pattern||v,w=r.next,A=s;w!==n.tail&&!(g&&A>=g.reach);A+=w.value.length,w=w.next){var E=w.value;if(n.length>e.length)return;if(!(E instanceof i)){var P,L=1;if(y){if(!(P=l(b,A,e,m))||P.index>=e.length)break;var S=P.index,O=P.index+P[0].length,j=A;for(j+=w.value.length;S>=j;)j+=(w=w.next).value.length;if(A=j-=w.value.length,w.value instanceof i)continue;for(var C=w;C!==n.tail&&(j<O||"string"==typeof C.value);C=C.next)L++,j+=C.value.length;L--,E=e.slice(A,j),P.index-=A}else if(!(P=l(b,0,E,m)))continue;S=P.index;var N=P[0],_=E.slice(0,S),M=E.slice(S+N.length),W=A+E.length;g&&W>g.reach&&(g.reach=W);var z=w.prev;if(_&&(z=u(n,z,_),A+=_.length),c(n,z,L),w=u(n,z,new i(f,p?a.tokenize(N,p):N,k,N)),M&&u(n,w,M),L>1){var I={cause:f+","+d,reach:W};o(e,n,t,w.prev,A,I),g&&I.reach>g.reach&&(g.reach=I.reach)}}}}}}function s(){var e={value:null,prev:null,next:null},n={value:null,prev:e,next:null};e.next=n,this.head=e,this.tail=n,this.length=0}function u(e,n,t){var r=n.next,a={value:t,prev:n,next:r};return n.next=a,r.prev=a,e.length++,a}function c(e,n,t){for(var r=n.next,a=0;a<t&&r!==e.tail;a++)r=r.next;n.next=r,r.prev=n,e.length-=a}if(e.Prism=a,i.stringify=function e(n,t){if("string"==typeof n)return n;if(Array.isArray(n)){var r="";return n.forEach((function(n){r+=e(n,t)})),r}var i={type:n.type,content:e(n.content,t),tag:"span",classes:["token",n.type],attributes:{},language:t},l=n.alias;l&&(Array.isArray(l)?Array.prototype.push.apply(i.classes,l):i.classes.push(l)),a.hooks.run("wrap",i);var o="";for(var s in i.attributes)o+=" "+s+'="'+(i.attributes[s]||"").replace(/"/g,"&quot;")+'"';return"<"+i.tag+' class="'+i.classes.join(" ")+'"'+o+">"+i.content+"</"+i.tag+">"},!e.document)return e.addEventListener?(a.disableWorkerMessageHandler||e.addEventListener("message",(function(n){var t=JSON.parse(n.data),r=t.language,i=t.code,l=t.immediateClose;e.postMessage(a.highlight(i,a.languages[r],r)),l&&e.close()}),!1),a):a;var g=a.util.currentScript();function f(){a.manual||a.highlightAll()}if(g&&(a.filename=g.src,g.hasAttribute("data-manual")&&(a.manual=!0)),!a.manual){var h=document.readyState;"loading"===h||"interactive"===h&&g&&g.defer?document.addEventListener("DOMContentLoaded",f):window.requestAnimationFrame?window.requestAnimationFrame(f):window.setTimeout(f,16)}return a}(_self);"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+Prism.languages.python={comment:{pattern:/(^|[^\\])#.*/,lookbehind:!0,greedy:!0},"string-interpolation":{pattern:/(?:f|fr|rf)(?:("""|''')[\s\S]*?\1|("|')(?:\\.|(?!\2)[^\\\r\n])*\2)/i,greedy:!0,inside:{interpolation:{pattern:/((?:^|[^{])(?:\{\{)*)\{(?!\{)(?:[^{}]|\{(?!\{)(?:[^{}]|\{(?!\{)(?:[^{}])+\})+\})+\}/,lookbehind:!0,inside:{"format-spec":{pattern:/(:)[^:(){}]+(?=\}$)/,lookbehind:!0},"conversion-option":{pattern:/![sra](?=[:}]$)/,alias:"punctuation"},rest:null}},string:/[\s\S]+/}},"triple-quoted-string":{pattern:/(?:[rub]|br|rb)?("""|''')[\s\S]*?\1/i,greedy:!0,alias:"string"},string:{pattern:/(?:[rub]|br|rb)?("|')(?:\\.|(?!\1)[^\\\r\n])*\1/i,greedy:!0},function:{pattern:/((?:^|\s)def[ \t]+)[a-zA-Z_]\w*(?=\s*\()/g,lookbehind:!0},"class-name":{pattern:/(\bclass\s+)\w+/i,lookbehind:!0},decorator:{pattern:/(^[\t ]*)@\w+(?:\.\w+)*/m,lookbehind:!0,alias:["annotation","punctuation"],inside:{punctuation:/\./}},keyword:/\b(?:_(?=\s*:)|and|as|assert|async|await|break|case|class|continue|def|del|elif|else|except|exec|finally|for|from|global|if|import|in|is|lambda|match|nonlocal|not|or|pass|print|raise|return|try|while|with|yield)\b/,builtin:/\b(?:__import__|abs|all|any|apply|ascii|basestring|bin|bool|buffer|bytearray|bytes|callable|chr|classmethod|cmp|coerce|compile|complex|delattr|dict|dir|divmod|enumerate|eval|execfile|file|filter|float|format|frozenset|getattr|globals|hasattr|hash|help|hex|id|input|int|intern|isinstance|issubclass|iter|len|list|locals|long|map|max|memoryview|min|next|object|oct|open|ord|pow|property|range|raw_input|reduce|reload|repr|reversed|round|set|setattr|slice|sorted|staticmethod|str|sum|super|tuple|type|unichr|unicode|vars|xrange|zip)\b/,boolean:/\b(?:False|None|True)\b/,number:/\b0(?:b(?:_?[01])+|o(?:_?[0-7])+|x(?:_?[a-f0-9])+)\b|(?:\b\d+(?:_\d+)*(?:\.(?:\d+(?:_\d+)*)?)?|\B\.\d+(?:_\d+)*)(?:e[+-]?\d+(?:_\d+)*)?j?(?!\w)/i,operator:/[-+%=]=?|!=|:=|\*\*?=?|\/\/?=?|<[<=>]?|>[=>]?|[&|^~]/,punctuation:/[{}[\];(),.:]/},Prism.languages.python["string-interpolation"].inside.interpolation.inside.rest=Prism.languages.python,Prism.languages.py=Prism.languages.python;
+Prism.languages.json={property:{pattern:/(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?=\s*:)/,lookbehind:!0,greedy:!0},string:{pattern:/(^|[^\\])"(?:\\.|[^\\"\r\n])*"(?!\s*:)/,lookbehind:!0,greedy:!0},comment:{pattern:/\/\/.*|\/\*[\s\S]*?(?:\*\/|$)/,greedy:!0},number:/-?\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b/i,punctuation:/[{}[\],]/,operator:/:/,boolean:/\b(?:false|true)\b/,null:{pattern:/\bnull\b/,alias:"keyword"}},Prism.languages.webmanifest=Prism.languages.json;
+!function(e){var t="\\b(?:BASH|BASHOPTS|BASH_ALIASES|BASH_ARGC|BASH_ARGV|BASH_CMDS|BASH_COMPLETION_COMPAT_DIR|BASH_LINENO|BASH_REMATCH|BASH_SOURCE|BASH_VERSINFO|BASH_VERSION|COLORTERM|COLUMNS|COMP_WORDBREAKS|DBUS_SESSION_BUS_ADDRESS|DEFAULTS_PATH|DESKTOP_SESSION|DIRSTACK|DISPLAY|EUID|GDMSESSION|GDM_LANG|GNOME_KEYRING_CONTROL|GNOME_KEYRING_PID|GPG_AGENT_INFO|GROUPS|HISTCONTROL|HISTFILE|HISTFILESIZE|HISTSIZE|HOME|HOSTNAME|HOSTTYPE|IFS|INSTANCE|JOB|LANG|LANGUAGE|LC_ADDRESS|LC_ALL|LC_IDENTIFICATION|LC_MEASUREMENT|LC_MONETARY|LC_NAME|LC_NUMERIC|LC_PAPER|LC_TELEPHONE|LC_TIME|LESSCLOSE|LESSOPEN|LINES|LOGNAME|LS_COLORS|MACHTYPE|MAILCHECK|MANDATORY_PATH|NO_AT_BRIDGE|OLDPWD|OPTERR|OPTIND|ORBIT_SOCKETDIR|OSTYPE|PAPERSIZE|PATH|PIPESTATUS|PPID|PS1|PS2|PS3|PS4|PWD|RANDOM|REPLY|SECONDS|SELINUX_INIT|SESSION|SESSIONTYPE|SESSION_MANAGER|SHELL|SHELLOPTS|SHLVL|SSH_AUTH_SOCK|TERM|UID|UPSTART_EVENTS|UPSTART_INSTANCE|UPSTART_JOB|UPSTART_SESSION|USER|WINDOWID|XAUTHORITY|XDG_CONFIG_DIRS|XDG_CURRENT_DESKTOP|XDG_DATA_DIRS|XDG_GREETER_DATA_DIR|XDG_MENU_PREFIX|XDG_RUNTIME_DIR|XDG_SEAT|XDG_SEAT_PATH|XDG_SESSION_DESKTOP|XDG_SESSION_ID|XDG_SESSION_PATH|XDG_SESSION_TYPE|XDG_VTNR|XMODIFIERS)\\b",a={pattern:/(^(["']?)\w+\2)[ \t]+\S.*/,lookbehind:!0,alias:"punctuation",inside:null},n={bash:a,environment:{pattern:RegExp("\\$"+t),alias:"constant"},variable:[{pattern:/\$?\(\([\s\S]+?\)\)/,greedy:!0,inside:{variable:[{pattern:/(^\$\(\([\s\S]+)\)\)/,lookbehind:!0},/^\$\(\(/],number:/\b0x[\dA-Fa-f]+\b|(?:\b\d+(?:\.\d*)?|\B\.\d+)(?:[Ee]-?\d+)?/,operator:/--|\+\+|\*\*=?|<<=?|>>=?|&&|\|\||[=!+\-*/%<>^&|]=?|[?~:]/,punctuation:/\(\(?|\)\)?|,|;/}},{pattern:/\$\((?:\([^)]+\)|[^()])+\)|`[^`]+`/,greedy:!0,inside:{variable:/^\$\(|^`|\)$|`$/}},{pattern:/\$\{[^}]+\}/,greedy:!0,inside:{operator:/:[-=?+]?|[!\/]|##?|%%?|\^\^?|,,?/,punctuation:/[\[\]]/,environment:{pattern:RegExp("(\\{)"+t),lookbehind:!0,alias:"constant"}}},/\$(?:\w+|[#?*!@$])/],entity:/\\(?:[abceEfnrtv\\"]|O?[0-7]{1,3}|U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{1,2})/};e.languages.bash={shebang:{pattern:/^#!\s*\/.*/,alias:"important"},comment:{pattern:/(^|[^"{\\$])#.*/,lookbehind:!0},"function-name":[{pattern:/(\bfunction\s+)[\w-]+(?=(?:\s*\(?:\s*\))?\s*\{)/,lookbehind:!0,alias:"function"},{pattern:/\b[\w-]+(?=\s*\(\s*\)\s*\{)/,alias:"function"}],"for-or-select":{pattern:/(\b(?:for|select)\s+)\w+(?=\s+in\s)/,alias:"variable",lookbehind:!0},"assign-left":{pattern:/(^|[\s;|&]|[<>]\()\w+(?:\.\w+)*(?=\+?=)/,inside:{environment:{pattern:RegExp("(^|[\\s;|&]|[<>]\\()"+t),lookbehind:!0,alias:"constant"}},alias:"variable",lookbehind:!0},parameter:{pattern:/(^|\s)-{1,2}(?:\w+:[+-]?)?\w+(?:\.\w+)*(?=[=\s]|$)/,alias:"variable",lookbehind:!0},string:[{pattern:/((?:^|[^<])<<-?\s*)(\w+)\s[\s\S]*?(?:\r?\n|\r)\2/,lookbehind:!0,greedy:!0,inside:n},{pattern:/((?:^|[^<])<<-?\s*)(["'])(\w+)\2\s[\s\S]*?(?:\r?\n|\r)\3/,lookbehind:!0,greedy:!0,inside:{bash:a}},{pattern:/(^|[^\\](?:\\\\)*)"(?:\\[\s\S]|\$\([^)]+\)|\$(?!\()|`[^`]+`|[^"\\`$])*"/,lookbehind:!0,greedy:!0,inside:n},{pattern:/(^|[^$\\])'[^']*'/,lookbehind:!0,greedy:!0},{pattern:/\$'(?:[^'\\]|\\[\s\S])*'/,greedy:!0,inside:{entity:n.entity}}],environment:{pattern:RegExp("\\$?"+t),alias:"constant"},variable:n.variable,function:{pattern:/(^|[\s;|&]|[<>]\()(?:add|apropos|apt|apt-cache|apt-get|aptitude|aspell|automysqlbackup|awk|basename|bash|bc|bconsole|bg|bzip2|cal|cargo|cat|cfdisk|chgrp|chkconfig|chmod|chown|chroot|cksum|clear|cmp|column|comm|composer|cp|cron|crontab|csplit|curl|cut|date|dc|dd|ddrescue|debootstrap|df|diff|diff3|dig|dir|dircolors|dirname|dirs|dmesg|docker|docker-compose|du|egrep|eject|env|ethtool|expand|expect|expr|fdformat|fdisk|fg|fgrep|file|find|fmt|fold|format|free|fsck|ftp|fuser|gawk|git|gparted|grep|groupadd|groupdel|groupmod|groups|grub-mkconfig|gzip|halt|head|hg|history|host|hostname|htop|iconv|id|ifconfig|ifdown|ifup|import|install|ip|java|jobs|join|kill|killall|less|link|ln|locate|logname|logrotate|look|lpc|lpr|lprint|lprintd|lprintq|lprm|ls|lsof|lynx|make|man|mc|mdadm|mkconfig|mkdir|mke2fs|mkfifo|mkfs|mkisofs|mknod|mkswap|mmv|more|most|mount|mtools|mtr|mutt|mv|nano|nc|netstat|nice|nl|node|nohup|notify-send|npm|nslookup|op|open|parted|passwd|paste|pathchk|ping|pkill|pnpm|podman|podman-compose|popd|pr|printcap|printenv|ps|pushd|pv|quota|quotacheck|quotactl|ram|rar|rcp|reboot|remsync|rename|renice|rev|rm|rmdir|rpm|rsync|scp|screen|sdiff|sed|sendmail|seq|service|sftp|sh|shellcheck|shuf|shutdown|sleep|slocate|sort|split|ssh|stat|strace|su|sudo|sum|suspend|swapon|sync|sysctl|tac|tail|tar|tee|time|timeout|top|touch|tr|traceroute|tsort|tty|umount|uname|unexpand|uniq|units|unrar|unshar|unzip|update-grub|uptime|useradd|userdel|usermod|users|uudecode|uuencode|v|vcpkg|vdir|vi|vim|virsh|vmstat|wait|watch|wc|wget|whereis|which|who|whoami|write|xargs|xdg-open|yarn|yes|zenity|zip|zsh|zypper)(?=$|[)\s;|&])/,lookbehind:!0},keyword:{pattern:/(^|[\s;|&]|[<>]\()(?:case|do|done|elif|else|esac|fi|for|function|if|in|select|then|until|while)(?=$|[)\s;|&])/,lookbehind:!0},builtin:{pattern:/(^|[\s;|&]|[<>]\()(?:\.|:|alias|bind|break|builtin|caller|cd|command|continue|declare|echo|enable|eval|exec|exit|export|getopts|hash|help|let|local|logout|mapfile|printf|pwd|read|readarray|readonly|return|set|shift|shopt|source|test|times|trap|type|typeset|ulimit|umask|unalias|unset)(?=$|[)\s;|&])/,lookbehind:!0,alias:"class-name"},boolean:{pattern:/(^|[\s;|&]|[<>]\()(?:false|true)(?=$|[)\s;|&])/,lookbehind:!0},"file-descriptor":{pattern:/\B&\d\b/,alias:"important"},operator:{pattern:/\d?<>|>\||\+=|=[=~]?|!=?|<<[<-]?|[&\d]?>>|\d[<>]&?|[<>][&=]?|&[>&]?|\|[&|]?/,inside:{"file-descriptor":{pattern:/^\d/,alias:"important"}}},punctuation:/\$?\(\(?|\)\)?|\.\.|[{}[\];\\]/,number:{pattern:/(^|\s)(?:[1-9]\d*|0)(?:[.,]\d+)?\b/,lookbehind:!0}},a.inside=e.languages.bash;for(var s=["comment","function-name","for-or-select","assign-left","parameter","string","environment","function","keyword","builtin","boolean","file-descriptor","operator","punctuation","number"],o=n.variable[1].inside,i=0;i<s.length;i++)o[s[i]]=e.languages.bash[s[i]];e.languages.sh=e.languages.bash,e.languages.shell=e.languages.bash}(Prism);
+</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  $("#themeBtn").addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme") || (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("fws-theme", next); } catch (e) {}
+  });
+
+  /* ---------- mobile contents ---------- */
+  var toc = $("#toc"), tocBtn = $("#tocBtn");
+  tocBtn.addEventListener("click", function () {
+    var open = toc.classList.toggle("open");
+    tocBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  $$("#toc a").forEach(function (a) { a.addEventListener("click", function () { toc.classList.remove("open"); tocBtn.setAttribute("aria-expanded", "false"); }); });
+
+  /* ---------- progress + active toc ---------- */
+  var bar = $("#progress");
+  window.addEventListener("scroll", function () {
+    var h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+  }, { passive: true });
+  var links = $$("#toc a"), targets = links.map(function (a) { return document.getElementById(a.getAttribute("href").slice(1)); });
+  function setActive() {
+    var y = scrollY + Math.min(260, innerHeight * 0.35), idx = 0;
+    targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top + scrollY <= y) idx = i; });
+    links.forEach(function (a, i) { a.classList.toggle("active", i === idx); });
+  }
+  window.addEventListener("scroll", setActive, { passive: true }); setActive();
+
+  /* ---------- copy buttons ---------- */
+  $$(".code").forEach(function (box) {
+    var head = $(".head", box), code = $("pre code", box);
+    if (!head || !code) return;
+    var sp = document.createElement("span"); sp.className = "sp"; head.appendChild(sp);
+    var b = document.createElement("button"); b.className = "copy"; b.type = "button"; b.textContent = "Copy";
+    b.addEventListener("click", function () {
+      var txt = code.textContent;
+      var done = function () { b.textContent = "Copied ✓"; setTimeout(function () { b.textContent = "Copy"; }, 1400); };
+      try {
+        navigator.clipboard.writeText(txt).then(done, function () { fallback(txt); done(); });
+      } catch (e) { fallback(txt); done(); }
+    });
+    head.appendChild(b);
+  });
+  function fallback(t) {
+    try { var ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } catch (e) {}
+  }
+
+  /* ---------- generic stepper ---------- */
+  function stepper(rootId, steps, marker, render) {
+    var el = document.getElementById(rootId); if (!el) return;
+    var i = 0, panel = $(".panel", el), counter = $(".counter", el), dots = $(".dots", el);
+    var prev = $('[data-act="prev"]', el), next = $('[data-act="next"]', el);
+    dots.innerHTML = steps.map(function () { return "<i></i>"; }).join("");
+    var allIds = {};
+    steps.forEach(function (s) { (s.hl || []).forEach(function (id) { allIds[id] = 1; }); });
+    function show() {
+      Object.keys(allIds).forEach(function (id) {
+        var n = document.getElementById(id); if (!n) return;
+        n.classList.remove("hl");
+        if (n.classList.contains("ar")) n.setAttribute("marker-end", "url(#" + marker + ")");
+      });
+      (steps[i].hl || []).forEach(function (id) {
+        var n = document.getElementById(id); if (!n) return;
+        n.classList.add("hl");
+        if (n.classList.contains("ar")) n.setAttribute("marker-end", "url(#" + marker + "h)");
+      });
+      panel.innerHTML = render(steps[i], i);
+      counter.textContent = "Step " + (i + 1) + " of " + steps.length;
+      $$("i", dots).forEach(function (d, k) { d.classList.toggle("on", k <= i); });
+      prev.disabled = i === 0; next.disabled = i === steps.length - 1;
+    }
+    prev.addEventListener("click", function () { if (i > 0) { i--; show(); } });
+    next.addEventListener("click", function () { if (i < steps.length - 1) { i++; show(); } });
+    show();
+  }
+  function pre(t, cls) { return '<pre' + (cls ? ' class="' + cls + '"' : "") + ">" + esc(t) + "</pre>"; }
+
+
+  var NS = "http://www.w3.org/2000/svg";
+  function mk(svg, tag, at, txt) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in at) e.setAttribute(k, at[k]);
+    if (txt != null) e.textContent = txt;
+    svg.appendChild(e); return e;
+  }
+  function clear(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+  /* ---------- 5.3 fiscal calendar translator ---------- */
+  (function () {
+    var svg = $("#fy-svg"), sl = $("#fy-m"), lab = $("#fy-mv"), out = $("#fy-out");
+    if (!svg) return;
+    var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var ROWS = [
+      { n: "Calendar", start: 1, cal: true, note: "Jan–Dec" },
+      { n: "Apple", start: 10, note: "year ends late Sep" },
+      { n: "Microsoft", start: 7, note: "year ends 30 Jun" },
+      { n: "NVIDIA", start: 2, note: "year ends late Jan" },
+      { n: "JPMorgan", start: 1, cal: true, note: "calendar year" }
+    ];
+    var X0 = 112, W = 26, TOP = 44, RH = 31;
+    function lbl(row, idx) {
+      var y = 2023 + Math.floor(idx / 12), m1 = (idx % 12) + 1;
+      var q = Math.floor(((m1 - row.start + 12) % 12) / 3) + 1;
+      var fy = row.cal ? y : (m1 >= row.start ? y + 1 : y);
+      return {
+        q: q, fy: fy,
+        full: row.cal ? "Q" + q + " " + fy : "Q" + q + " FY" + fy,
+        short: row.cal ? "Q" + q + " '" + String(fy).slice(2) : "Q" + q + " FY" + String(fy).slice(2)
+      };
+    }
+    function draw() {
+      var sel = +sl.value;
+      lab.textContent = MON[sel % 12] + " " + (2023 + Math.floor(sel / 12));
+      clear(svg);
+      mk(svg, "text", { x: X0 + 6 * W, y: 14, "text-anchor": "middle", "class": "t12 b" }, "2023");
+      mk(svg, "text", { x: X0 + 18 * W, y: 14, "text-anchor": "middle", "class": "t12 b" }, "2024");
+      mk(svg, "line", { x1: X0 + 12 * W, y1: 4, x2: X0 + 12 * W, y2: TOP + 5 * RH, "class": "dash" });
+      mk(svg, "rect", { x: X0 + sel * W + 2, y: 21, width: W - 4, height: 18, rx: 5, style: "fill:var(--gold-soft); stroke:var(--gold); stroke-width:1.5" });
+      for (var i = 0; i < 24; i++) {
+        mk(svg, "text", { x: X0 + i * W + W / 2, y: 34, "text-anchor": "middle", "class": "t11 sub", style: i === sel ? "fill:var(--gold); font-weight:800; opacity:1" : "" }, MON[i % 12].charAt(0));
+      }
+      ROWS.forEach(function (row, r) {
+        var y = TOP + r * RH;
+        mk(svg, "text", { x: 6, y: y + 17, "class": "t12 b" }, row.n);
+        var i = 0;
+        while (i < 24) {
+          var L = lbl(row, i), j = i;
+          while (j + 1 < 24 && lbl(row, j + 1).full === L.full) j++;
+          var w = (j - i + 1) * W, hit = sel >= i && sel <= j;
+          var g = mk(svg, "g", { "class": "nd" + (hit ? " hl" : (L.q % 2 ? "" : " soft")) });
+          mk(g, "rect", { x: X0 + i * W + 1, y: y, width: w - 2, height: RH - 6, rx: 5 });
+          var t = w >= 62 ? L.short : (w >= 24 ? "Q" + L.q : "");
+          if (t) mk(g, "text", { x: X0 + i * W + w / 2, y: y + 17, "text-anchor": "middle", "class": "t11" + (hit ? " b" : "") }, t);
+          i = j + 1;
+        }
+      });
+      var names = ROWS.map(function (row) { return "<span class='pill'>" + row.n + ": <b>" + lbl(row, sel).full + "</b></span>"; }).join(" ");
+      var qs = {}; ROWS.forEach(function (row) { qs[lbl(row, sel).q] = 1; });
+      var nq = Object.keys(qs).length;
+      out.innerHTML = "<b>" + lab.textContent + "</b> is called: " + names +
+        "<br><span class='muted' style='font-size:14.5px'>Same month, <b>" + nq + "</b> different quarter numbers. NVIDIA's fiscal year runs about a year \"ahead\": its FY" + lbl(ROWS[3], sel).fy + " mostly happened in calendar " + (lbl(ROWS[3], sel).fy - 1) + ".</span>";
+    }
+    sl.addEventListener("input", draw); draw();
+  })();
+
+  /* ---------- 5.4 full-run stepper ---------- */
+  (function () {
+    var steps = [
+      { hl: ["dg-q", "dg-aq"], t: "1 · You ask the question",
+        p: "You call <code>deep_search(question, tickers)</code>. The loop starts its first attempt, so <code>attempt = 0</code>. Nothing has been fetched yet: the notebook <code>results</code> is empty.",
+        code: 'report = asyncio.run(deep_search(QUESTION, ["NVDA", "AMD", "INTC"]))',
+        v: { question: '"Analyze NVIDIA\'s…"', tickers: '["NVDA","AMD","INTC"]', attempt: "0" } },
+      { hl: ["dg-plan", "dg-p1", "dg-p2", "dg-p3", "dg-p4", "dg-p5"], t: "2 · The planner writes 7 cards",
+        p: "One structured-output LLM call returns a <code>ResearchPlan</code>: 7 sub-tasks, each with its tools and dependencies, all wearing the PENDING sticker. About 2,000 tokens and a few seconds.",
+        code: "plan = await create_research_plan(question)",
+        v: { plan: "7 tasks · all PENDING" } },
+      { hl: ["dg-t1", "dg-t2", "dg-t3", "dg-t4", "dg-t5"], t: "3 · Wave 1: five tasks at once",
+        p: "<code>execute_plan</code> asks \"who can start?\" Tasks 1–5 have no dependencies, so <code>ready = [1, 2, 3, 4, 5]</code>. <code>gather</code> fires all five together; the round lasts as long as the slowest one (the news search). Five findings land in the notebook.",
+        code: "completed = await asyncio.gather(*[run_task(t, results) for t in ready])",
+        v: { plan: "1–5 COMPLETED", ready: "[1, 2, 3, 4, 5]", results: "keys 1 2 3 4 5" } },
+      { hl: ["dg-a16", "dg-a26", "dg-a36", "dg-t6"], t: "4 · Wave 2: compare the three companies",
+        p: "Next round: task 6's dependencies 1, 2 and 3 are now COMPLETED, so <code>ready = [6]</code>. It's a thinking task — the LLM gets the three companies' metrics as context and writes the comparison. Task 7 still waits for 6.",
+        code: "output = await analyze_with_llm(task.description, context)",
+        v: { plan: "1–6 COMPLETED", ready: "[6]", results: "keys 1 … 6" } },
+      { hl: ["dg-a67", "dg-a47", "dg-a57", "dg-t7"], t: "5 · Wave 3: draft the memo",
+        p: "Task 7 now has 4, 5 and 6 done. The LLM drafts a memo from the comparison, the risks and the news. Next time round no task is PENDING, so the <code>while</code> loop ends and <code>results</code> is returned.",
+        code: "while any(t.status == TaskStatus.PENDING for t in plan.sub_tasks):   # → False",
+        v: { plan: "all 7 COMPLETED", ready: "[7]", results: "keys 1 … 7" } },
+      { hl: ["dg-a7v", "dg-val"], t: "6 · The validator checks — no LLM",
+        p: "Every task COMPLETED ✓ · all three tickers found ✓ · margins possible ✓ — but AMD's P/E of 195.3 becomes a <b>warning</b>. Warnings don't block, so <code>is_valid = True</code> and <code>break</code> leaves the loop. (With a gap, the dashed arrow would send us back to the planner — try it in the task-board simulation in 5.8.)",
+        code: "validation = validate_research(plan, results, tickers)",
+        v: { validation: "valid · 1 warning" } },
+      { hl: ["dg-avs", "dg-syn"], t: "7 · The memo is written and saved",
+        p: "The synthesizer gets the question, all 7 findings and the warning, and fills a <code>ResearchReport</code>. The memo mentions AMD's extreme P/E and reports 85% confidence. Saved to <code>output/report.json</code>. Total: about 30 seconds, ~28k tokens, ~$0.15.",
+        code: "return await synthesize_report(question, results, validation)",
+        v: { report: "memo · 85% confidence" } }
+    ];
+    var ORDER = ["question", "tickers", "attempt", "plan", "ready", "results", "validation", "report"];
+    var chips = ["Question", "Plan", "Wave 1", "Wave 2", "Wave 3", "Validate", "Memo"];
+    stepper("sim-run", steps, "dg-m", function (s, i) {
+      var st = { question: "—", tickers: "—", attempt: "—", plan: "—", ready: "—", results: "{}", validation: "—", report: "—" };
+      for (var k = 0; k <= i; k++) for (var key in steps[k].v) st[key] = steps[k].v[key];
+      var trail = '<div class="trail">' + chips.map(function (c, n) {
+        return (n ? "<i>→</i>" : "") + '<span class="c ' + (n === i ? "now" : n < i ? "done" : "") + '">' + c + "</span>";
+      }).join("") + "</div>";
+      var grid = '<div class="state">' + ORDER.map(function (key) {
+        return '<div class="' + (key in s.v ? "chg" : "") + '">' + key + "<b>" + esc(st[key]) + "</b></div>";
+      }).join("") + "</div>";
+      return trail + "<h5 style='margin-top:10px'>" + s.t + "</h5><div>" + s.p + "</div><div class='lbl'>The line of code doing this</div>" + pre(s.code) + "<div class='lbl'>Variables right now (gold = changed at this step)</div>" + grid;
+    });
+  })();
+
+  /* ---------- 5.4 sequential vs parallel ---------- */
+  (function () {
+    var svg = $("#par-svg"), sl = $("#par-n"), out = $("#par-out");
+    if (!svg) return;
+    var TICK = ["NVDA", "AMD", "INTC", "AVGO", "QCOM", "ARM", "TSM", "MU"];
+    var SC = 740 / 26, X = 10;
+    function draw() {
+      var n = +sl.value; $("#par-nv").textContent = n;
+      var tasks = TICK.slice(0, n).map(function (t) { return { l: t, d: 2 }; }).concat([{ l: "10-K", d: 4 }, { l: "News", d: 5 }]);
+      var seq = tasks.reduce(function (a, t) { return a + t.d; }, 0), par = 5;
+      var lanesTop = 106, laneH = 17, axisY = lanesTop + tasks.length * laneH + 10, H = axisY + 22;
+      svg.setAttribute("viewBox", "0 0 760 " + H);
+      clear(svg);
+      mk(svg, "text", { x: X, y: 18, "class": "t13 b" }, "One after another — " + seq + " s");
+      var x = X;
+      tasks.forEach(function (t, i) {
+        var w = t.d * SC, g = mk(svg, "g", { "class": "nd" + (i % 2 ? " soft" : "") });
+        mk(g, "rect", { x: x + 1, y: 28, width: w - 2, height: 26, rx: 5 });
+        mk(g, "text", { x: x + w / 2, y: 45, "text-anchor": "middle", "class": "t11 b" }, t.l);
+        x += w;
+      });
+      mk(svg, "text", { x: X, y: 82, "class": "t13 b" }, "All at once with asyncio.gather — " + par + " s");
+      tasks.forEach(function (t, i) {
+        var y = lanesTop + i * laneH, w = t.d * SC, g = mk(svg, "g", { "class": "nd acc" });
+        mk(g, "rect", { x: X + 1, y: y, width: w - 2, height: laneH - 4, rx: 4 });
+        mk(svg, "text", { x: X + par * SC + 10, y: y + 11, "class": "t11 sub" }, t.l + " · " + t.d + " s");
+      });
+      mk(svg, "line", { x1: X + par * SC, y1: lanesTop - 16, x2: X + par * SC, y2: axisY, "class": "dash", style: "stroke:var(--gold); stroke-opacity:1; stroke-width:2" });
+      mk(svg, "text", { x: X + par * SC + 10, y: lanesTop - 6, "class": "t11 b", style: "fill:var(--gold)" }, "← gather returns here, when the slowest task is done");
+      mk(svg, "line", { x1: X, y1: axisY, x2: X + 26 * SC, y2: axisY, "class": "ar" });
+      for (var s = 0; s <= 25; s += 5) mk(svg, "text", { x: X + s * SC, y: axisY + 16, "text-anchor": s ? "middle" : "start", "class": "t11 sub" }, s + " s");
+      out.innerHTML = "One after another: <b>" + seq + " s</b> · All at once: <b>" + par + " s</b> → <b>" + (seq / par).toFixed(1) + "× faster</b>.<br><span class='muted' style='font-size:14.5px'>Each extra company adds 2 s to the first line and <b>0 s</b> to the second: <code>gather</code> only waits for the slowest task (the news search, 5 s).</span>";
+    }
+    sl.addEventListener("input", draw); draw();
+  })();
+
+  /* ---------- 5.8 task board ---------- */
+  (function () {
+    var tbl = $("#bd-table"); if (!tbl) return;
+    var T = [
+      { id: 1, d: "Fetch NVIDIA metrics", src: "financial_api", dep: [] },
+      { id: 2, d: "Fetch AMD metrics", src: "financial_api", dep: [] },
+      { id: 3, d: "Fetch Intel metrics", src: "financial_api", dep: [] },
+      { id: 4, d: "Risk factors from 10-Ks", src: "sec_filing", dep: [] },
+      { id: 5, d: "AI-chip market news", src: "web_search", dep: [] },
+      { id: 6, d: "Compare growth, margins, P/E", src: "LLM", dep: [1, 2, 3] },
+      { id: 7, d: "Draft investment memo", src: "LLM", dep: [4, 5, 6] }
+    ];
+    var snaps = [], k = 0;
+    function list(a) { return "[" + a.join(", ") + "]"; }
+    function build(scn) {
+      var S = [], extra = 0, a, st, res, ready, val, valid = false, gaps;
+      function push(code, msg) {
+        S.push({ a: a, st: st.slice(), ready: ready.slice(), res: res.slice(), val: val, extra: extra, code: code, msg: msg });
+      }
+      for (a = 0; a <= 2; a++) {
+        st = T.map(function () { return "pending"; }); res = []; ready = []; val = "—";
+        push("plan = await create_research_plan(question)", a === 0
+          ? "The planner returns 7 tasks. Every task starts with the <b>PENDING</b> sticker and the notebook <code>results</code> is empty."
+          : "<b>Attempt " + a + ":</b> a fresh plan. The planner has read the gap notes added to the question, but the cards look much the same — the problem was the API, not the plan. The notebook starts empty again: everything is fetched from scratch.");
+        var round = 0;
+        while (true) {
+          if (st.indexOf("pending") < 0) {
+            ready = [];
+            push("while any(t.status == TaskStatus.PENDING for t in plan.sub_tasks):   # False", "No task is PENDING any more, so the <code>while</code> loop ends and <code>execute_plan</code> returns the notebook.");
+            break;
+          }
+          ready = T.filter(function (t, i) { return st[i] === "pending" && t.dep.every(function (d) { return st[d - 1] === "completed"; }); }).map(function (t) { return t.id; });
+          round++;
+          if (!ready.length) {
+            push("if not ready:\n    break", "Tasks 6 and 7 are still PENDING, but neither can start: task 6 needs task 2, which <b>FAILED</b>, and task 7 needs task 6. <code>ready</code> is empty → <code>break</code>. Without this line the loop would spin forever.");
+            break;
+          }
+          var running = st.slice(); ready.forEach(function (id) { running[id - 1] = "running"; });
+          var why = round === 1 ? "Tasks 1–5 have no dependencies (<code>all([])</code> is True), so all five are ready."
+            : ready[0] === 6 ? "Task 6's dependencies 1, 2, 3 are all COMPLETED, so it's ready. Task 7 still waits for 6."
+            : "Task 7's dependencies 4, 5, 6 are all COMPLETED, so it's ready.";
+          var keep = st; st = running;
+          push("ready = [t for t in plan.sub_tasks\n         if t.status == PENDING and all(deps COMPLETED)]", "<b>Round " + round + ": who can start?</b> " + why + " <code>ready = " + list(ready) + "</code> — gold rows.");
+          st = keep;
+          var failed = [];
+          ready.forEach(function (id) {
+            var bad = id === 2 && (scn === "down" || (scn === "once" && a === 0));
+            st[id - 1] = bad ? "failed" : "completed"; res.push(id); if (bad) failed.push(id);
+          });
+          push("completed = await asyncio.gather(*[run_task(t, results) for t in ready])", failed.length
+            ? "<code>gather</code> ran tasks " + list(ready) + " together. Four finished. <b>Task 2 FAILED</b>: the API answered 503, <code>raise_for_status()</code> raised, <code>run_task</code> caught it and stored <code>\"ERROR: 503 …\"</code> in <code>results[2]</code>. The other tasks were not affected."
+            : "<code>gather</code> ran " + (ready.length > 1 ? "tasks " + list(ready) + " together" : "task " + ready[0]) + ". " + (ready.length > 1 ? "All COMPLETED" : "COMPLETED") + " — the findings are now in the notebook.");
+        }
+        gaps = []; st.forEach(function (s, i) { if (s !== "completed") gaps.push("Task " + (i + 1) + " " + s + ": " + T[i].d); });
+        valid = gaps.length === 0;
+        ready = [];
+        val = valid ? "valid · 1 warning" : "NOT valid · " + gaps.length + " gaps";
+        push("validation = validate_research(plan, results, tickers)", valid
+          ? "Check 1 ✓ all 7 COMPLETED · Check 2 ✓ NVDA, AMD and INTC all found · Check 3: AMD's P/E of 195.3 → <b>warning</b>. Warnings don't block, so <code>is_valid = True</code>."
+          : "Check 1 found <b>" + gaps.length + " gaps</b>:<br>" + gaps.map(function (g) { return "<span class='msg g'>" + esc(g) + "</span>"; }).join("") + "Check 2 still passed for AMD — the news text (and even the error message) contain \"AMD\". <code>is_valid = False</code>.");
+        if (valid) { push("if validation.is_valid:\n    break", "Valid → <code>break</code> jumps out of the <code>for</code> loop, straight to the synthesizer."); break; }
+        if (a < 2) {
+          extra += gaps.length;
+          push('problems = validation.gaps + validation.errors\nquestion += "\\nAddress these gaps:\\n" + "\\n".join(problems)', "<code>attempt</code> is " + a + ", and " + a + " &lt; 2, so we <b>re-plan</b>. The gap lines are appended to <code>question</code> — the planner's only memory of what went wrong. Watch the dashed arrow on the map in 5.4: this is it.");
+        } else {
+          push("elif attempt < MAX_REPLAN_ATTEMPTS:   # 2 < 2 is False", "Attempt 2 was the last one (2 &lt; 2 is False). The <code>for</code> loop simply ends, still holding the last attempt's <code>results</code> and <code>validation</code>.");
+        }
+      }
+      a = Math.min(a, 2); ready = [];
+      push("return await synthesize_report(question, results, validation)", valid
+        ? "The synthesizer writes the memo: <b>85% confidence</b>, and AMD's extreme P/E is mentioned. " + (S[S.length - 1].a > 0 ? "The PM never knows there was a hiccup — it just took about 30 seconds longer." : "Done in one attempt.")
+        : "The memo is written <b>anyway</b>, from the last attempt's findings. It openly lists the missing AMD data, and its confidence score is clearly lower. A partial, honest memo beats no memo — and beats a memo with invented AMD numbers.");
+      return S;
+    }
+    var prevS = null;
+    function show() {
+      var s = snaps[k], p = k ? snaps[k - 1] : null;
+      tbl.innerHTML = "<tr><th>#</th><th>Task</th><th>Tool</th><th>Needs</th><th>Status</th></tr>" + T.map(function (t, i) {
+        var stt = s.st[i];
+        return '<tr class="' + (s.ready.indexOf(t.id) >= 0 && stt === "running" ? "ready" : "") + '"><td class="id">' + t.id + "</td><td>" + t.d + '</td><td class="dep">' + t.src + '</td><td class="dep">' + (t.dep.length ? t.dep.join(", ") : "—") + '</td><td><span class="st st-' + stt + '">' + stt + "</span></td></tr>";
+      }).join("");
+      var vars = [
+        ["attempt", String(s.a)],
+        ["ready", s.ready.length ? list(s.ready) : "[]"],
+        ["results (keys)", s.res.length ? s.res.slice().sort().join(" ") : "{}"],
+        ["validation", s.val],
+        ["question", s.extra ? "original + " + s.extra + " gap lines" : "original"]
+      ];
+      var pv = p ? [String(p.a), p.ready.length ? list(p.ready) : "[]", p.res.length ? p.res.slice().sort().join(" ") : "{}", p.val, p.extra ? "original + " + p.extra + " gap lines" : "original"] : null;
+      $("#bd-state").innerHTML = vars.map(function (v, i) { return '<div class="' + (pv && pv[i] !== v[1] ? "chg" : "") + '">' + v[0] + "<b>" + esc(v[1]) + "</b></div>"; }).join("");
+      $("#bd-code").textContent = s.code;
+      $("#bd-msg").innerHTML = s.msg;
+      $("#bd-count").textContent = "Step " + (k + 1) + " of " + snaps.length;
+      $("#bd-back").disabled = k === 0; $("#bd-next").disabled = k === snaps.length - 1;
+    }
+    function reset() { snaps = build($("#bd-scn").value); k = 0; show(); }
+    $("#bd-next").addEventListener("click", function () { if (k < snaps.length - 1) { k++; show(); } });
+    $("#bd-back").addEventListener("click", function () { if (k > 0) { k--; show(); } });
+    $("#bd-scn").addEventListener("change", reset);
+    reset();
+  })();
+
+  /* ---------- 5.9 validator lab ---------- */
+  (function () {
+    var tbl = $("#vl-table"); if (!tbl) return;
+    var CO = [["NVDA", "NVIDIA", 1], ["AMD", "AMD", 2], ["INTC", "Intel", 3]];
+    var F = ["g", "gm", "om", "pe"];
+    var P = {
+      sample: { NVDA: [125.9, 72.7, 54.1, 68.5], AMD: [-3.9, 46.1, 1.8, 195.3], INTC: [-14.0, 41.5, 0.2, 95.2] },
+      units: { NVDA: [1259, 727, 54.1, 68.5], AMD: [-3.9, 46.1, 1.8, 195.3], INTC: [-14.0, 41.5, 0.2, 95.2] },
+      margins: { NVDA: [125.9, 72.7, 54.1, 68.5], AMD: [-3.9, 46.1, 1.8, 195.3], INTC: [-14.0, 41.5, 48.0, 95.2] },
+      fail: { NVDA: [125.9, 72.7, 54.1, 68.5], AMD: null, INTC: [-14.0, 41.5, 0.2, 95.2] },
+      loss: { NVDA: [125.9, 72.7, 54.1, 68.5], AMD: [-3.9, 46.1, 1.8, 45.0], INTC: [-14.0, 41.5, -3.0, ""] }
+    };
+    var NOTE = {
+      sample: "The real run: one warning, and the memo goes ahead.",
+      units: "A parser read 72.7 as 727 and 125.9 as 1259 — the classic units / decimal bug.",
+      margins: "Intel's operating margin is above its gross margin. Mathematically impossible.",
+      fail: "AMD's fetch failed. Tasks 6 and 7 never ran. Now untick the box below the table and watch check 2 finally speak up.",
+      loss: "Intel lost money (operating margin −3%), so EPS was negative and P/E is unknown (empty). Both are perfectly fine."
+    };
+    tbl.innerHTML += CO.map(function (c) {
+      return "<tr><td><b>" + c[0] + "</b></td><td><input type='checkbox' data-c='" + c[0] + "' data-f='ok' aria-label='" + c[1] + " fetched'></td>" +
+        F.map(function (f) { return "<td><input type='text' inputmode='decimal' data-c='" + c[0] + "' data-f='" + f + "' aria-label='" + c[1] + " " + f + "'></td>"; }).join("") + "</tr>";
+    }).join("");
+    var cur = "sample";
+    function inp(c, f) { return $("input[data-c='" + c + "'][data-f='" + f + "']", tbl); }
+    function load(p) {
+      cur = p;
+      CO.forEach(function (c) {
+        var v = P[p][c[0]];
+        inp(c[0], "ok").checked = !!v;
+        F.forEach(function (f, i) { var e = inp(c[0], f); e.value = v ? v[i] : ""; e.disabled = !v; });
+      });
+      $("#vl-news").checked = true;
+      $$("#vl-presets button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-p") === p); });
+      run();
+    }
+    function num(s) { s = String(s).trim(); if (s === "") return null; var x = parseFloat(s); return isNaN(x) ? null : x; }
+    function run() {
+      var errors = [], warnings = [], gaps = [], anyFail = false;
+      CO.forEach(function (c) {
+        var ok = inp(c[0], "ok").checked;
+        F.forEach(function (f) { inp(c[0], f).disabled = !ok; });
+        if (!ok) { anyFail = true; gaps.push("Task " + c[2] + " failed: Fetch " + c[1] + " metrics"); }
+      });
+      if (anyFail) { gaps.push("Task 6 pending: Compare growth, margins, P/E"); gaps.push("Task 7 pending: Draft investment memo"); }
+      var news = $("#vl-news").checked, check2pass = [];
+      CO.forEach(function (c) {
+        var ok = inp(c[0], "ok").checked;
+        if (!ok && !news) gaps.push("Missing data for " + c[0]);
+        if (!ok && news) check2pass.push(c[0]);
+      });
+      CO.forEach(function (c) {
+        if (!inp(c[0], "ok").checked) return;
+        var g = num(inp(c[0], "g").value), gm = num(inp(c[0], "gm").value), om = num(inp(c[0], "om").value), pe = num(inp(c[0], "pe").value);
+        if (gm !== null && !(gm >= -50 && gm <= 100)) errors.push(c[0] + ": gross margin " + gm + "% is impossible");
+        if (gm !== null && om !== null && om > gm) errors.push(c[0] + ": operating margin is above gross margin");
+        if (pe !== null && !(pe > 0 && pe <= 150)) warnings.push(c[0] + ": P/E of " + pe + " is extreme - check earnings");
+        if (g !== null && Math.abs(g) > 300) warnings.push(c[0] + ": revenue growth " + g + "% - unit error?");
+      });
+      var valid = !errors.length && !gaps.length;
+      function blk(title, arr, cls) {
+        return "<div style='margin:6px 0'><b>" + title + "</b> (" + arr.length + ")" + (arr.length ? arr.map(function (m) { return "<span class='msg " + cls + "'>" + esc(m) + "</span>"; }).join("") : " <span class='muted'>— none</span>") + "</div>";
+      }
+      var next = valid
+        ? (warnings.length ? "→ <code>break</code>: the synthesizer writes the memo and must mention the " + (warnings.length > 1 ? warnings.length + " warnings" : "warning") + "." : "→ <code>break</code>: a clean memo, no notes needed.")
+        : "→ if tries are left, the orchestrator appends " + (errors.length + gaps.length > 1 ? "these " + (errors.length + gaps.length) + " problems" : "this problem") + " to the question and <b>re-plans</b>.";
+      var c2 = check2pass.length ? "<div class='muted' style='font-size:14px; margin-top:6px'>Check 2 passed for " + check2pass.join(", ") + " only because other results mention " + (check2pass.length > 1 ? "them" : "it") + ". Check 1 caught the failure.</div>" : "";
+      $("#vl-out").innerHTML = "<div class='muted' style='font-size:14px; margin-bottom:6px'>" + NOTE[cur] + "</div>" + blk("errors", errors, "e") + blk("warnings", warnings, "w") + blk("gaps", gaps, "g") +
+        "<div style='margin-top:8px'><span class='pill " + (valid ? "ok" : "no") + "'>is_valid = " + (valid ? "True" : "False") + "</span> " + next + "</div>" + c2;
+    }
+    $$("#vl-presets button").forEach(function (b) { b.addEventListener("click", function () { load(b.getAttribute("data-p")); }); });
+    tbl.addEventListener("input", run);
+    tbl.addEventListener("change", run);
+    $("#vl-news").addEventListener("change", run);
+    load("sample");
+  })();
+
+  /* ---------- 5.12 cost ---------- */
+  (function () {
+    var sl = $("#cs-n"); if (!sl) return;
+    function usd(x) { return "$" + (x >= 100 ? Math.round(x).toLocaleString("en-US") : x.toFixed(x < 10 ? 2 : 0)); }
+    function draw() {
+      var n = +sl.value; $("#cs-nv").textContent = n;
+      var day = n * 0.15, tok = n * 28000;
+      $("#cs-out").innerHTML = n + " runs × ~$0.15 = <b>" + usd(day) + " a day</b> · about <b>" + usd(day * 30) + " a month</b> · " + (tok >= 1e6 ? (tok / 1e6).toFixed(1) + "M" : Math.round(tok / 1000) + "k") + " tokens a day." +
+        "<br><span class='muted' style='font-size:14.5px'>Unoptimised (3–5×): " + usd(day * 3) + "–" + usd(day * 5) + " a day, " + usd(day * 90) + "–" + usd(day * 150) + " a month. That gap is why model routing and caching matter.</span>";
+    }
+    sl.addEventListener("input", draw); draw();
+  })();
+
+  /* ---------- quiz ---------- */
+  (function () {
+    var Q = [
+      { q: "What makes deep search different from basic RAG?", o: ["It uses a bigger model", "It plans sub-tasks, runs many tools, checks the results and can re-plan", "It only searches the web", "It never uses an LLM"], a: 1, w: "RAG retrieves once and answers. Deep search plans, executes, validates and loops until the research is complete." },
+      { q: "Tasks 1–5 have \"dependencies\": []. Why are they ready in the very first round?", o: ["The planner marks them RUNNING", "gather starts every task anyway", "They are the cheapest tasks", "all() of an empty list is True"], a: 3, w: "\"All of zero dependencies are done\" — Python says True, so no special case is needed." },
+      { q: "AMD's metrics fetch fails. What happens to tasks 6 and 7 inside execute_plan?", o: ["They run with whatever data exists", "They become FAILED too", "They stay PENDING; ready becomes empty, so the loop breaks", "The program crashes"], a: 2, w: "Task 6 needs task 2, task 7 needs task 6. Nothing can start, so \"if not ready: break\" stops the loop." },
+      { q: "AMD's P/E comes back as 195.3. What does the validator do?", o: ["Adds a warning; the run continues and the memo must mention it", "Adds an error and forces a re-plan", "Ignores it", "Asks the LLM whether it looks right"], a: 0, w: "Possible but unusual → warning. Warnings never block; they travel into the synthesizer's prompt." },
+      { q: "Why does the orchestrator add the gaps to the question text before re-planning?", o: ["To make the prompt longer", "OpenAI requires it", "The planner has no memory between calls — the question is its memory", "To reduce cost"], a: 2, w: "Each planner call starts fresh. The gap notes in the question are how it learns what went wrong." },
+      { q: "NVIDIA reports FY2024 revenue of $60.9B. When did most of those sales happen?", o: ["Calendar 2024", "Calendar 2023", "Calendar 2025", "Impossible to tell"], a: 1, w: "NVIDIA's fiscal year ends in late January, so FY2024 ran from about February 2023 to January 2024." },
+      { q: "In a PydanticAI Agent, what does retries=2 do?", o: ["Calls two different models", "Runs the whole pipeline twice", "Retries failed API tools", "If the answer doesn't fit output_type, sends the error back and asks again, up to 2 times"], a: 3, w: "Like a clerk returning a form with a red circle: \"fix this box\"." }
+    ];
+    var box = $("#quiz"); if (!box) return;
+    box.innerHTML = Q.map(function (x, i) {
+      return '<div class="q" data-i="' + i + '"><p>' + (i + 1) + ". " + esc(x.q) + "</p>" + x.o.map(function (o, k) { return '<button type="button" data-k="' + k + '">' + esc(o) + "</button>"; }).join("") + '<div class="why">' + esc(x.w) + "</div></div>";
+    }).join("") + '<div class="out" id="quiz-score">Answer all seven to see your score.</div>';
+    var score = 0, answered = 0;
+    $$(".q", box).forEach(function (qd) {
+      var x = Q[+qd.getAttribute("data-i")];
+      $$("button", qd).forEach(function (b) {
+        b.addEventListener("click", function () {
+          if (qd.classList.contains("done")) return;
+          qd.classList.add("done");
+          var k = +b.getAttribute("data-k");
+          if (k === x.a) { b.classList.add("right"); score++; } else { b.classList.add("wrong"); $$("button", qd)[x.a].classList.add("right"); }
+          answered++;
+          if (answered === Q.length) $("#quiz-score").innerHTML = "Score: <b>" + score + " / " + Q.length + "</b>" + (score === Q.length ? " — you could teach this section yourself." : " — revisit the parts you missed, then try the simulations again.");
+        });
+      });
+    });
+  })();
+})();
+</script>
+</body>
+</html>

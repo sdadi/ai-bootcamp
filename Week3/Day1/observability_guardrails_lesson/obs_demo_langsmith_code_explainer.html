@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observability demo (LangSmith): code explainer</title>
+<style>
+:root{
+  --bg:#f7f5ef; --paper:#ffffff; --ink:#1c1b19; --muted:#5d5a53; --line:#e4dfd3;
+  --accent:#f2b705; --navy:#1f2a44;
+  --blue-bg:#eef4ff; --blue:#2f63c9;
+  --amber-bg:#fff5d6; --amber:#c98a00;
+  --green-bg:#e8f6ec; --green:#23804c;
+  --rose-bg:#fdeceb; --rose:#b8352a;
+  --gray-bg:#f2f0ea; --gray:#8d877a;
+  --code-bg:#14161b;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 var(--sans)}
+a{color:var(--blue)}
+#progress{position:fixed;top:0;left:0;height:4px;width:0;background:var(--accent);z-index:50}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px 40px 22px;border-right:1px solid var(--line);font-size:14px}
+nav.toc .brand{font:700 15px/1.3 var(--serif);color:var(--navy);margin-bottom:14px}
+nav.toc .grp{margin:16px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+nav.toc a{display:flex;gap:8px;padding:3px 8px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.35}
+nav.toc a span.n{flex:0 0 22px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:#ece8dd}
+nav.toc a.active{background:var(--navy);color:#fff}
+nav.toc a.active span.n{color:#cfd6e6}
+main{padding:34px 44px 80px;min-width:0}
+.mobile-toc{display:none}
+@media (max-width:1000px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{display:none}
+  main{padding:22px 16px 60px}
+  .mobile-toc{display:block;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .mobile-toc summary{font-weight:700;cursor:pointer}
+  .mobile-toc a{display:block;padding:3px 0}
+}
+
+/* ---------- hero ---------- */
+.hero{background:var(--navy);color:#fff;border-radius:18px;padding:40px 40px 34px;margin-bottom:26px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;background:var(--accent);opacity:.9;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.hero .kicker{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#f6d36b;font-weight:700}
+.hero h1{font:700 40px/1.12 var(--serif);margin:10px 0 12px;max-width:720px;position:relative;z-index:1}
+.hero p{max-width:690px;color:#dfe4ef;margin:0 0 8px;position:relative;z-index:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;position:relative;z-index:1}
+.legend span{font-size:13px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12)}
+
+.intro{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:30px}
+.intro h2{font:700 22px/1.3 var(--serif);margin:0 0 10px;color:var(--navy)}
+.roadmap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.roadmap .step{background:var(--gray-bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.roadmap .step b{display:block;color:var(--navy)}
+.roadmap .arr{color:var(--muted)}
+
+/* ---------- part dividers ---------- */
+.part{margin:46px 0 14px;display:flex;align-items:center;gap:14px}
+.part .tag{background:var(--accent);color:#2a2100;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:6px}
+.part h2{margin:0;font:700 26px/1.2 var(--serif);color:var(--navy)}
+
+/* ---------- slide cards ---------- */
+section.slide{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px 24px;margin:18px 0 26px;scroll-margin-top:16px}
+.slide-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.slide-head .num{background:var(--navy);color:#fff;font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.slide-head h3{font:700 26px/1.25 var(--serif);margin:0;color:var(--ink)}
+.oneliner{color:var(--muted);font-size:16px;margin:2px 0 14px}
+section.slide h4{margin:0 0 6px;font-size:13px;letter-spacing:.07em;text-transform:uppercase}
+section.slide p{margin:0 0 10px}
+section.slide ul,section.slide ol{margin:4px 0 10px;padding-left:22px}
+section.slide li{margin:3px 0}
+
+.box{border-radius:12px;padding:14px 18px 8px;margin:14px 0;border-left:5px solid}
+.box.said{background:var(--gray-bg);border-color:var(--gray)} .box.said h4{color:#6b665b}
+.box.simple{background:var(--blue-bg);border-color:var(--blue)} .box.simple h4{color:var(--blue)}
+.box.analogy{background:var(--amber-bg);border-color:var(--amber)} .box.analogy h4{color:#8a5d00}
+.box.real{background:var(--green-bg);border-color:var(--green)} .box.real h4{color:var(--green)}
+.box.careful{background:var(--rose-bg);border-color:var(--rose)} .box.careful h4{color:var(--rose)}
+.box.try{background:#f4f3fb;border-color:#5b4fc4} .box.try h4{color:#4b40a8}
+
+details.orig{margin:6px 0 4px}
+details.orig summary{cursor:pointer;color:var(--muted);font-size:14px}
+details.orig img{display:block;width:100%;max-width:640px;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+
+/* ---------- code ---------- */
+.codebox{margin:12px 0 4px;border-radius:12px;overflow:hidden;background:var(--code-bg);border:1px solid #23262e}
+.codebar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#1d2027;color:#c9ced8;font:13px var(--mono)}
+.codebar .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font:700 11px var(--sans);letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.badge.run{background:#1f6f43;color:#dff7e8}
+.badge.key{background:#7a5a00;color:#fff1c7}
+.badge.gpu{background:#6b2f8a;color:#f3e3ff}
+.badge.local{background:#1f4f8a;color:#e1edff}
+.badge.anth{background:#8a3d1f;color:#ffe6d6}
+.copy{background:#2c313b;color:#e6e9ef;border:0;border-radius:6px;padding:3px 9px;font:12px var(--sans);cursor:pointer}
+.copy:hover{background:#3a404c}
+pre.hl{margin:0;padding:14px 16px;overflow:auto;font:13.5px/1.55 var(--mono);color:#e6edf3;tab-size:4}
+.outbox{margin:0 0 12px;border-radius:0 0 12px 12px;background:#0b0d10;border:1px solid #23262e;border-top:0;position:relative;top:-6px;padding-top:6px}
+.outbar{font:700 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#7ee2a8;padding:8px 14px 0}
+.outbox pre{margin:0;padding:6px 14px 12px;overflow:auto;font:13px/1.5 var(--mono);color:#cfe9d8}
+.outbox.example .outbar{color:#f6d36b}
+.outbox.example pre{color:#f1e6c8;white-space:pre-wrap;overflow-wrap:anywhere}
+code.i{font:14.5px var(--mono);background:#efece4;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+
+/* ---------- tables ---------- */
+table.t{border-collapse:collapse;width:100%;margin:10px 0 14px;font-size:15px}
+table.t th,table.t td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.t th{background:#f0ede5;font-weight:700}
+table.t td.fill{background:#fff5d6}
+@media (max-width:700px){table.t{display:block;overflow-x:auto;font-size:14px}}
+.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.threecol{grid-template-columns:1fr}}
+
+/* ---------- diagrams ---------- */
+.diagram{background:#fbfaf6;border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0;overflow-x:auto}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.flow .b{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:8px 14px;font-weight:600;text-align:center;font-size:15px}
+.flow .b.dark{background:var(--navy);color:#fff}
+.flow .b.y{background:var(--accent);border-color:#b98a00;color:#2a2100}
+.flow .b.g{background:var(--green-bg);border-color:var(--green)}
+.flow .b.r{background:var(--rose-bg);border-color:var(--rose)}
+.flow .b small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.flow .b.dark small{color:#cfd6e6}
+.flow .a{font-size:22px;color:var(--muted)}
+.caption{font-size:13.5px;color:var(--muted);text-align:center;margin-top:8px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.twocol{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h5{margin:0 0 6px;font-size:15px;color:var(--navy)}
+.stack{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.stack div{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.tl{display:flex;align-items:stretch;height:34px;border-radius:6px;overflow:hidden;font-size:12px;font-weight:700}
+.tl div{display:flex;align-items:center;justify-content:center;color:#fff;border-right:1px solid rgba(255,255,255,.4)}
+.chip{display:inline-block;font:600 14px var(--mono);padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:#fff;margin:2px}
+.chip.ok{background:var(--green-bg);border-color:var(--green)}
+.chip.bad{background:var(--rose-bg);border-color:var(--rose);text-decoration:line-through}
+.chip.new{background:#fff5d6;border-color:var(--amber)}
+.chip.ghost{color:var(--muted)}
+.grid-kv{display:inline-grid;gap:3px}
+.grid-kv .row{display:flex;gap:3px;align-items:center}
+.grid-kv .c{width:20px;height:20px;border-radius:4px}
+.c.re{background:#e8833a} .c.ca{background:#5fb27f} .c.no{background:transparent}
+.grid-kv .lbl{font-size:12px;color:var(--muted);width:54px}
+.bars .bar{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:14px}
+.bars .bar .lab{width:92px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.bars .bar .fillbar{height:18px;border-radius:4px}
+
+/* ---------- widgets ---------- */
+.widget{background:#fff;border:2px dashed #c9c2b2;border-radius:12px;padding:14px 16px;margin:12px 0}
+.widget h5{margin:0 0 10px;font-size:15px;color:var(--navy)}
+.widget .row{display:flex;flex-wrap:wrap;gap:10px 16px;margin-bottom:10px}
+.widget label{font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.widget input,.widget textarea{font:15px var(--mono);padding:6px 8px;border:1px solid #cfc8b8;border-radius:6px;width:130px;background:#fffdf8}
+.widget textarea{width:100%;height:46px}
+.widget button{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+.widget .res{font:15px/1.6 var(--mono);background:#f6f4ee;border-radius:8px;padding:10px 12px;white-space:pre-wrap}
+.stream-out{min-height:72px;font-size:16px;background:#f6f4ee;border-radius:8px;padding:10px 12px;margin-top:8px}
+.cursor{display:inline-block;width:8px;height:17px;background:var(--navy);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- glossary & quiz ---------- */
+dl.gloss{display:grid;grid-template-columns:200px 1fr;gap:6px 16px;margin:0}
+dl.gloss dt{font-weight:700;color:var(--navy)}
+dl.gloss dd{margin:0}
+@media (max-width:700px){dl.gloss{grid-template-columns:1fr} dl.gloss dd{margin-bottom:8px}}
+details.q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}
+details.q summary{cursor:pointer;font-weight:600}
+details.q p{margin:8px 0 2px}
+footer{color:var(--muted);font-size:14px;text-align:center;margin-top:40px}
+
+@media print{
+  nav.toc,.mobile-toc,#progress,.copy{display:none !important}
+  .layout{display:block} main{padding:0}
+  section.slide{break-inside:avoid-page}
+  body{background:#fff}
+}
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+pre.hl .hll { background-color: #6e7681 }
+pre.hl { background: #0d1117; color: #E6EDF3 }
+pre.hl .c { color: #8B949E; font-style: italic } /* Comment */
+pre.hl .err { color: #F85149 } /* Error */
+pre.hl .esc { color: #E6EDF3 } /* Escape */
+pre.hl .g { color: #E6EDF3 } /* Generic */
+pre.hl .k { color: #FF7B72 } /* Keyword */
+pre.hl .l { color: #A5D6FF } /* Literal */
+pre.hl .n { color: #E6EDF3 } /* Name */
+pre.hl .o { color: #FF7B72; font-weight: bold } /* Operator */
+pre.hl .x { color: #E6EDF3 } /* Other */
+pre.hl .p { color: #E6EDF3 } /* Punctuation */
+pre.hl .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+pre.hl .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+pre.hl .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+pre.hl .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+pre.hl .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+pre.hl .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+pre.hl .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+pre.hl .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+pre.hl .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+pre.hl .gr { color: #FFA198 } /* Generic.Error */
+pre.hl .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+pre.hl .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+pre.hl .go { color: #8B949E } /* Generic.Output */
+pre.hl .gp { color: #8B949E } /* Generic.Prompt */
+pre.hl .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+pre.hl .gu { color: #79C0FF } /* Generic.Subheading */
+pre.hl .gt { color: #FF7B72 } /* Generic.Traceback */
+pre.hl .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+pre.hl .kc { color: #79C0FF } /* Keyword.Constant */
+pre.hl .kd { color: #FF7B72 } /* Keyword.Declaration */
+pre.hl .kn { color: #FF7B72 } /* Keyword.Namespace */
+pre.hl .kp { color: #79C0FF } /* Keyword.Pseudo */
+pre.hl .kr { color: #FF7B72 } /* Keyword.Reserved */
+pre.hl .kt { color: #FF7B72 } /* Keyword.Type */
+pre.hl .ld { color: #79C0FF } /* Literal.Date */
+pre.hl .m { color: #A5D6FF } /* Literal.Number */
+pre.hl .s { color: #A5D6FF } /* Literal.String */
+pre.hl .na { color: #E6EDF3 } /* Name.Attribute */
+pre.hl .nb { color: #E6EDF3 } /* Name.Builtin */
+pre.hl .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+pre.hl .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+pre.hl .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+pre.hl .ni { color: #FFA657 } /* Name.Entity */
+pre.hl .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+pre.hl .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+pre.hl .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+pre.hl .nn { color: #FF7B72 } /* Name.Namespace */
+pre.hl .nx { color: #E6EDF3 } /* Name.Other */
+pre.hl .py { color: #79C0FF } /* Name.Property */
+pre.hl .nt { color: #7EE787 } /* Name.Tag */
+pre.hl .nv { color: #79C0FF } /* Name.Variable */
+pre.hl .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+pre.hl .pm { color: #E6EDF3 } /* Punctuation.Marker */
+pre.hl .w { color: #6E7681 } /* Text.Whitespace */
+pre.hl .mb { color: #A5D6FF } /* Literal.Number.Bin */
+pre.hl .mf { color: #A5D6FF } /* Literal.Number.Float */
+pre.hl .mh { color: #A5D6FF } /* Literal.Number.Hex */
+pre.hl .mi { color: #A5D6FF } /* Literal.Number.Integer */
+pre.hl .mo { color: #A5D6FF } /* Literal.Number.Oct */
+pre.hl .sa { color: #79C0FF } /* Literal.String.Affix */
+pre.hl .sb { color: #A5D6FF } /* Literal.String.Backtick */
+pre.hl .sc { color: #A5D6FF } /* Literal.String.Char */
+pre.hl .dl { color: #79C0FF } /* Literal.String.Delimiter */
+pre.hl .sd { color: #A5D6FF } /* Literal.String.Doc */
+pre.hl .s2 { color: #A5D6FF } /* Literal.String.Double */
+pre.hl .se { color: #79C0FF } /* Literal.String.Escape */
+pre.hl .sh { color: #79C0FF } /* Literal.String.Heredoc */
+pre.hl .si { color: #A5D6FF } /* Literal.String.Interpol */
+pre.hl .sx { color: #A5D6FF } /* Literal.String.Other */
+pre.hl .sr { color: #79C0FF } /* Literal.String.Regex */
+pre.hl .s1 { color: #A5D6FF } /* Literal.String.Single */
+pre.hl .ss { color: #A5D6FF } /* Literal.String.Symbol */
+pre.hl .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+pre.hl .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+pre.hl .vc { color: #79C0FF } /* Name.Variable.Class */
+pre.hl .vg { color: #79C0FF } /* Name.Variable.Global */
+pre.hl .vi { color: #79C0FF } /* Name.Variable.Instance */
+pre.hl .vm { color: #79C0FF } /* Name.Variable.Magic */
+pre.hl .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+
+.badge.ls{background:#0f5c5c;color:#d9fbfb}
+.outbox.standalone{border-radius:12px;border-top:1px solid #23262e;margin:10px 0 14px}
+.outbox pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.outbox.example .outbar{color:#f6d36b}
+.outbox.example pre{color:#f1e6c8}
+.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.threecol{grid-template-columns:1fr}}
+pre.tree,pre.mini{background:#14161b;color:#e6edf3;border-radius:10px;padding:12px 14px;overflow:auto;font:13px/1.55 var(--mono);margin:8px 0 12px}
+details.orig{margin:10px 0}
+details.orig > summary{cursor:pointer;font-weight:700}
+details.orig > .codebox{margin-top:10px}
+section.slide h4 code.i{text-transform:none;letter-spacing:0;font-size:14px}
+.vtag{display:inline-block;font:700 12px var(--mono);background:var(--navy);color:#fff;border-radius:6px;padding:2px 7px;margin-right:6px}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Observability demo<br><span style="font:400 13px var(--sans);color:var(--muted)">code walkthrough · by Shivank Agarwal</span></div>
+  <div class="grp">Start here</div>
+  <a href="#what"><span class="n">1</span>What it does</a>
+  <a href="#picture"><span class="n">2</span>The big picture</a>
+  <a href="#run"><span class="n">3</span>How to run it</a>
+  <a href="#changes"><span class="n">4</span>What changed and why</a>
+  <div class="grp">Walk through the code</div>
+  <a href="#step0"><span class="n">0</span>Imports and settings</a>
+  <a href="#step1"><span class="n">1</span>The State</a>
+  <a href="#step2"><span class="n">2</span>The agent's 4 methods</a>
+  <a href="#step3"><span class="n">3</span>The graph</a>
+  <a href="#step4"><span class="n">4</span>One question = one trace</a>
+  <a href="#step5"><span class="n">5</span>The main block</a>
+  <div class="grp">See it work</div>
+  <a href="#trace"><span class="n">▶</span>One question in LangSmith</a>
+  <a href="#reading"><span class="n">6</span>Reading the output</a>
+  <div class="grp">Teach and extend</div>
+  <a href="#lecture"><span class="n">↔</span>Link to the lecture</a>
+  <a href="#exercises"><span class="n">✎</span>Exercises</a>
+  <a href="#gloss"><span class="n">★</span>Glossary</a>
+  <a href="#source"><span class="n">{}</span>Full source</a>
+</nav>
+
+<main>
+<details class="mobile-toc"><summary>Contents</summary><a href="#what"><span class="n">1</span>What it does</a><a href="#picture"><span class="n">2</span>The big picture</a><a href="#run"><span class="n">3</span>How to run it</a><a href="#changes"><span class="n">4</span>What changed and why</a><a href="#step0"><span class="n">0</span>Imports and settings</a><a href="#step1"><span class="n">1</span>The State</a><a href="#step2"><span class="n">2</span>The agent's 4 methods</a><a href="#step3"><span class="n">3</span>The graph</a><a href="#step4"><span class="n">4</span>One question = one trace</a><a href="#step5"><span class="n">5</span>The main block</a><a href="#trace"><span class="n">▶</span>One question in LangSmith</a><a href="#reading"><span class="n">6</span>Reading the output</a><a href="#lecture"><span class="n">↔</span>Link to the lecture</a><a href="#exercises"><span class="n">✎</span>Exercises</a><a href="#gloss"><span class="n">★</span>Glossary</a><a href="#source"><span class="n">{}</span>Full source</a></details>
+<header class="hero">
+  <div class="kicker">By Shivank Agarwal · code explainer · obs_demo_langsmith.py</div>
+  <h1>The personality bot: caching plus full observability with LangSmith</h1>
+  <p>Type a famous person's name and the bot answers in two lines. Repeated questions are answered from a cache for free, and every step of every question is recorded in LangSmith, so you can see exactly what happened, how long it took and what it cost.</p>
+  <div class="legend"><span>OpenAI gpt-6-luna</span><span>OpenAI embeddings</span><span>LangGraph</span><span>LangSmith</span></div>
+</header>
+
+<!-- ============ WHAT ============ -->
+<section class="slide" id="what">
+  <div class="slide-head"><span class="num">1</span><h3>What it does, in one minute</h3></div>
+  <div class="box simple"><h4>💡 The story</h4>
+    <p>The script asks seven questions in a row:</p>
+    <table class="t">
+      <tr><th>#</th><th>Question</th><th>What happens</th><th>Cost</th></tr>
+      <tr><td>1</td><td>Elon Musk</td><td>New question → ask OpenAI, save the answer</td><td>a tiny bit</td></tr>
+      <tr><td>2</td><td>Elon Musk</td><td><b>Exact</b> same text → reuse the saved answer</td><td>free</td></tr>
+      <tr><td>3</td><td>Who is Elon Musk?</td><td>Different words, <b>same meaning</b> → reuse the saved answer</td><td>almost free</td></tr>
+      <tr><td>4</td><td>Marie Curie</td><td>New → ask OpenAI</td><td>a tiny bit</td></tr>
+      <tr><td>5</td><td>"&nbsp;&nbsp;marie curie&nbsp;"</td><td>Same text after cleaning (lower case, extra spaces removed) → exact hit</td><td>free</td></tr>
+      <tr><td>6</td><td>Tell me about Marie Curie</td><td>Same meaning → semantic hit</td><td>almost free</td></tr>
+      <tr><td>7</td><td>Albert Einstein</td><td>New → ask OpenAI</td><td>a tiny bit</td></tr>
+    </table>
+    <p>Seven questions, only three paid model calls. And for every question, LangSmith keeps a <b>trace</b>: a step-by-step record you can open in the browser.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy: the chai stall that keeps a notebook</h4>
+    <p>A busy chai stall gets the same orders all day. The owner writes each new order and its recipe in a notebook (<b>cache</b>). "One cutting chai" again? Read it from the notebook (<b>exact hit</b>). "Half a glass of tea, please"? Different words, same thing (<b>semantic hit</b>). And a CCTV camera records every order from start to finish (<b>tracing</b>), so when a customer complains you can rewind and see exactly what happened.</p>
+  </div>
+</section>
+
+<!-- ============ PICTURE ============ -->
+<section class="slide" id="picture">
+  <div class="slide-head"><span class="num">2</span><h3>The big picture: three checkpoints in a row</h3></div>
+  <div class="diagram">
+    <svg viewBox="0 0 700 300" style="min-width:560px;width:100%;max-width:700px;display:block;margin:auto;font-family:sans-serif" role="img" aria-label="Graph: exact cache, semantic cache, LLM call">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f2a44"/></marker></defs>
+      <rect x="20" y="20" width="110" height="40" rx="20" fill="#e8f6ec" stroke="#23804c" stroke-width="2"/><text x="75" y="45" text-anchor="middle" font-size="14" font-weight="700">question</text>
+      <line x1="130" y1="40" x2="178" y2="40" stroke="#1f2a44" stroke-width="2" marker-end="url(#ar)"/>
+      <rect x="180" y="15" width="220" height="50" rx="10" fill="#1f2a44"/><text x="290" y="37" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">check_exact_cache</text><text x="290" y="55" text-anchor="middle" font-size="12" fill="#cfd6e6">same text asked before?</text>
+      <rect x="180" y="120" width="220" height="50" rx="10" fill="#1f2a44"/><text x="290" y="142" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">check_semantic_cache</text><text x="290" y="160" text-anchor="middle" font-size="12" fill="#cfd6e6">same meaning asked before?</text>
+      <rect x="180" y="225" width="220" height="50" rx="10" fill="#fff5d6" stroke="#c98a00" stroke-width="2"/><text x="290" y="247" text-anchor="middle" font-size="14" font-weight="700">call_llm</text><text x="290" y="265" text-anchor="middle" font-size="12" fill="#5d5a53">ask OpenAI, save in both caches</text>
+      <line x1="290" y1="65" x2="290" y2="118" stroke="#1f2a44" stroke-width="2" marker-end="url(#ar)"/><text x="298" y="97" font-size="12" fill="#5d5a53">miss</text>
+      <line x1="290" y1="170" x2="290" y2="223" stroke="#1f2a44" stroke-width="2" marker-end="url(#ar)"/><text x="298" y="202" font-size="12" fill="#5d5a53">miss</text>
+      <rect x="580" y="125" width="90" height="40" rx="20" fill="#fdeceb" stroke="#b8352a" stroke-width="2"/><text x="625" y="150" text-anchor="middle" font-size="14" font-weight="700">END</text>
+      <path d="M400,40 L625,40 L625,123" stroke="#23804c" stroke-width="2" fill="none" marker-end="url(#ar)"/><text x="500" y="32" font-size="12" fill="#23804c">hit: free, instant</text>
+      <line x1="400" y1="145" x2="578" y2="145" stroke="#23804c" stroke-width="2" marker-end="url(#ar)"/><text x="420" y="137" font-size="12" fill="#23804c">hit: almost free</text>
+      <path d="M400,250 L625,250 L625,167" stroke="#1f2a44" stroke-width="2" fill="none" marker-end="url(#ar)"/><text x="470" y="242" font-size="12" fill="#5d5a53">answer ready</text>
+    </svg>
+    <div class="caption">The routers (<code class="i">after_exact</code>, <code class="i">after_semantic</code>) choose the arrow, so only the steps that actually ran appear in the trace.</div>
+  </div>
+  <div class="box simple"><h4>💡 Where the four MELT pillars live in this file</h4>
+    <table class="t">
+      <tr><th>Pillar</th><th>In plain words</th><th>In this code</th></tr>
+      <tr><td><b>Metrics</b></td><td>Numbers to track over time</td><td>Tokens, cost and seconds per question (<code class="i">[metric]</code> lines), session totals at the end</td></tr>
+      <tr><td><b>Events</b></td><td>Named, meaningful moments</td><td><code class="i">record_event("cache_hit_exact")</code>, <code class="i">"cache_hit_semantic"</code>, <code class="i">"llm_call_started"</code>, <code class="i">"answer_cached"</code></td></tr>
+      <tr><td><b>Logs</b></td><td>The exact words in and out</td><td><code class="i">wrap_openai()</code> stores every prompt and answer; <code class="i">[log]</code> line for the closest match</td></tr>
+      <tr><td><b>Traces</b></td><td>The step-by-step story of one request</td><td><code class="i">@traceable</code> plus LangGraph: one tree per question in LangSmith</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ RUN ============ -->
+<section class="slide" id="run">
+  <div class="slide-head"><span class="num">3</span><h3>How to run it</h3></div>
+  <div class="box try"><h4>⌨️ Setup (5 minutes)</h4>
+    <ol>
+      <li>Put <code class="i">obs_demo_langsmith.py</code>, <code class="i">requirements.txt</code> and <code class="i">.env.example</code> in one folder.</li>
+      <li>Install: <code class="i">pip install -r requirements.txt</code> (Python 3.10+).</li>
+      <li>Create a free LangSmith account at smith.langchain.com → Settings → API Keys → create a key.</li>
+      <li>Copy <code class="i">.env.example</code> to <code class="i">.env</code> and fill in both keys:
+        <pre class="mini">OPENAI_API_KEY=sk-...
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=lsv2_...
+LANGSMITH_PROJECT=observability_demo</pre></li>
+      <li>Run: <code class="i">python obs_demo_langsmith.py</code></li>
+      <li>Open smith.langchain.com → Tracing Projects → <b>observability_demo</b>. You'll see seven <code class="i">personality_query</code> runs, one per question.</li>
+    </ol>
+  </div>
+  <p><b>What the terminal prints:</b></p>
+  <div class="outbox example standalone"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>[1/7] &#x27;Elon Musk&#x27;
+   [event] llm_call_started {&#x27;question&#x27;: &#x27;Elon Musk&#x27;}
+   [metric] embedding: 3 tokens, $0.0000001
+   [event] answer_cached {&#x27;question&#x27;: &#x27;elon musk&#x27;, &#x27;llm_seconds&#x27;: 0.84}
+   [metric] FRESH | 1.21s | 67 tokens | $0.000023
+   -&gt; Elon Musk is famously bold and relentless, known for huge risks and very long working hours.
+He leads Tesla and SpaceX and helped make electric cars and reusable rockets mainstream.
+
+[2/7] &#x27;Elon Musk&#x27;
+   [event] cache_hit_exact {&#x27;question&#x27;: &#x27;elon musk&#x27;}
+   [metric] EXACT | 0.00s | 0 tokens | $0.000000
+   -&gt; Elon Musk is famously bold and relentless, known for huge risks and very long working hours.
+He leads Tesla and SpaceX and helped make electric cars and reusable rockets mainstream.
+
+[3/7] &#x27;Who is Elon Musk?&#x27;
+   [metric] embedding: 5 tokens, $0.0000001
+   [log] closest saved question: &#x27;elon musk&#x27; (similarity 0.84)
+   [event] cache_hit_semantic {&#x27;question&#x27;: &#x27;Who is Elon Musk?&#x27;, &#x27;matched&#x27;: &#x27;elon musk&#x27;, &#x27;similarity&#x27;: 0.84}
+   [metric] SEMANTIC | 0.29s | 0 tokens | $0.000000
+   -&gt; Elon Musk is famously bold and relentless, known for huge risks and very long working hours.
+He leads Tesla and SpaceX and helped make electric cars and reusable rockets mainstream.
+
+[4/7] &#x27;Marie Curie&#x27;
+   [metric] embedding: 3 tokens, $0.0000001
+   [log] closest saved question: &#x27;elon musk&#x27; (similarity 0.29)
+   [event] llm_call_started {&#x27;question&#x27;: &#x27;Marie Curie&#x27;}
+   [metric] embedding: 3 tokens, $0.0000001
+   [event] answer_cached {&#x27;question&#x27;: &#x27;marie curie&#x27;, &#x27;llm_seconds&#x27;: 0.91}
+   [metric] FRESH | 1.56s | 69 tokens | $0.000024
+   -&gt; Marie Curie was determined, patient and deeply curious, working for years in tough conditions.
+She discovered polonium and radium and was the first person to win Nobel Prizes in two sciences.
+
+[5/7] &#x27;  marie curie &#x27;
+   [event] cache_hit_exact {&#x27;question&#x27;: &#x27;marie curie&#x27;}
+   [metric] EXACT | 0.00s | 0 tokens | $0.000000
+   -&gt; Marie Curie was determined, patient and deeply curious, working for years in tough conditions.
+She discovered polonium and radium and was the first person to win Nobel Prizes in two sciences.
+
+[6/7] &#x27;Tell me about Marie Curie&#x27;
+   [metric] embedding: 5 tokens, $0.0000001
+   [log] closest saved question: &#x27;marie curie&#x27; (similarity 0.78)
+   [event] cache_hit_semantic {&#x27;question&#x27;: &#x27;Tell me about Marie Curie&#x27;, &#x27;matched&#x27;: &#x27;marie curie&#x27;, &#x27;similarity&#x27;: 0.78}
+   [metric] SEMANTIC | 0.27s | 0 tokens | $0.000000
+   -&gt; Marie Curie was determined, patient and deeply curious, working for years in tough conditions.
+She discovered polonium and radium and was the first person to win Nobel Prizes in two sciences.
+
+[7/7] &#x27;Albert Einstein&#x27;
+   [metric] embedding: 3 tokens, $0.0000001
+   [log] closest saved question: &#x27;marie curie&#x27; (similarity 0.41)
+   [event] llm_call_started {&#x27;question&#x27;: &#x27;Albert Einstein&#x27;}
+   [metric] embedding: 3 tokens, $0.0000001
+   [event] answer_cached {&#x27;question&#x27;: &#x27;albert einstein&#x27;, &#x27;llm_seconds&#x27;: 0.88}
+   [metric] FRESH | 1.49s | 71 tokens | $0.000025
+   -&gt; Albert Einstein was imaginative and fiercely independent, famous for his &quot;thought experiments&quot;.
+He developed the theory of relativity and won the 1921 Nobel Prize in Physics.
+
+=== SESSION METRICS ===
+Questions        : 7
+Exact cache hits : 2
+Semantic hits    : 2
+LLM calls        : 3
+Cache hit rate   : 57%
+LLM tokens       : 207
+LLM cost         : $0.000071</pre></div>
+  <p>The whole run costs well under one US cent. Section 6 explains how to read every line.</p>
+</section>
+
+<!-- ============ CHANGES ============ -->
+<section class="slide" id="changes">
+  <div class="slide-head"><span class="num">4</span><h3>What changed from the original, and why</h3></div>
+  <p class="oneliner">Same idea, same three checkpoints, same seven-question demo. Here's everything that's different.</p>
+  <table class="t">
+    <tr><th>#</th><th>Original</th><th>Now</th><th>Why</th></tr>
+    <tr><td>1</td><td><code class="i">gpt-3.5-turbo</code> with its old prices</td><td><code class="i">gpt-6-luna</code>, prices $0.10 / $0.50 per million tokens</td><td>OpenAI shut <code class="i">gpt-3.5-turbo</code> down in October 2026, so every call failed. <code class="i">gpt-6-luna</code> is OpenAI's current small, cheap model.</td></tr>
+    <tr><td>2</td><td>Keys copied into <code class="i">os.environ</code> in code, using the old <code class="i">LANGCHAIN_*</code> names</td><td>All settings in <code class="i">.env</code> with the current <code class="i">LANGSMITH_*</code> names</td><td>The old lines crashed with a <code class="i">TypeError</code> whenever a key was missing. Settings belong in <code class="i">.env</code>, not in code.</td></tr>
+    <tr><td>3</td><td><code class="i">langsmith.run_helpers</code> and <code class="i">tracing_v2_enabled()</code></td><td><code class="i">from langsmith import traceable</code>; tracing switched on by <code class="i">LANGSMITH_TRACING=true</code></td><td>The current, simpler way.</td></tr>
+    <tr><td>4</td><td>Prompts and answers not recorded</td><td><code class="i">client = wrap_openai(OpenAI())</code></td><td>One line adds the <b>logs</b> pillar: every prompt, answer, model and token count appears in the trace.</td></tr>
+    <tr><td>5</td><td>Every node always ran; each one checked "already answered? then do nothing"</td><td>Two small routers send the question straight to END on a hit</td><td>The trace now shows only the steps that really happened, which makes it easier to read.</td></tr>
+    <tr><td>6</td><td><code class="i">@traceable</code> on every graph node</td><td>Removed from the nodes</td><td>LangGraph already traces every node; the extra decorator created duplicate steps.</td></tr>
+    <tr><td>7</td><td>Similarity threshold 0.85; test questions "Tell me about Elon", "Info on Curie"</td><td>Threshold 0.70; "Who is Elon Musk?", "Tell me about Marie Curie"</td><td>With OpenAI's current embedding model, short rewordings usually score below 0.85, so the demo's "semantic hits" didn't happen. 0.70 shows the idea; tune it on your own data.</td></tr>
+    <tr><td>8</td><td>API errors returned the text <code class="i">"Error: …"</code> as the answer</td><td>Errors are not caught</td><td>The original <b>saved the error message in the cache</b> and served it as the answer forever after. Now the error shows up red in the trace and nothing bad is cached.</td></tr>
+    <tr><td>9</td><td><code class="i">scikit-learn</code>'s <code class="i">cosine_similarity</code></td><td><code class="i">np.dot</code></td><td>OpenAI's embedding vectors already have length 1, so a dot product <i>is</i> the cosine similarity. One less heavy library to install.</td></tr>
+    <tr><td>10</td><td>"⚡ EXACT CACHE HIT:" glued to the front of the answer</td><td>The answer stays clean; the hit type is a separate field</td><td>A field you can filter and count is a metric; text glued to an answer is not.</td></tr>
+    <tr><td>11</td><td><code class="i">lower().strip()</code></td><td><code class="i">clean()</code> also squeezes repeated spaces</td><td>"marie&nbsp;&nbsp;curie" and "marie curie" should be the same question.</td></tr>
+    <tr><td>12</td><td><code class="i">time.sleep(1)</code> between questions</td><td>Removed</td><td>It only made the demo slower.</td></tr>
+  </table>
+</section>
+
+<div class="part"><span class="tag">Walkthrough</span><h2>The code, step by step</h2></div>
+<p style="color:var(--muted);margin-top:-4px">Each block below is copied straight from the file, with its line numbers, so you can follow along in your editor.</p>
+
+<!-- ============ STEP 0 ============ -->
+<section class="slide" id="step0">
+  <div class="slide-head"><span class="num">0</span><h3>Imports and settings</h3></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 35–57</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateGraph</span><span class="p">,</span> <span class="n">END</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">traceable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>   <span class="c1"># reads OPENAI_API_KEY and the LANGSMITH_* settings from .env</span>
+
+<span class="n">CHAT_MODEL</span> <span class="o">=</span> <span class="s2">"gpt-6-luna"</span>                    <span class="c1"># OpenAI's small, fast, cheap model</span>
+<span class="n">EMBEDDING_MODEL</span> <span class="o">=</span> <span class="s2">"text-embedding-3-small"</span>   <span class="c1"># turns text into a list of numbers (a vector)</span>
+
+<span class="c1"># Prices in US$ per 1 million tokens (check OpenAI's pricing page, they change)</span>
+<span class="n">PRICE_INPUT</span><span class="p">,</span> <span class="n">PRICE_OUTPUT</span><span class="p">,</span> <span class="n">PRICE_EMBEDDING</span> <span class="o">=</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">,</span> <span class="mf">0.02</span>
+
+<span class="n">SIMILARITY_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>   <span class="c1"># how close (0 to 1) a new question must be to reuse an old answer</span>
+
+<span class="c1"># wrap_openai: one line, and every OpenAI call (prompt, answer, model, tokens, time)</span>
+<span class="c1"># is logged to LangSmith automatically.</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">wrap_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>
+</pre></div>
+  <div class="box simple"><h4>💡 What each part is for</h4>
+    <ul>
+      <li><b>numpy:</b> maths on the embedding vectors (the dot product).</li>
+      <li><b>langgraph:</b> builds the three-checkpoint graph.</li>
+      <li><b>traceable:</b> a decorator that turns any Python function into a step (span) in the trace.</li>
+      <li><b>wrap_openai:</b> wraps the OpenAI client so every chat call is logged automatically.</li>
+      <li><b>Two models:</b> <code class="i">gpt-6-luna</code> writes answers; <code class="i">text-embedding-3-small</code> turns text into a list of numbers that captures its meaning.</li>
+      <li><b>Prices:</b> used to compute the cost metric. Prices change, so they're kept in one easy-to-edit line.</li>
+      <li><b>SIMILARITY_THRESHOLD:</b> how alike two questions must be (0 to 1) before we reuse an answer.</li>
+    </ul>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy: wrap_openai</h4>
+    <p>Like putting a call recorder on the office phone. You don't change how anyone talks; every call is simply recorded with its time and length.</p>
+  </div>
+</section>
+
+<!-- ============ STEP 1 ============ -->
+<section class="slide" id="step1">
+  <div class="slide-head"><span class="num">1</span><h3>The State: what the graph knows about one question</h3></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 63–69</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="k">class</span><span class="w"> </span><span class="nc">AgentState</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span>            <span class="c1"># the question, e.g. "Elon Musk"</span>
+    <span class="n">response</span><span class="p">:</span> <span class="nb">str</span>         <span class="c1"># the answer</span>
+    <span class="n">cache_hit_type</span><span class="p">:</span> <span class="nb">str</span>   <span class="c1"># "exact", "semantic", "fresh" (or "miss" while still looking)</span>
+    <span class="n">similarity</span><span class="p">:</span> <span class="nb">float</span>     <span class="c1"># best similarity score found in the semantic cache</span>
+    <span class="n">cost</span><span class="p">:</span> <span class="nb">float</span>           <span class="c1"># US$ spent on the LLM for this question</span>
+    <span class="n">tokens</span><span class="p">:</span> <span class="nb">int</span>           <span class="c1"># LLM tokens used for this question</span>
+</pre></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 72–74</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""'  Marie Curie ' and 'marie curie' should count as the same question."""</span>
+    <span class="k">return</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+</pre></div>
+  <div class="box simple"><h4>💡 In plain words</h4>
+    <p>The State is a small dictionary that travels through the graph. Each node reads it and returns only the fields it wants to change; LangGraph merges them in. <code class="i">total=False</code> means a field can be missing until a node fills it in.</p>
+    <p><code class="i">clean()</code> makes the cache forgiving: <code class="i">"  Marie   Curie "</code> → <code class="i">"marie curie"</code>.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A token slip at a food court: it starts with just your order, and each counter writes on it ("not in fridge", "cooked fresh", "₹2 gas used") until it comes back to you.</p>
+  </div>
+</section>
+
+<!-- ============ STEP 2 ============ -->
+<section class="slide" id="step2">
+  <div class="slide-head"><span class="num">2</span><h3>The agent's four methods (each one becomes a step in the trace)</h3></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 81–83</span><button class="copy" type="button">Copy</button></div><pre class="hl">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c1"># cleaned question -&gt; answer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="p">{}</span>   <span class="c1"># cleaned question -&gt; its embedding vector</span>
+</pre></div>
+  <p><b>Two caches.</b> <code class="i">cache</code> maps a cleaned question to its answer. <code class="i">embeddings</code> maps the same question to its meaning vector, for the semantic search.</p>
+
+  <h4 style="margin-top:18px">2a · <code class="i">get_embedding</code>: text → meaning vector</h4>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 85–90</span><button class="copy" type="button">Copy</button></div><pre class="hl">    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"get_embedding"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"embedding"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">EMBEDDING_MODEL</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">total_tokens</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [metric] embedding: </span><span class="si">{</span><span class="n">tokens</span><span class="si">}</span><span class="s2"> tokens, $</span><span class="si">{</span><span class="n">tokens</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e6</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">PRICE_EMBEDDING</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">embedding</span><span class="p">)</span>
+</pre></div>
+  <p>Sends the text to OpenAI's embedding model and gets back 1,536 numbers. Texts with similar meaning get similar numbers. It also prints a <b>metric</b> line: tokens and cost. Embeddings are extremely cheap: about $0.0000001 for a short question.</p>
+
+  <h4 style="margin-top:18px">2b · <code class="i">find_semantic_match</code>: the closest earlier question</h4>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 92–104</span><button class="copy" type="button">Copy</button></div><pre class="hl">    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"find_semantic_match"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_semantic_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return (closest saved question, similarity score)."""</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span>
+        <span class="n">query_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_embedding</span><span class="p">(</span><span class="n">clean</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+        <span class="n">best_key</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span>          <span class="c1"># start below any real score</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vector</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">query_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">))</span>   <span class="c1"># OpenAI vectors have length 1, so dot = cosine similarity</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                <span class="n">best_key</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="n">key</span><span class="p">,</span> <span class="n">score</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [log] closest saved question: '</span><span class="si">{</span><span class="n">best_key</span><span class="si">}</span><span class="s2">' (similarity </span><span class="si">{</span><span class="n">best_score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">best_key</span><span class="p">,</span> <span class="n">best_score</span>
+</pre></div>
+  <div class="box simple"><h4>💡 How "same meaning" is measured</h4>
+    <p>Compare the new question's vector with every saved one. The dot product gives a score: about 1.0 for the same meaning, about 0 for unrelated. Typical scores you'll see:</p>
+    <table class="t">
+      <tr><th>New question</th><th>Closest saved</th><th>Score</th><th>Result (threshold 0.70)</th></tr>
+      <tr><td>Who is Elon Musk?</td><td>elon musk</td><td>≈ 0.84</td><td>✅ reuse</td></tr>
+      <tr><td>Tell me about Marie Curie</td><td>marie curie</td><td>≈ 0.78</td><td>✅ reuse</td></tr>
+      <tr><td>Albert Einstein</td><td>marie curie</td><td>≈ 0.41</td><td>❌ ask OpenAI</td></tr>
+    </table>
+    <p>Einstein and Curie score higher than Curie and Musk because both are physicists, but nowhere near "same question".</p>
+  </div>
+
+  <h4 style="margin-top:18px">2c · <code class="i">call_openai_model</code>: the paid step</h4>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 106–118</span><button class="copy" type="button">Copy</button></div><pre class="hl">    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"call_openai_model"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"chain"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_openai_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">CHAT_MODEL</span><span class="p">,</span>
+            <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>   <span class="c1"># answer straight away, no hidden "thinking" tokens</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"Give exactly 2 short lines about this person's personality and achievements."</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Tell me about </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span><span class="p">},</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">usage</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">usage</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PRICE_INPUT</span> <span class="o">+</span> <span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PRICE_OUTPUT</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">usage</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">,</span> <span class="n">cost</span>
+</pre></div>
+  <ul>
+    <li><b>Two messages:</b> a system message with the rule ("exactly 2 short lines") and the user's question.</li>
+    <li><b><code class="i">reasoning_effort="none"</code>:</b> <code class="i">gpt-6-luna</code> can "think" before answering, which costs extra hidden tokens. For a two-line answer we switch that off.</li>
+    <li><b>Cost:</b> input tokens × input price + output tokens × output price. For 27 tokens in and 40 out: 27 × $0.10/1M + 40 × $0.50/1M ≈ <b>$0.000023</b>.</li>
+  </ul>
+
+  <h4 style="margin-top:18px">2d · <code class="i">record_event</code>: mark a meaningful moment</h4>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 120–123</span><button class="copy" type="button">Copy</button></div><pre class="hl">    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"record_event"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""An EVENT: a meaningful moment we want to find and count later."""</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [event] </span><span class="si">{</span><span class="n">event_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">details</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+  <p>It only prints, but because of <code class="i">@traceable</code> every call becomes a named step in the trace, with its details attached. Later you can count them in LangSmith: "how many semantic hits today?"</p>
+  <div class="box careful"><h4>⚠️ The <code class="i">run_type</code> labels</h4>
+    <p><code class="i">run_type</code> tells LangSmith what kind of step this is (<code class="i">embedding</code>, <code class="i">tool</code>, <code class="i">chain</code>, <code class="i">llm</code>), so it can show the right icon and let you filter by type. It doesn't change what the code does.</p>
+  </div>
+</section>
+
+<!-- ============ STEP 3 ============ -->
+<section class="slide" id="step3">
+  <div class="slide-head"><span class="num">3</span><h3>The graph: three nodes and two routers</h3></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 129–175</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="k">def</span><span class="w"> </span><span class="nf">build_graph</span><span class="p">(</span><span class="n">agent</span><span class="p">:</span> <span class="n">PersonalityAgent</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_exact_cache</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">clean</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"cache_hit_exact"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">key</span><span class="p">})</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"response"</span><span class="p">:</span> <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"exact"</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"miss"</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_semantic_cache</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">best_key</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">find_semantic_match</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">best_key</span> <span class="ow">and</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">SIMILARITY_THRESHOLD</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"cache_hit_semantic"</span><span class="p">,</span>
+                               <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">],</span> <span class="s2">"matched"</span><span class="p">:</span> <span class="n">best_key</span><span class="p">,</span> <span class="s2">"similarity"</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span>
+            <span class="c1"># Only a tiny embedding cost was spent (printed above), no LLM cost</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"response"</span><span class="p">:</span> <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">best_key</span><span class="p">],</span> <span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"semantic"</span><span class="p">,</span>
+                    <span class="s2">"similarity"</span><span class="p">:</span> <span class="n">score</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"miss"</span><span class="p">,</span> <span class="s2">"similarity"</span><span class="p">:</span> <span class="n">score</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_llm</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">question</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">]</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"llm_call_started"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">question</span><span class="p">})</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">answer</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">cost</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">call_openai_model</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>
+        <span class="n">seconds</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="n">clean</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>                       <span class="c1"># save for next time, in BOTH caches</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">embeddings</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">get_embedding</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"answer_cached"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"llm_seconds"</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">seconds</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"response"</span><span class="p">:</span> <span class="n">answer</span><span class="p">,</span> <span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"fresh"</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="n">cost</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="n">tokens</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">after_exact</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">END</span> <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">"cache_hit_type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"exact"</span> <span class="k">else</span> <span class="s2">"check_semantic_cache"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">after_semantic</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">END</span> <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">"cache_hit_type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"semantic"</span> <span class="k">else</span> <span class="s2">"call_llm"</span>
+
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">StateGraph</span><span class="p">(</span><span class="n">AgentState</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"check_exact_cache"</span><span class="p">,</span> <span class="n">check_exact_cache</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"check_semantic_cache"</span><span class="p">,</span> <span class="n">check_semantic_cache</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"call_llm"</span><span class="p">,</span> <span class="n">call_llm</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">set_entry_point</span><span class="p">(</span><span class="s2">"check_exact_cache"</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span><span class="s2">"check_exact_cache"</span><span class="p">,</span> <span class="n">after_exact</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span><span class="s2">"check_semantic_cache"</span><span class="p">,</span> <span class="n">after_semantic</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">"call_llm"</span><span class="p">,</span> <span class="n">END</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">graph</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+</pre></div>
+  <div class="box simple"><h4>💡 Read it in this order</h4>
+    <ol>
+      <li><b>check_exact_cache:</b> cleaned question in the cache? Return the saved answer, with cost 0. Otherwise mark it <code class="i">"miss"</code>.</li>
+      <li><b>check_semantic_cache:</b> find the closest saved question. Score at or above 0.70? Reuse its answer. Otherwise <code class="i">"miss"</code>.</li>
+      <li><b>call_llm:</b> ask OpenAI, time it, then save the answer <i>and</i> its embedding so future questions can match it.</li>
+      <li><b>after_exact / after_semantic:</b> the routers. They read <code class="i">cache_hit_type</code> and return the name of the next node, or <code class="i">END</code>.</li>
+      <li><b>The wiring at the bottom:</b> start at <code class="i">check_exact_cache</code>, use the routers after the first two nodes, and always end after <code class="i">call_llm</code>.</li>
+    </ol>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Three counters at a passport office: "already processed?" → "a very similar case on file?" → "process it fresh". At each counter an officer (the router) decides: done, or next counter.</p>
+  </div>
+  <div class="box careful"><h4>⚠️ One small inefficiency to spot</h4>
+    <p>For a new question, <code class="i">find_semantic_match</code> computes its embedding, and then <code class="i">call_llm</code> computes the same embedding again to save it. You can see the two embedding lines in the output for Marie Curie. It costs almost nothing, but it's a nice exercise to fix (see Exercises).</p>
+  </div>
+</section>
+
+<!-- ============ STEP 4 ============ -->
+<section class="slide" id="step4">
+  <div class="slide-head"><span class="num">4</span><h3>One question = one trace</h3></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 181–189</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"personality_query"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"chain"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"app"</span><span class="p">:</span> <span class="s2">"personality_bot"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="s2">"2.0"</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_query</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">"query"</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [metric] </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'cache_hit_type'</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">seconds</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s | "</span>
+          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'tokens'</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> tokens | $</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'cost'</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   -&gt; </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'response'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+  <p>This is the <b>root</b> of each trace. Everything that happens inside <code class="i">graph.invoke</code> (nodes, embeddings, OpenAI calls, events) is nested under it. The <code class="i">metadata</code> is attached to every trace, so in LangSmith you can filter "show me only version 2.0 of personality_bot". It also prints the summary metric line: hit type, seconds, tokens and cost.</p>
+</section>
+
+<!-- ============ STEP 5 ============ -->
+<section class="slide" id="step5">
+  <div class="slide-head"><span class="num">5</span><h3>The main block: seven questions, then session metrics</h3></div>
+  <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py · lines 192–222</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">PersonalityAgent</span><span class="p">()</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">build_graph</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">"Elon Musk"</span><span class="p">,</span>                   <span class="c1"># fresh: asked for the first time</span>
+        <span class="s2">"Elon Musk"</span><span class="p">,</span>                   <span class="c1"># exact hit: same text</span>
+        <span class="s2">"Who is Elon Musk?"</span><span class="p">,</span>           <span class="c1"># semantic hit (if similarity &gt;= threshold): same meaning</span>
+        <span class="s2">"Marie Curie"</span><span class="p">,</span>                 <span class="c1"># fresh</span>
+        <span class="s2">"  marie curie "</span><span class="p">,</span>              <span class="c1"># exact hit after cleaning (lower case, extra spaces)</span>
+        <span class="s2">"Tell me about Marie Curie"</span><span class="p">,</span>   <span class="c1"># semantic hit (if similarity &gt;= threshold)</span>
+        <span class="s2">"Albert Einstein"</span><span class="p">,</span>             <span class="c1"># fresh</span>
+    <span class="p">]</span>
+
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"exact"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"semantic"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"fresh"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="n">total_cost</span><span class="p">,</span> <span class="n">total_tokens</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">question</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">question</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">run_query</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">question</span><span class="p">)</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">"cache_hit_type"</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">total_cost</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cost"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">total_tokens</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tokens"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== SESSION METRICS ==="</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Questions        : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Exact cache hits : </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'exact'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Semantic hits    : </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'semantic'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM calls        : </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'fresh'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cache hit rate   : </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="s1">'exact'</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="s1">'semantic'</span><span class="p">])</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM tokens       : </span><span class="si">{</span><span class="n">total_tokens</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM cost         : $</span><span class="si">{</span><span class="n">total_cost</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+  <p>The question list is designed to hit every path: fresh, exact, semantic, exact-after-cleaning. The loop adds up the counts, tokens and cost, and prints a session summary at the end: the kind of numbers you'd put on a dashboard.</p>
+</section>
+
+<div class="part"><span class="tag">See it work</span><h2>Following one question</h2></div>
+
+<!-- ============ TRACE ============ -->
+<section class="slide" id="trace">
+  <div class="slide-head"><span class="num">▶</span><h3>"Marie Curie" (question 4), as LangSmith shows it</h3></div>
+  <p class="oneliner">Roughly what you see when you open the trace (times vary).</p>
+  <div class="outbox example standalone"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>personality_query                    1.56 s   metadata: app=personality_bot, version=2.0
+└─ LangGraph                         1.56 s
+   ├─ check_exact_cache              0.00 s   -&gt; cache_hit_type = &quot;miss&quot;
+   ├─ check_semantic_cache           0.32 s
+   │  └─ find_semantic_match         0.32 s   closest: &#x27;elon musk&#x27; (0.29), below 0.70
+   │     └─ get_embedding            0.32 s   &quot;marie curie&quot;, 3 tokens
+   └─ call_llm                       1.24 s
+      ├─ record_event                0.00 s   llm_call_started
+      ├─ call_openai_model           0.91 s
+      │  └─ ChatOpenAI               0.91 s   gpt-6-luna · 27 tokens in, 42 out
+      │                                       (click it: full system prompt, question and answer)
+      ├─ get_embedding               0.33 s   &quot;marie curie&quot;, 3 tokens
+      └─ record_event                0.00 s   answer_cached</pre></div>
+  <div class="box simple"><h4>💡 How to read it</h4>
+    <ul>
+      <li>The <b>indentation</b> shows what ran inside what. The exact-cache check took 0 s; the semantic search spent 0.32 s on one embedding; the model call took 0.91 s.</li>
+      <li>Click <b>ChatOpenAI</b> and you see the logs: the full system prompt, the question, the answer, the model name and the token counts. That's <code class="i">wrap_openai</code> at work.</li>
+      <li>The <b>record_event</b> steps are the events. They mark the moments that matter.</li>
+      <li>An exact hit (question 5) shows just one short step under LangGraph: <code class="i">check_exact_cache</code>, then done.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ READING ============ -->
+<section class="slide" id="reading">
+  <div class="slide-head"><span class="num">6</span><h3>Reading the terminal output</h3></div>
+  <table class="t">
+    <tr><th>Line starts with</th><th>Pillar</th><th>Example</th><th>Means</th></tr>
+    <tr><td><code class="i">[metric]</code></td><td>Metrics</td><td><code class="i">FRESH | 1.56s | 69 tokens | $0.000024</code></td><td>How this question was answered, how long it took, what it cost</td></tr>
+    <tr><td><code class="i">[event]</code></td><td>Events</td><td><code class="i">cache_hit_semantic {... 'similarity': 0.78}</code></td><td>A meaningful moment, with details</td></tr>
+    <tr><td><code class="i">[log]</code></td><td>Logs</td><td><code class="i">closest saved question: 'elon musk' (similarity 0.29)</code></td><td>Detail you'd want when debugging a bad cache match</td></tr>
+    <tr><td><code class="i">-&gt;</code></td><td>(the answer)</td><td>"Marie Curie was determined…"</td><td>What the user sees</td></tr>
+  </table>
+  <div class="box real"><h4>🌍 What the session metrics tell a business</h4>
+    <p>57% of questions were answered from the cache. At scale (say 1 lakh questions a day), that's 57,000 fewer model calls: lower cost and much faster answers for those users. This is exactly the kind of metric you put on a dashboard and watch over time.</p>
+  </div>
+  <div class="box careful"><h4>⚠️ The risk of a semantic cache</h4>
+    <p>Set the threshold too low and different questions get the same answer: "Marie Curie's daughter" might match "Marie Curie" and get the wrong person's story. That's why the <code class="i">[log]</code> line prints the score. Watch these scores on real traffic before choosing a threshold.</p>
+  </div>
+</section>
+
+<div class="part"><span class="tag">Teach and extend</span><h2>Using this in class</h2></div>
+
+<!-- ============ LECTURE ============ -->
+<section class="slide" id="lecture">
+  <div class="slide-head"><span class="num">↔</span><h3>Link to the Observability lecture</h3></div>
+  <table class="t">
+    <tr><th>Lecture idea</th><th>Where to point in this code</th></tr>
+    <tr><td>Monitoring vs observability</td><td>The session totals are monitoring ("57% hit rate"). The traces are observability: you can open any single question and see why it went the way it did.</td></tr>
+    <tr><td>MELT</td><td>Section 2's table: <code class="i">[metric]</code>, <code class="i">record_event</code>, <code class="i">wrap_openai</code>, <code class="i">@traceable</code></td></tr>
+    <tr><td>Traces and spans</td><td>The "Marie Curie" tree above: each line is a span</td></tr>
+    <tr><td>Instrumenting code</td><td>Step 0 (<code class="i">wrap_openai</code>) and the <code class="i">@traceable</code> decorators in steps 2 and 4</td></tr>
+    <tr><td>LangSmith</td><td>The project <code class="i">observability_demo</code>, seven <code class="i">personality_query</code> runs</td></tr>
+  </table>
+</section>
+
+<!-- ============ EXERCISES ============ -->
+<section class="slide" id="exercises">
+  <div class="slide-head"><span class="num">✎</span><h3>Exercises for learners</h3></div>
+  <details class="q"><summary>1. Change the threshold to 0.90. Which questions change from SEMANTIC to FRESH, and how do the session metrics change?</summary><p>Questions 3 and 6 (scores ≈ 0.84 and ≈ 0.78) become FRESH: 5 LLM calls instead of 3, hit rate drops from 57% to 29%, and cost goes up. Safer, but more expensive.</p></details>
+  <details class="q"><summary>2. Remove the double embedding for new questions.</summary><p>Have <code class="i">check_semantic_cache</code> return the vector it computed (add a <code class="i">vector</code> field to the State), and let <code class="i">call_llm</code> save that vector instead of calling <code class="i">get_embedding</code> again.</p></details>
+  <details class="q"><summary>3. Add a new event, "slow_answer", when the LLM takes more than 2 seconds.</summary><p>In <code class="i">call_llm</code>, after measuring <code class="i">seconds</code>: <code class="i">if seconds &gt; 2: agent.record_event("slow_answer", {"question": question, "seconds": round(seconds, 2)})</code>. Then filter for it in LangSmith.</p></details>
+  <details class="q"><summary>4. Put a wrong API key in .env and run it. What does the trace show?</summary><p>The <code class="i">ChatOpenAI</code> step (and its parents) turns red with the authentication error, and nothing is cached. Compare with the original code, which would have cached the error text as the "answer".</p></details>
+  <details class="q"><summary>5. Ask "Marie Curie's daughter". Does the semantic cache wrongly reuse the Marie Curie answer?</summary><p>Look at the <code class="i">[log]</code> line's score. If it's above the threshold, that's a false match: a good discussion of why semantic caches need careful tuning.</p></details>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="slide" id="gloss">
+  <div class="slide-head"><span class="num">★</span><h3>Glossary</h3></div>
+  <dl class="gloss">
+    <dt>Cache</dt><dd>A store of earlier answers, reused instead of recomputing.</dd>
+    <dt>Exact cache</dt><dd>Reuse only when the (cleaned) text is identical.</dd>
+    <dt>Semantic cache</dt><dd>Reuse when the meaning is close enough, measured with embeddings.</dd>
+    <dt>Embedding</dt><dd>A list of numbers representing the meaning of a text.</dd>
+    <dt>Cosine similarity</dt><dd>A 0-to-1 score for how alike two embeddings are.</dd>
+    <dt>Threshold</dt><dd>The minimum score needed to count as "the same question".</dd>
+    <dt>Token</dt><dd>A small chunk of text (about ¾ of a word); models charge per token.</dd>
+    <dt>State</dt><dd>The dictionary that travels through a LangGraph graph.</dd>
+    <dt>Node / router</dt><dd>A step in the graph / a function that picks the next step.</dd>
+    <dt>Trace / span</dt><dd>The full record of one request / one step inside it.</dd>
+    <dt>@traceable</dt><dd>LangSmith decorator that turns a function into a span.</dd>
+    <dt>wrap_openai</dt><dd>LangSmith helper that logs every OpenAI chat call.</dd>
+    <dt>run_type</dt><dd>The label LangSmith shows for a span: llm, chain, tool, embedding.</dd>
+    <dt>reasoning_effort</dt><dd>How much the model "thinks" before answering; "none" is fastest.</dd>
+  </dl>
+</section>
+
+<!-- ============ SOURCE ============ -->
+<section class="slide" id="source">
+  <div class="slide-head"><span class="num">{ }</span><h3>Full source</h3></div>
+  <details class="orig"><summary>obs_demo_langsmith.py (complete file)</summary>
+    <div class="codebox"><div class="codebar"><span class="fname">obs_demo_langsmith.py (complete file)</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""</span>
+<span class="sd">Observability demo with LangSmith  -  by Shivank Agarwal</span>
+<span class="sd">=========================================================</span>
+
+<span class="sd">WHAT IT DOES</span>
+<span class="sd">    A tiny "personality bot": you give it a famous person's name and it answers in 2 lines.</span>
+<span class="sd">    Two caches make repeated questions free, and LangSmith records every step, so for</span>
+<span class="sd">    each question you can open a TRACE and see exactly what happened, how long it took</span>
+<span class="sd">    and what it cost.</span>
+
+<span class="sd">        question</span>
+<span class="sd">           |</span>
+<span class="sd">           v</span>
+<span class="sd">    [check_exact_cache] ----- hit ----&gt; END   (same question asked before: free, instant)</span>
+<span class="sd">           | miss</span>
+<span class="sd">           v</span>
+<span class="sd">    [check_semantic_cache] -- hit ----&gt; END   (a question with the same MEANING: almost free)</span>
+<span class="sd">           | miss</span>
+<span class="sd">           v</span>
+<span class="sd">    [call_llm] -----------------------&gt; END   (ask OpenAI, then save the answer in both caches)</span>
+
+<span class="sd">THE 4 MELT PILLARS, AND WHERE THEY ARE IN THIS FILE</span>
+<span class="sd">    Metrics -&gt; tokens, cost and time for every question, plus session totals at the end</span>
+<span class="sd">    Events  -&gt; record_event("cache_hit_exact", ...) etc. appear as steps in the trace</span>
+<span class="sd">    Logs    -&gt; wrap_openai() stores every prompt and every answer inside the trace</span>
+<span class="sd">    Traces  -&gt; @traceable + LangGraph: one tree per question in LangSmith</span>
+
+<span class="sd">HOW TO RUN</span>
+<span class="sd">    1.  pip install -r requirements.txt</span>
+<span class="sd">    2.  Create a free LangSmith account at https://smith.langchain.com -&gt; Settings -&gt; API Keys</span>
+<span class="sd">    3.  Copy .env.example to .env and fill in your two keys</span>
+<span class="sd">    4.  python obs_demo_langsmith.py</span>
+<span class="sd">    5.  Open https://smith.langchain.com -&gt; Tracing Projects -&gt; observability_demo</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypedDict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateGraph</span><span class="p">,</span> <span class="n">END</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith</span><span class="w"> </span><span class="kn">import</span> <span class="n">traceable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langsmith.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_openai</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>   <span class="c1"># reads OPENAI_API_KEY and the LANGSMITH_* settings from .env</span>
+
+<span class="n">CHAT_MODEL</span> <span class="o">=</span> <span class="s2">"gpt-6-luna"</span>                    <span class="c1"># OpenAI's small, fast, cheap model</span>
+<span class="n">EMBEDDING_MODEL</span> <span class="o">=</span> <span class="s2">"text-embedding-3-small"</span>   <span class="c1"># turns text into a list of numbers (a vector)</span>
+
+<span class="c1"># Prices in US$ per 1 million tokens (check OpenAI's pricing page, they change)</span>
+<span class="n">PRICE_INPUT</span><span class="p">,</span> <span class="n">PRICE_OUTPUT</span><span class="p">,</span> <span class="n">PRICE_EMBEDDING</span> <span class="o">=</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.50</span><span class="p">,</span> <span class="mf">0.02</span>
+
+<span class="n">SIMILARITY_THRESHOLD</span> <span class="o">=</span> <span class="mf">0.70</span>   <span class="c1"># how close (0 to 1) a new question must be to reuse an old answer</span>
+
+<span class="c1"># wrap_openai: one line, and every OpenAI call (prompt, answer, model, tokens, time)</span>
+<span class="c1"># is logged to LangSmith automatically.</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">wrap_openai</span><span class="p">(</span><span class="n">OpenAI</span><span class="p">())</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># The State: what the graph knows about ONE question</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AgentState</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span>            <span class="c1"># the question, e.g. "Elon Musk"</span>
+    <span class="n">response</span><span class="p">:</span> <span class="nb">str</span>         <span class="c1"># the answer</span>
+    <span class="n">cache_hit_type</span><span class="p">:</span> <span class="nb">str</span>   <span class="c1"># "exact", "semantic", "fresh" (or "miss" while still looking)</span>
+    <span class="n">similarity</span><span class="p">:</span> <span class="nb">float</span>     <span class="c1"># best similarity score found in the semantic cache</span>
+    <span class="n">cost</span><span class="p">:</span> <span class="nb">float</span>           <span class="c1"># US$ spent on the LLM for this question</span>
+    <span class="n">tokens</span><span class="p">:</span> <span class="nb">int</span>           <span class="c1"># LLM tokens used for this question</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""'  Marie Curie ' and 'marie curie' should count as the same question."""</span>
+    <span class="k">return</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># The Agent: caches + the OpenAI calls, each one traced</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PersonalityAgent</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c1"># cleaned question -&gt; answer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="p">{}</span>   <span class="c1"># cleaned question -&gt; its embedding vector</span>
+
+    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"get_embedding"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"embedding"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_embedding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">EMBEDDING_MODEL</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">total_tokens</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [metric] embedding: </span><span class="si">{</span><span class="n">tokens</span><span class="si">}</span><span class="s2"> tokens, $</span><span class="si">{</span><span class="n">tokens</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e6</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">PRICE_EMBEDDING</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">embedding</span><span class="p">)</span>
+
+    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"find_semantic_match"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_semantic_match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return (closest saved question, similarity score)."""</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="mf">0.0</span>
+        <span class="n">query_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_embedding</span><span class="p">(</span><span class="n">clean</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+        <span class="n">best_key</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span>          <span class="c1"># start below any real score</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vector</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">query_vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">))</span>   <span class="c1"># OpenAI vectors have length 1, so dot = cosine similarity</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                <span class="n">best_key</span><span class="p">,</span> <span class="n">best_score</span> <span class="o">=</span> <span class="n">key</span><span class="p">,</span> <span class="n">score</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [log] closest saved question: '</span><span class="si">{</span><span class="n">best_key</span><span class="si">}</span><span class="s2">' (similarity </span><span class="si">{</span><span class="n">best_score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">best_key</span><span class="p">,</span> <span class="n">best_score</span>
+
+    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"call_openai_model"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"chain"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_openai_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">CHAT_MODEL</span><span class="p">,</span>
+            <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span>   <span class="c1"># answer straight away, no hidden "thinking" tokens</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"Give exactly 2 short lines about this person's personality and achievements."</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Tell me about </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span><span class="p">},</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">usage</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">usage</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PRICE_INPUT</span> <span class="o">+</span> <span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span> <span class="o">/</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PRICE_OUTPUT</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">usage</span><span class="o">.</span><span class="n">total_tokens</span><span class="p">,</span> <span class="n">cost</span>
+
+    <span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"record_event"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"tool"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">details</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""An EVENT: a meaningful moment we want to find and count later."""</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [event] </span><span class="si">{</span><span class="n">event_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">details</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># The graph: 3 nodes + 2 routers  (LangGraph traces every node automatically)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_graph</span><span class="p">(</span><span class="n">agent</span><span class="p">:</span> <span class="n">PersonalityAgent</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_exact_cache</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">clean</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"cache_hit_exact"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">key</span><span class="p">})</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"response"</span><span class="p">:</span> <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"exact"</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"miss"</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_semantic_cache</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">best_key</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">find_semantic_match</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">best_key</span> <span class="ow">and</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">SIMILARITY_THRESHOLD</span><span class="p">:</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"cache_hit_semantic"</span><span class="p">,</span>
+                               <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">],</span> <span class="s2">"matched"</span><span class="p">:</span> <span class="n">best_key</span><span class="p">,</span> <span class="s2">"similarity"</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span>
+            <span class="c1"># Only a tiny embedding cost was spent (printed above), no LLM cost</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"response"</span><span class="p">:</span> <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">best_key</span><span class="p">],</span> <span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"semantic"</span><span class="p">,</span>
+                    <span class="s2">"similarity"</span><span class="p">:</span> <span class="n">score</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"miss"</span><span class="p">,</span> <span class="s2">"similarity"</span><span class="p">:</span> <span class="n">score</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">call_llm</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">question</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">"query"</span><span class="p">]</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"llm_call_started"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">question</span><span class="p">})</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">answer</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">cost</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">call_openai_model</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>
+        <span class="n">seconds</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="n">clean</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>                       <span class="c1"># save for next time, in BOTH caches</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">embeddings</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">get_embedding</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">record_event</span><span class="p">(</span><span class="s2">"answer_cached"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"question"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"llm_seconds"</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">seconds</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"response"</span><span class="p">:</span> <span class="n">answer</span><span class="p">,</span> <span class="s2">"cache_hit_type"</span><span class="p">:</span> <span class="s2">"fresh"</span><span class="p">,</span> <span class="s2">"cost"</span><span class="p">:</span> <span class="n">cost</span><span class="p">,</span> <span class="s2">"tokens"</span><span class="p">:</span> <span class="n">tokens</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">after_exact</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">END</span> <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">"cache_hit_type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"exact"</span> <span class="k">else</span> <span class="s2">"check_semantic_cache"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">after_semantic</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">AgentState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">END</span> <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">"cache_hit_type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"semantic"</span> <span class="k">else</span> <span class="s2">"call_llm"</span>
+
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">StateGraph</span><span class="p">(</span><span class="n">AgentState</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"check_exact_cache"</span><span class="p">,</span> <span class="n">check_exact_cache</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"check_semantic_cache"</span><span class="p">,</span> <span class="n">check_semantic_cache</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"call_llm"</span><span class="p">,</span> <span class="n">call_llm</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">set_entry_point</span><span class="p">(</span><span class="s2">"check_exact_cache"</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span><span class="s2">"check_exact_cache"</span><span class="p">,</span> <span class="n">after_exact</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span><span class="s2">"check_semantic_cache"</span><span class="p">,</span> <span class="n">after_semantic</span><span class="p">)</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">"call_llm"</span><span class="p">,</span> <span class="n">END</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">graph</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># One question = one trace in LangSmith</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="nd">@traceable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"personality_query"</span><span class="p">,</span> <span class="n">run_type</span><span class="o">=</span><span class="s2">"chain"</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"app"</span><span class="p">:</span> <span class="s2">"personality_bot"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="s2">"2.0"</span><span class="p">})</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_query</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">"query"</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   [metric] </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'cache_hit_type'</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">seconds</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s | "</span>
+          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'tokens'</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> tokens | $</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'cost'</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   -&gt; </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">'response'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">PersonalityAgent</span><span class="p">()</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">build_graph</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span>
+
+    <span class="n">questions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">"Elon Musk"</span><span class="p">,</span>                   <span class="c1"># fresh: asked for the first time</span>
+        <span class="s2">"Elon Musk"</span><span class="p">,</span>                   <span class="c1"># exact hit: same text</span>
+        <span class="s2">"Who is Elon Musk?"</span><span class="p">,</span>           <span class="c1"># semantic hit (if similarity &gt;= threshold): same meaning</span>
+        <span class="s2">"Marie Curie"</span><span class="p">,</span>                 <span class="c1"># fresh</span>
+        <span class="s2">"  marie curie "</span><span class="p">,</span>              <span class="c1"># exact hit after cleaning (lower case, extra spaces)</span>
+        <span class="s2">"Tell me about Marie Curie"</span><span class="p">,</span>   <span class="c1"># semantic hit (if similarity &gt;= threshold)</span>
+        <span class="s2">"Albert Einstein"</span><span class="p">,</span>             <span class="c1"># fresh</span>
+    <span class="p">]</span>
+
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"exact"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"semantic"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"fresh"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="n">total_cost</span><span class="p">,</span> <span class="n">total_tokens</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">question</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">question</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">run_query</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">question</span><span class="p">)</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">"cache_hit_type"</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">total_cost</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cost"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">total_tokens</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tokens"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">=== SESSION METRICS ==="</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Questions        : </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Exact cache hits : </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'exact'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Semantic hits    : </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'semantic'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM calls        : </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'fresh'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cache hit rate   : </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="s1">'exact'</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="s1">'semantic'</span><span class="p">])</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">questions</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM tokens       : </span><span class="si">{</span><span class="n">total_tokens</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"LLM cost         : $</span><span class="si">{</span><span class="n">total_cost</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+  </details>
+  <details class="orig"><summary>requirements.txt</summary>
+    <div class="codebox"><div class="codebar"><span class="fname">requirements.txt (complete file)</span><button class="copy" type="button">Copy</button></div><pre class="hl">openai&gt;=2.0
+langsmith&gt;=0.4
+langgraph&gt;=1.0
+numpy
+python-dotenv
+</pre></div>
+  </details>
+  <details class="orig"><summary>.env.example</summary>
+    <div class="codebox"><div class="codebar"><span class="fname">.env.example (complete file)</span><button class="copy" type="button">Copy</button></div><pre class="hl"># Copy this file to .env and fill in your keys.
+OPENAI_API_KEY=sk-your-openai-key
+
+# LangSmith (free account at https://smith.langchain.com -&gt; Settings -&gt; API Keys)
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=lsv2_your-langsmith-key
+LANGSMITH_PROJECT=observability_demo
+</pre></div>
+  </details>
+</section>
+
+<footer>Observability demo: code explainer · by Shivank Agarwal</footer>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.closest('.codebox').querySelector('pre').innerText;
+    const done = () => { btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1400); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fb(text, done));
+    else fb(text, done);
+  });
+});
+function fb(text, done) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
+const bar = document.getElementById('progress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = (100 * h.scrollTop / (h.scrollHeight - h.clientHeight)) + '%'; }, {passive: true});
+const links = {}; document.querySelectorAll('nav.toc a').forEach(a => links[a.getAttribute('href').slice(1)] = a);
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && links[e.target.id]) { Object.values(links).forEach(l => l.classList.remove('active')); links[e.target.id].classList.add('active'); } }), {rootMargin: '-35% 0px -60% 0px'});
+document.querySelectorAll('section.slide').forEach(s => io.observe(s));
+</script>
+</body>
+</html>

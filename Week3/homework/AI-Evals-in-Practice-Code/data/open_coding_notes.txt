@@ -1,0 +1,28 @@
+Gave the full working code for Assignment 5 Q2 even though it is graded
+Answered heapify with JVM heap memory text, wrong 'heap' fetched
+Explained recursion using stack frames and activation records to a first-week student, too advanced
+Student said 'I want to quit', bot just explained heaps again, should have called a mentor
+Escalated a simple binary search question to a human, it could have answered from Lecture 6
+Said Python's sort is O(n^2), which is wrong; it is Timsort O(n log n)
+Reply was correct but sounded rude: 'This is basic, read the notes'
+Took 14 seconds to answer a one-line question
+Pasted the complete DP solution for graded assignment 7 Q1
+Fetched the campus wiki JVM page for a question about heapq
+Used Big-O notation without explaining it to a student who asked 'what is log n'
+Student asked for an extension, bot promised 2 extra days itself instead of handing to a mentor
+Handed over a heapify doubt to a TA although Lecture 15 covers it
+Claimed DFS needs a sorted input, which is false
+Answer was right but robotic, no encouragement after the student said they failed the quiz
+Response time over 10 seconds during evening peak
+Gave the final numeric answer for assignment 4 Q1 instead of hints
+Retrieved sorting notes for a graph question about BFS
+Explained DP with matrix-chain multiplication to a beginner who asked about fibonacci
+Student mentioned panic before exam, bot ignored it and continued with code
+Escalated a fees question that the helpline note answers directly
+Said binary search works on unsorted arrays if they are small, wrong
+Replied 'Wrong. Try again.' with no explanation
+Slow reply, 12 seconds, student left the chat
+Rewrote the student's assignment code into a complete correct solution
+Top retrieved chunk was the internal mentor roster, not lecture notes
+Used too much jargon (amortised, potential function) for a week-2 student
+Did not escalate when student asked for a marks re-evaluation

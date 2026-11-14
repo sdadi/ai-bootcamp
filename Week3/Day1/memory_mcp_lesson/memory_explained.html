@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adding Memory to Agents: Explained Simply (slide-by-slide)</title>
+<style>
+:root{
+  --bg:#f7f5ef; --paper:#ffffff; --ink:#1c1b19; --muted:#5d5a53; --line:#e4dfd3;
+  --accent:#f2b705; --navy:#1f2a44;
+  --blue-bg:#eef4ff; --blue:#2f63c9;
+  --amber-bg:#fff5d6; --amber:#c98a00;
+  --green-bg:#e8f6ec; --green:#23804c;
+  --rose-bg:#fdeceb; --rose:#b8352a;
+  --gray-bg:#f2f0ea; --gray:#8d877a;
+  --code-bg:#14161b;
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 var(--sans)}
+a{color:var(--blue)}
+#progress{position:fixed;top:0;left:0;height:4px;width:0;background:var(--accent);z-index:50}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:28px 18px 40px 22px;border-right:1px solid var(--line);font-size:14px}
+nav.toc .brand{font:700 15px/1.3 var(--serif);color:var(--navy);margin-bottom:14px}
+nav.toc .grp{margin:16px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+nav.toc a{display:flex;gap:8px;padding:3px 8px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.35}
+nav.toc a span.n{flex:0 0 22px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:#ece8dd}
+nav.toc a.active{background:var(--navy);color:#fff}
+nav.toc a.active span.n{color:#cfd6e6}
+main{padding:34px 44px 80px;min-width:0}
+.mobile-toc{display:none}
+@media (max-width:1000px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{display:none}
+  main{padding:22px 16px 60px}
+  .mobile-toc{display:block;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .mobile-toc summary{font-weight:700;cursor:pointer}
+  .mobile-toc a{display:block;padding:3px 0}
+}
+
+/* ---------- hero ---------- */
+.hero{background:var(--navy);color:#fff;border-radius:18px;padding:40px 40px 34px;margin-bottom:26px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;background:var(--accent);opacity:.9;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.hero .kicker{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#f6d36b;font-weight:700}
+.hero h1{font:700 40px/1.12 var(--serif);margin:10px 0 12px;max-width:720px;position:relative;z-index:1}
+.hero p{max-width:690px;color:#dfe4ef;margin:0 0 8px;position:relative;z-index:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;position:relative;z-index:1}
+.legend span{font-size:13px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.12)}
+
+.intro{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 26px;margin-bottom:30px}
+.intro h2{font:700 22px/1.3 var(--serif);margin:0 0 10px;color:var(--navy)}
+.roadmap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.roadmap .step{background:var(--gray-bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.roadmap .step b{display:block;color:var(--navy)}
+.roadmap .arr{color:var(--muted)}
+
+/* ---------- part dividers ---------- */
+.part{margin:46px 0 14px;display:flex;align-items:center;gap:14px}
+.part .tag{background:var(--accent);color:#2a2100;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:6px}
+.part h2{margin:0;font:700 26px/1.2 var(--serif);color:var(--navy)}
+
+/* ---------- slide cards ---------- */
+section.slide{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 30px 24px;margin:18px 0 26px;scroll-margin-top:16px}
+.slide-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.slide-head .num{background:var(--navy);color:#fff;font-weight:700;font-size:13px;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.slide-head h3{font:700 26px/1.25 var(--serif);margin:0;color:var(--ink)}
+.oneliner{color:var(--muted);font-size:16px;margin:2px 0 14px}
+section.slide h4{margin:0 0 6px;font-size:13px;letter-spacing:.07em;text-transform:uppercase}
+section.slide p{margin:0 0 10px}
+section.slide ul,section.slide ol{margin:4px 0 10px;padding-left:22px}
+section.slide li{margin:3px 0}
+
+.box{border-radius:12px;padding:14px 18px 8px;margin:14px 0;border-left:5px solid}
+.box.said{background:var(--gray-bg);border-color:var(--gray)} .box.said h4{color:#6b665b}
+.box.simple{background:var(--blue-bg);border-color:var(--blue)} .box.simple h4{color:var(--blue)}
+.box.analogy{background:var(--amber-bg);border-color:var(--amber)} .box.analogy h4{color:#8a5d00}
+.box.real{background:var(--green-bg);border-color:var(--green)} .box.real h4{color:var(--green)}
+.box.careful{background:var(--rose-bg);border-color:var(--rose)} .box.careful h4{color:var(--rose)}
+.box.try{background:#f4f3fb;border-color:#5b4fc4} .box.try h4{color:#4b40a8}
+
+details.orig{margin:6px 0 4px}
+details.orig summary{cursor:pointer;color:var(--muted);font-size:14px}
+details.orig img{display:block;width:100%;max-width:640px;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+
+/* ---------- code ---------- */
+.codebox{margin:12px 0 4px;border-radius:12px;overflow:hidden;background:var(--code-bg);border:1px solid #23262e}
+.codebar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#1d2027;color:#c9ced8;font:13px var(--mono)}
+.codebar .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{font:700 11px var(--sans);letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.badge.run{background:#1f6f43;color:#dff7e8}
+.badge.key{background:#7a5a00;color:#fff1c7}
+.badge.gpu{background:#6b2f8a;color:#f3e3ff}
+.badge.local{background:#1f4f8a;color:#e1edff}
+.badge.anth{background:#8a3d1f;color:#ffe6d6}
+.copy{background:#2c313b;color:#e6e9ef;border:0;border-radius:6px;padding:3px 9px;font:12px var(--sans);cursor:pointer}
+.copy:hover{background:#3a404c}
+pre.hl{margin:0;padding:14px 16px;overflow:auto;font:13.5px/1.55 var(--mono);color:#e6edf3;tab-size:4}
+.outbox{margin:0 0 12px;border-radius:0 0 12px 12px;background:#0b0d10;border:1px solid #23262e;border-top:0;position:relative;top:-6px;padding-top:6px}
+.outbar{font:700 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#7ee2a8;padding:8px 14px 0}
+.outbox pre{margin:0;padding:6px 14px 12px;overflow:auto;font:13px/1.5 var(--mono);color:#cfe9d8}
+.outbox.example .outbar{color:#f6d36b}
+.outbox.example pre{color:#f1e6c8;white-space:pre-wrap;overflow-wrap:anywhere}
+code.i{font:14.5px var(--mono);background:#efece4;padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+
+/* ---------- tables ---------- */
+table.t{border-collapse:collapse;width:100%;margin:10px 0 14px;font-size:15px}
+table.t th,table.t td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+table.t th{background:#f0ede5;font-weight:700}
+table.t td.fill{background:#fff5d6}
+@media (max-width:700px){table.t{display:block;overflow-x:auto;font-size:14px}}
+.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.threecol{grid-template-columns:1fr}}
+
+/* ---------- diagrams ---------- */
+.diagram{background:#fbfaf6;border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0;overflow-x:auto}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.flow .b{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:8px 14px;font-weight:600;text-align:center;font-size:15px}
+.flow .b.dark{background:var(--navy);color:#fff}
+.flow .b.y{background:var(--accent);border-color:#b98a00;color:#2a2100}
+.flow .b.g{background:var(--green-bg);border-color:var(--green)}
+.flow .b.r{background:var(--rose-bg);border-color:var(--rose)}
+.flow .b small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.flow .b.dark small{color:#cfd6e6}
+.flow .a{font-size:22px;color:var(--muted)}
+.caption{font-size:13.5px;color:var(--muted);text-align:center;margin-top:8px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.twocol{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h5{margin:0 0 6px;font-size:15px;color:var(--navy)}
+.stack{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.stack div{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.tl{display:flex;align-items:stretch;height:34px;border-radius:6px;overflow:hidden;font-size:12px;font-weight:700}
+.tl div{display:flex;align-items:center;justify-content:center;color:#fff;border-right:1px solid rgba(255,255,255,.4)}
+.chip{display:inline-block;font:600 14px var(--mono);padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:#fff;margin:2px}
+.chip.ok{background:var(--green-bg);border-color:var(--green)}
+.chip.bad{background:var(--rose-bg);border-color:var(--rose);text-decoration:line-through}
+.chip.new{background:#fff5d6;border-color:var(--amber)}
+.chip.ghost{color:var(--muted)}
+.grid-kv{display:inline-grid;gap:3px}
+.grid-kv .row{display:flex;gap:3px;align-items:center}
+.grid-kv .c{width:20px;height:20px;border-radius:4px}
+.c.re{background:#e8833a} .c.ca{background:#5fb27f} .c.no{background:transparent}
+.grid-kv .lbl{font-size:12px;color:var(--muted);width:54px}
+.bars .bar{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:14px}
+.bars .bar .lab{width:92px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.bars .bar .fillbar{height:18px;border-radius:4px}
+
+/* ---------- widgets ---------- */
+.widget{background:#fff;border:2px dashed #c9c2b2;border-radius:12px;padding:14px 16px;margin:12px 0}
+.widget h5{margin:0 0 10px;font-size:15px;color:var(--navy)}
+.widget .row{display:flex;flex-wrap:wrap;gap:10px 16px;margin-bottom:10px}
+.widget label{font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.widget input,.widget textarea{font:15px var(--mono);padding:6px 8px;border:1px solid #cfc8b8;border-radius:6px;width:130px;background:#fffdf8}
+.widget textarea{width:100%;height:46px}
+.widget button{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+.widget .res{font:15px/1.6 var(--mono);background:#f6f4ee;border-radius:8px;padding:10px 12px;white-space:pre-wrap}
+.stream-out{min-height:72px;font-size:16px;background:#f6f4ee;border-radius:8px;padding:10px 12px;margin-top:8px}
+.cursor{display:inline-block;width:8px;height:17px;background:var(--navy);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- glossary & quiz ---------- */
+dl.gloss{display:grid;grid-template-columns:200px 1fr;gap:6px 16px;margin:0}
+dl.gloss dt{font-weight:700;color:var(--navy)}
+dl.gloss dd{margin:0}
+@media (max-width:700px){dl.gloss{grid-template-columns:1fr} dl.gloss dd{margin-bottom:8px}}
+details.q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}
+details.q summary{cursor:pointer;font-weight:600}
+details.q p{margin:8px 0 2px}
+footer{color:var(--muted);font-size:14px;text-align:center;margin-top:40px}
+
+@media print{
+  nav.toc,.mobile-toc,#progress,.copy{display:none !important}
+  .layout{display:block} main{padding:0}
+  section.slide{break-inside:avoid-page}
+  body{background:#fff}
+}
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+pre.hl .hll { background-color: #6e7681 }
+pre.hl { background: #0d1117; color: #E6EDF3 }
+pre.hl .c { color: #8B949E; font-style: italic } /* Comment */
+pre.hl .err { color: #F85149 } /* Error */
+pre.hl .esc { color: #E6EDF3 } /* Escape */
+pre.hl .g { color: #E6EDF3 } /* Generic */
+pre.hl .k { color: #FF7B72 } /* Keyword */
+pre.hl .l { color: #A5D6FF } /* Literal */
+pre.hl .n { color: #E6EDF3 } /* Name */
+pre.hl .o { color: #FF7B72; font-weight: bold } /* Operator */
+pre.hl .x { color: #E6EDF3 } /* Other */
+pre.hl .p { color: #E6EDF3 } /* Punctuation */
+pre.hl .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+pre.hl .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+pre.hl .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+pre.hl .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+pre.hl .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+pre.hl .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+pre.hl .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+pre.hl .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+pre.hl .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+pre.hl .gr { color: #FFA198 } /* Generic.Error */
+pre.hl .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+pre.hl .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+pre.hl .go { color: #8B949E } /* Generic.Output */
+pre.hl .gp { color: #8B949E } /* Generic.Prompt */
+pre.hl .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+pre.hl .gu { color: #79C0FF } /* Generic.Subheading */
+pre.hl .gt { color: #FF7B72 } /* Generic.Traceback */
+pre.hl .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+pre.hl .kc { color: #79C0FF } /* Keyword.Constant */
+pre.hl .kd { color: #FF7B72 } /* Keyword.Declaration */
+pre.hl .kn { color: #FF7B72 } /* Keyword.Namespace */
+pre.hl .kp { color: #79C0FF } /* Keyword.Pseudo */
+pre.hl .kr { color: #FF7B72 } /* Keyword.Reserved */
+pre.hl .kt { color: #FF7B72 } /* Keyword.Type */
+pre.hl .ld { color: #79C0FF } /* Literal.Date */
+pre.hl .m { color: #A5D6FF } /* Literal.Number */
+pre.hl .s { color: #A5D6FF } /* Literal.String */
+pre.hl .na { color: #E6EDF3 } /* Name.Attribute */
+pre.hl .nb { color: #E6EDF3 } /* Name.Builtin */
+pre.hl .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+pre.hl .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+pre.hl .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+pre.hl .ni { color: #FFA657 } /* Name.Entity */
+pre.hl .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+pre.hl .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+pre.hl .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+pre.hl .nn { color: #FF7B72 } /* Name.Namespace */
+pre.hl .nx { color: #E6EDF3 } /* Name.Other */
+pre.hl .py { color: #79C0FF } /* Name.Property */
+pre.hl .nt { color: #7EE787 } /* Name.Tag */
+pre.hl .nv { color: #79C0FF } /* Name.Variable */
+pre.hl .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+pre.hl .pm { color: #E6EDF3 } /* Punctuation.Marker */
+pre.hl .w { color: #6E7681 } /* Text.Whitespace */
+pre.hl .mb { color: #A5D6FF } /* Literal.Number.Bin */
+pre.hl .mf { color: #A5D6FF } /* Literal.Number.Float */
+pre.hl .mh { color: #A5D6FF } /* Literal.Number.Hex */
+pre.hl .mi { color: #A5D6FF } /* Literal.Number.Integer */
+pre.hl .mo { color: #A5D6FF } /* Literal.Number.Oct */
+pre.hl .sa { color: #79C0FF } /* Literal.String.Affix */
+pre.hl .sb { color: #A5D6FF } /* Literal.String.Backtick */
+pre.hl .sc { color: #A5D6FF } /* Literal.String.Char */
+pre.hl .dl { color: #79C0FF } /* Literal.String.Delimiter */
+pre.hl .sd { color: #A5D6FF } /* Literal.String.Doc */
+pre.hl .s2 { color: #A5D6FF } /* Literal.String.Double */
+pre.hl .se { color: #79C0FF } /* Literal.String.Escape */
+pre.hl .sh { color: #79C0FF } /* Literal.String.Heredoc */
+pre.hl .si { color: #A5D6FF } /* Literal.String.Interpol */
+pre.hl .sx { color: #A5D6FF } /* Literal.String.Other */
+pre.hl .sr { color: #79C0FF } /* Literal.String.Regex */
+pre.hl .s1 { color: #A5D6FF } /* Literal.String.Single */
+pre.hl .ss { color: #A5D6FF } /* Literal.String.Symbol */
+pre.hl .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+pre.hl .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+pre.hl .vc { color: #79C0FF } /* Name.Variable.Class */
+pre.hl .vg { color: #79C0FF } /* Name.Variable.Global */
+pre.hl .vi { color: #79C0FF } /* Name.Variable.Instance */
+pre.hl .vm { color: #79C0FF } /* Name.Variable.Magic */
+pre.hl .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+
+.badge.ls{background:#0f5c5c;color:#d9fbfb}
+.outbox.example .outbar{color:#f6d36b}
+.outbox.example pre{color:#f1e6c8;white-space:pre-wrap;overflow-wrap:anywhere}
+.outbox pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.threecol{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:700px){.threecol{grid-template-columns:1fr}}
+@media (max-width:700px){table.t{display:block;overflow-x:auto;font-size:14px}}
+pre.tree{background:#14161b;color:#e6edf3;border-radius:10px;padding:12px 14px;overflow:auto;font:13px/1.55 var(--mono);margin:8px 0 12px}
+.widget label.chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:15px}
+.widget label.chk input{width:auto}
+pre.mini{background:#14161b;color:#e6edf3;border-radius:10px;padding:12px 14px;overflow:auto;font:13px/1.55 var(--mono);margin:8px 0 12px}
+#specRes{white-space:pre-wrap;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="layout">
+<nav class="toc" id="toc">
+  <div class="brand">Adding Memory to Agents<br><span style="font:400 13px var(--sans);color:var(--muted)">by Shivank Agarwal</span></div>
+  <div class="grp">Why memory</div>
+  <a href="#s1"><span class="n">1</span>Title &amp; big idea</a>
+  <a href="#s2"><span class="n">2</span>Parts of an agent</a>
+  <a href="#s3"><span class="n">3</span>Focus on memory</a>
+  <a href="#s4"><span class="n">4</span>Why LLM apps need memory</a>
+  <a href="#s5"><span class="n">5</span>Questions to ask</a>
+  <a href="#s6"><span class="n">6</span>Writing memory</a>
+  <a href="#s7"><span class="n">7</span>Types of memory</a>
+  <div class="grp">Short-term memory</div>
+  <a href="#s8"><span class="n">8</span>Short-term memory</a>
+  <a href="#s9"><span class="n">9</span>Trimming &amp; deleting</a>
+  <a href="#s10"><span class="n">10</span>Summarizing</a>
+  <a href="#s11"><span class="n">11</span>Limits &amp; trade-offs</a>
+  <div class="grp">Long-term memory</div>
+  <a href="#s12"><span class="n">12</span>Long-term memory</a>
+  <a href="#s13"><span class="n">13</span>Semantic: definition</a>
+  <a href="#s14"><span class="n">14</span>Semantic: why</a>
+  <a href="#s15"><span class="n">15</span>Semantic: representation</a>
+  <a href="#s16"><span class="n">16</span>Semantic: storage</a>
+  <a href="#s17"><span class="n">17</span>Semantic: usage</a>
+  <a href="#s18"><span class="n">18</span>Episodic: definition</a>
+  <a href="#s19"><span class="n">19</span>Episodic: why</a>
+  <a href="#s20"><span class="n">20</span>Episodic: representation</a>
+  <a href="#s21"><span class="n">21</span>Episodic: storage</a>
+  <a href="#s22"><span class="n">22</span>Episodic: failure path</a>
+  <a href="#s23"><span class="n">23</span>Episodic: success path</a>
+  <a href="#s24"><span class="n">24</span>Episodic: retrieval</a>
+  <a href="#s25"><span class="n">25</span>Procedural: definition</a>
+  <a href="#s26"><span class="n">26</span>Procedural: why</a>
+  <a href="#s27"><span class="n">27</span>Procedural: representation</a>
+  <a href="#s28"><span class="n">28</span>Procedural: storage</a>
+  <a href="#s29"><span class="n">29</span>Procedural: usage</a>
+  <div class="grp">Wrap-up</div>
+  <a href="#s30"><span class="n">30</span>Summary</a>
+  <a href="#glossary"><span class="n">★</span>Glossary</a>
+  <a href="#quiz"><span class="n">?</span>Check yourself</a>
+</nav>
+<main>
+<details class="mobile-toc"><summary>Contents (30 slides)</summary>
+  <a href="#s1">1 · Title</a><a href="#s2">2 · Parts of an agent</a><a href="#s3">3 · Memory</a><a href="#s4">4 · Why memory</a>
+  <a href="#s5">5 · Questions</a><a href="#s6">6 · Writing memory</a><a href="#s7">7 · Types</a><a href="#s8">8 · Short-term</a>
+  <a href="#s9">9 · Trim &amp; delete</a><a href="#s10">10 · Summarize</a><a href="#s11">11 · Trade-offs</a><a href="#s12">12 · Long-term</a>
+  <a href="#s13">13 · Semantic</a><a href="#s14">14 · Why semantic</a><a href="#s15">15 · Representation</a><a href="#s16">16 · Storage</a>
+  <a href="#s17">17 · Usage</a><a href="#s18">18 · Episodic</a><a href="#s19">19 · Why episodic</a><a href="#s20">20 · Representation</a>
+  <a href="#s21">21 · Storage</a><a href="#s22">22 · Failure path</a><a href="#s23">23 · Success path</a><a href="#s24">24 · Retrieval</a>
+  <a href="#s25">25 · Procedural</a><a href="#s26">26 · Why procedural</a><a href="#s27">27 · Representation</a><a href="#s28">28 · Storage</a>
+  <a href="#s29">29 · Usage</a><a href="#s30">30 · Summary</a><a href="#glossary">Glossary</a><a href="#quiz">Check yourself</a>
+</details>
+<header class="hero">
+  <div class="kicker">By Shivank Agarwal · 30 slides · every slide covered</div>
+  <h1>Adding Memory to Your Agents: making agents remember and evolve, explained simply</h1>
+  <p>Each slide gets the same treatment: what the slide says, the idea in plain words, an everyday analogy, a real-world example, and code wherever the slide only gives theory.</p>
+  <p>Code marked <b>Ran it</b> was actually run, and the output under it is real. Code that needs your OpenAI key has an <b>example output</b> under it, so learners can follow just by reading.</p>
+  <div class="legend">
+    <span>▢ What the slide says</span><span>💡 In simple words</span><span>🍛 Analogy</span><span>🌍 Real world</span><span>⌨️ Try it in code</span><span>⚠️ Careful</span>
+  </div>
+</header>
+<div class="intro">
+  <h2>The whole talk in one picture</h2>
+  <p>A language model forgets everything the moment it finishes answering. <b>Memory</b> is everything your agent stores and brings back so it can follow a conversation (<b>short-term</b>) and know its users, facts and skills across days and weeks (<b>long-term</b>: semantic, episodic and procedural).</p>
+  <div class="roadmap">
+    <div class="step"><b>1 · Why memory</b>slides 1–7</div><span class="arr">→</span>
+    <div class="step"><b>2 · Short-term</b>slides 8–11</div><span class="arr">→</span>
+    <div class="step"><b>3 · Long-term</b>slides 12–29</div><span class="arr">→</span>
+    <div class="step"><b>4 · Summary</b>slide 30</div>
+  </div>
+</div>
+
+<div class="part"><span class="tag">Part 1</span><h2>Why agents need memory</h2></div>
+
+<!-- ============ SLIDE 1 ============ -->
+<section class="slide" id="s1">
+  <div class="slide-head"><span class="num">Slide 1</span><h3>Adding memory to your agents: making agents remember and evolve</h3></div>
+  <p class="oneliner">by Shivank Agarwal</p>
+  <div class="box simple"><h4>💡 In simple words</h4>
+    <p>A model answers each message as if it has never seen you before. <b>Memory</b> is what your agent saves and brings back: what was said a minute ago, who the user is, what's true about your business, what happened last time, and how to do a task well. With memory, an agent can <b>remember</b> (continuity) and <b>evolve</b> (get better with experience).</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Your regular chai-wala remembers that you take less sugar, that you were travelling last week, and how to make your usual just right. A new stall forgets you every morning. Memory turns the new stall into the regular one.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2 ============ -->
+<section class="slide" id="s2">
+  <div class="slide-head"><span class="num">Slide 2</span><h3>Components of an agentic system</h3></div>
+  <div class="box said"><h4>▢ What the slide shows</h4>
+    <p>An <b>agent</b> in the centre, connected to four parts: <b>model</b>, <b>memory</b>, <b>tools</b>, and <b>planning and reasoning</b>.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 560 300" style="width:100%;max-width:560px;display:block;margin:auto;font-family:sans-serif" role="img" aria-label="Agent connected to model, memory, tools, planning">
+      <g stroke="#9a948a" stroke-width="2"><line x1="280" y1="150" x2="280" y2="55"/><line x1="280" y1="150" x2="280" y2="245"/><line x1="280" y1="150" x2="95" y2="150"/><line x1="280" y1="150" x2="465" y2="150"/></g>
+      <rect x="210" y="120" width="140" height="60" rx="30" fill="#1f2a44"/><text x="280" y="156" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">Agent</text>
+      <rect x="200" y="20" width="160" height="50" rx="10" fill="#efe7fb" stroke="#7a4fc0" stroke-width="3"/><text x="280" y="42" text-anchor="middle" font-size="15" font-weight="700">Memory</text><text x="280" y="60" text-anchor="middle" font-size="12">what it remembers</text>
+      <rect x="10" y="125" width="170" height="50" rx="10" fill="#e8f6ec" stroke="#23804c" stroke-width="2"/><text x="95" y="147" text-anchor="middle" font-size="15" font-weight="700">Tools</text><text x="95" y="165" text-anchor="middle" font-size="12">hands and eyes</text>
+      <rect x="380" y="125" width="170" height="50" rx="10" fill="#fff5d6" stroke="#c98a00" stroke-width="2"/><text x="465" y="147" text-anchor="middle" font-size="15" font-weight="700">Model</text><text x="465" y="165" text-anchor="middle" font-size="12">the brain (e.g. gpt-6-luna)</text>
+      <rect x="190" y="230" width="180" height="50" rx="10" fill="#e6effc" stroke="#3f72cc" stroke-width="2"/><text x="280" y="252" text-anchor="middle" font-size="15" font-weight="700">Planning &amp; reasoning</text><text x="280" y="270" text-anchor="middle" font-size="12">which step next?</text>
+    </svg>
+  </div>
+  <div class="box simple"><h4>💡 Each part in one line</h4>
+    <ul>
+      <li><b>Model:</b> understands the request and writes the answer.</li>
+      <li><b>Tools:</b> fetch real data and take real actions (previous lecture).</li>
+      <li><b>Memory:</b> keeps what the agent has seen and learned, and brings back the right bits at the right time (this lecture).</li>
+      <li><b>Planning &amp; reasoning:</b> decides the next step.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3 ============ -->
+<section class="slide" id="s3">
+  <div class="slide-head"><span class="num">Slide 3</span><h3>Let us now focus on the memory</h3></div>
+  <div class="box said"><h4>▢ What the slide shows</h4>
+    <p>The same four-part picture, now with the spotlight on <b>memory</b>.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy: a hospital</h4>
+    <p>The doctor is the model, the X-ray machine is a tool, and the patient's file is memory. A brilliant doctor without the file asks every patient the same questions again and may repeat a treatment that failed last time. The file makes the whole hospital smarter.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4 ============ -->
+<section class="slide" id="s4">
+  <div class="slide-head"><span class="num">Slide 4</span><h3>Why do LLM applications need memory?</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>LLMs are <b>stateless</b>.</li>
+      <li>Stateless bots forget past turns and need repeated clarifications.</li>
+      <li>Memory enables: <b>context continuity</b>, <b>personalization</b>, and <b>richer dialog</b> (referring to the past).</li>
+      <li>Real-world agents have memory modules built in.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 "Stateless" in plain words</h4>
+    <p>Each call to a model is a fresh start: it gets the text you send, writes a reply, and keeps nothing. If a chatbot seems to remember, it's because the <b>app</b> sends the earlier messages along again every time. That re-sending is the simplest form of memory.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: forgetting vs remembering</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m04_stateless.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""An LLM API call remembers nothing. Memory = sending the history again."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ask</span><span class="p">(</span><span class="n">messages</span><span class="p">):</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">reply</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"--- Two separate calls (no memory) ---"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"A:"</span><span class="p">,</span> <span class="n">ask</span><span class="p">([{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"Hi, I'm Priya. I'm vegetarian and I live in Pune."</span><span class="p">}]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"A:"</span><span class="p">,</span> <span class="n">ask</span><span class="p">([{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"Suggest a dinner place for me tonight."</span><span class="p">}]))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">--- Same questions, history sent along (short-term memory) ---"</span><span class="p">)</span>
+<span class="n">history</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"Hi, I'm Priya. I'm vegetarian and I live in Pune."</span><span class="p">}]</span>
+<span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">ask</span><span class="p">(</span><span class="n">history</span><span class="p">)})</span>
+<span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"Suggest a dinner place for me tonight."</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"A:"</span><span class="p">,</span> <span class="n">ask</span><span class="p">(</span><span class="n">history</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>--- Two separate calls (no memory) ---
+A: Hi Priya, nice to meet you! Pune has a great vegetarian food scene. How can I help you today?
+A: Happy to help! Which city are you in, and what kind of food do you like? Then I can suggest
+a few places for tonight.
+
+--- Same questions, history sent along (short-term memory) ---
+A: Since you&#x27;re vegetarian and in Pune, how about a traditional Maharashtrian thali tonight, or a
+South Indian dinner around FC Road? Both are easy to find fully vegetarian. Tell me your area and
+budget and I&#x27;ll narrow it down.</pre></div>
+    <p>Same model, same question. The only difference is whether the earlier message was sent along. That's "context continuity" and "personalization" in four lines of code.</p>
+  </div>
+  <div class="box real"><h4>🌍 Real world</h4>
+    <p>Chat assistants such as ChatGPT and Claude now offer memory that carries facts you've shared across conversations. Customer-support bots look up your past tickets before replying. Coding assistants remember your project's conventions.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5 ============ -->
+<section class="slide" id="s5">
+  <div class="slide-head"><span class="num">Slide 5</span><h3>Things to think about when adding memory</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <table class="t">
+      <tr><th>Question</th><th>What the slide asks</th></tr>
+      <tr><td><b>What</b></td><td>What content should the agent learn: facts and knowledge, summaries of past events, or rules and style?</td></tr>
+      <tr><td><b>When</b></td><td>When should memories be formed, and who forms them?</td></tr>
+      <tr><td><b>Where</b></td><td>Where should memories be stored: in the prompt, in a semantic store? This largely decides how they're recalled.</td></tr>
+      <tr><td><b>How</b></td><td>Retrieval: similarity search, filtering, recency.</td></tr>
+      <tr><td><b>How much</b></td><td>Memory size limits and pruning strategies.</td></tr>
+    </table>
+  </div>
+  <div class="box real"><h4>🌍 The five questions answered for a food-delivery support bot</h4>
+    <table class="t">
+      <tr><th>Question</th><th>Example answer</th></tr>
+      <tr><td>What</td><td>Facts (refund rules), the user's preferences (vegetarian, no onion), past events (last order arrived cold), style rules (apologise first)</td></tr>
+      <tr><td>When / who</td><td>The agent saves preferences during the chat; a nightly job summarises past tickets</td></tr>
+      <tr><td>Where</td><td>Refund rules in the system prompt; preferences in a database keyed by user ID; old tickets in a vector store</td></tr>
+      <tr><td>How</td><td>Preferences by user ID (filter); similar past tickets by meaning (similarity); only the last 90 days (recency)</td></tr>
+      <tr><td>How much</td><td>At most 50 facts per user; tickets older than a year are summarised, then deleted</td></tr>
+    </table>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Organising a kitchen: what to stock (what), when to restock (when), shelf or fridge (where), labels so you can find it (how), and throwing out what's expired (how much).</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6 ============ -->
+<section class="slide" id="s6">
+  <div class="slide-head"><span class="num">Slide 6</span><h3>Writing memory: hot path vs in the background</h3></div>
+  <div class="box said"><h4>▢ What the slide shows</h4>
+    <p>Two timelines. <b>Hot path:</b> user message → update memory → AI response, every turn. <b>In the background:</b> user message → AI response, repeated; then, say 30 minutes later, a separate update of memory. Key trade-off: <b>real-time</b> vs <b>computational efficiency</b>.</p>
+  </div>
+  <div class="twocol">
+    <div class="card"><h5>🔥 Hot path</h5>
+      <div class="flow" style="flex-direction:column;align-items:stretch">
+        <div class="b">User message</div><div class="b y">Update memory</div><div class="b g">AI response</div>
+        <div class="b">User message</div><div class="b y">Update memory</div><div class="b g">AI response</div>
+      </div>
+      <p style="margin:8px 0 0">✅ Memory is fresh at once · ❌ every reply is slower and costs an extra model call</p>
+    </div>
+    <div class="card"><h5>🌙 In the background</h5>
+      <div class="flow" style="flex-direction:column;align-items:stretch">
+        <div class="b">User message</div><div class="b g">AI response</div>
+        <div class="b">User message</div><div class="b g">AI response</div>
+        <div class="b" style="background:none;border:none">⏱ 30 min later</div><div class="b y">Update memory (one batch)</div>
+      </div>
+      <p style="margin:8px 0 0">✅ Fast replies, fewer calls · ❌ new facts aren't saved until later</p>
+    </div>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: the same chat, both ways</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m06_hot_vs_background.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Writing memory: in the hot path (every turn, before replying) vs in the background (later, in one batch)."""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
+<span class="n">extractor</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">response_format</span><span class="o">=</span><span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"json_object"</span><span class="p">})</span>
+
+<span class="n">EXTRACT</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'Extract lasting facts about the user from these messages as JSON: {{"facts": ["..."]}}. '</span>
+           <span class="s1">'Only facts worth remembering for future chats. Messages:</span><span class="se">\n</span><span class="si">{messages}</span><span class="s1">'</span><span class="p">)</span>
+
+<span class="n">chat</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"I'm planning a trip to Rishikesh with my parents next month."</span><span class="p">,</span>
+        <span class="s2">"My mother can't climb stairs, by the way."</span><span class="p">,</span>
+        <span class="s2">"Which area should we stay in?"</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"=== HOT PATH: update memory inside every turn ==="</span><span class="p">)</span>
+<span class="n">memory</span><span class="p">,</span> <span class="n">start</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">chat</span><span class="p">:</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">facts</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">EXTRACT</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">msg</span><span class="p">))</span><span class="o">.</span><span class="n">text</span><span class="p">)[</span><span class="s2">"facts"</span><span class="p">]</span>   <span class="c1"># extra call BEFORE replying</span>
+    <span class="n">memory</span> <span class="o">+=</span> <span class="n">facts</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Known about the user: </span><span class="si">{</span><span class="n">memory</span><span class="si">}</span><span class="se">\n</span><span class="s2">User: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"user: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">   memory now: </span><span class="si">{</span><span class="n">memory</span><span class="si">}</span><span class="se">\n</span><span class="s2">   reply waited </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t0</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"total </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"=== BACKGROUND: reply now, update memory later in one batch ==="</span><span class="p">)</span>
+<span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">chat</span><span class="p">:</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">reply</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="sa">f</span><span class="s2">"User: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>                                            <span class="c1"># no memory work here</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"user: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">   reply waited </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t0</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+<span class="n">facts</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">EXTRACT</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chat</span><span class="p">)))</span><span class="o">.</span><span class="n">text</span><span class="p">)[</span><span class="s2">"facts"</span><span class="p">]</span>   <span class="c1"># e.g. 30 min later</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"later, one batch job saved: </span><span class="si">{</span><span class="n">facts</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"total </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>=== HOT PATH: update memory inside every turn ===
+user: I&#x27;m planning a trip to Rishikesh with my parents next month.
+   memory now: [&#x27;Planning a trip to Rishikesh with their parents next month&#x27;]
+   reply waited 2.1s
+user: My mother can&#x27;t climb stairs, by the way.
+   memory now: [&#x27;Planning a trip to Rishikesh with their parents next month&#x27;, &quot;User&#x27;s mother can&#x27;t climb stairs&quot;]
+   reply waited 1.9s
+user: Which area should we stay in?
+   memory now: [&#x27;Planning a trip to Rishikesh with their parents next month&#x27;, &quot;User&#x27;s mother can&#x27;t climb stairs&quot;]
+   reply waited 2.3s
+total 6.3s
+
+=== BACKGROUND: reply now, update memory later in one batch ===
+user: I&#x27;m planning a trip to Rishikesh with my parents next month.
+   reply waited 1.2s
+user: My mother can&#x27;t climb stairs, by the way.
+   reply waited 1.1s
+user: Which area should we stay in?
+   reply waited 1.3s
+later, one batch job saved: [&#x27;Planning a trip to Rishikesh with their parents next month&#x27;, &quot;User&#x27;s mother can&#x27;t climb stairs&quot;]
+total 4.6s</pre></div>
+    <p>Both saved the same two facts. The hot path made every reply about a second slower; the background job made one extra call at the end. Inside this conversation the chat history still carries the facts either way; what's delayed is them reaching <i>future</i> conversations.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A shopkeeper who writes each sale in the ledger before serving the next customer (hot path) versus one who serves everyone and updates the ledger at closing time (background).</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7 ============ -->
+<section class="slide" id="s7">
+  <div class="slide-head"><span class="num">Slide 7</span><h3>Types of memory in agents</h3></div>
+  <div class="box said"><h4>▢ What the slide shows</h4>
+    <p>A tree: <b>types of memory</b> split into <b>short-term</b> and <b>long-term</b>; long-term splits into <b>semantic</b>, <b>procedural</b> and <b>episodic</b>.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 700 230" style="min-width:540px;width:100%;font-family:sans-serif" role="img" aria-label="Memory types tree">
+      <g stroke="#9a948a" stroke-width="2" fill="none">
+        <path d="M330,50 L330,70 L130,70 L130,90"/><path d="M330,70 L480,70 L480,90"/>
+        <path d="M480,130 L480,150 L340,150 L340,170"/><path d="M480,150 L480,170"/><path d="M480,150 L620,150 L620,170"/>
+      </g>
+      <rect x="240" y="12" width="180" height="38" rx="19" fill="#1f2a44"/><text x="330" y="36" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">Types of memory</text>
+      <rect x="40" y="90" width="180" height="40" rx="10" fill="#e6effc" stroke="#3f72cc" stroke-width="2"/><text x="130" y="108" text-anchor="middle" font-weight="700" font-size="14">Short-term</text><text x="130" y="124" text-anchor="middle" font-size="11">this conversation</text>
+      <rect x="390" y="90" width="180" height="40" rx="10" fill="#efe7fb" stroke="#7a4fc0" stroke-width="2"/><text x="480" y="108" text-anchor="middle" font-weight="700" font-size="14">Long-term</text><text x="480" y="124" text-anchor="middle" font-size="11">across conversations</text>
+      <rect x="280" y="170" width="120" height="48" rx="10" fill="#e8f6ec" stroke="#23804c" stroke-width="2"/><text x="340" y="190" text-anchor="middle" font-weight="700" font-size="13">Semantic</text><text x="340" y="207" text-anchor="middle" font-size="11">what is true</text>
+      <rect x="420" y="170" width="120" height="48" rx="10" fill="#fde7e5" stroke="#b8352a" stroke-width="2"/><text x="480" y="190" text-anchor="middle" font-weight="700" font-size="13">Episodic</text><text x="480" y="207" text-anchor="middle" font-size="11">what happened</text>
+      <rect x="560" y="170" width="120" height="48" rx="10" fill="#fff5d6" stroke="#c98a00" stroke-width="2"/><text x="620" y="190" text-anchor="middle" font-weight="700" font-size="13">Procedural</text><text x="620" y="207" text-anchor="middle" font-size="11">how to act</text>
+    </svg>
+    <div class="caption">Semantic = facts · Episodic = experiences · Procedural = skills.</div>
+  </div>
+  <table class="t">
+    <tr><th>Type</th><th>Remembers…</th><th>Human example</th><th>Agent example</th></tr>
+    <tr><td><b>Short-term</b></td><td>The current conversation</td><td>What your friend said a minute ago</td><td>The last 20 messages of this chat</td></tr>
+    <tr><td><b>Semantic</b></td><td>Facts: what is true</td><td>"Delhi is the capital of India"</td><td>"Refunds are allowed within 30 days"; "This user is vegetarian"</td></tr>
+    <tr><td><b>Episodic</b></td><td>Experiences: what happened</td><td>"My last train to Pune was 2 hours late"</td><td>"Last time, the shipping API rejected this order ID"</td></tr>
+    <tr><td><b>Procedural</b></td><td>Skills: how to do things</td><td>Riding a bike</td><td>"To track an order: validate the ID, then look it up in the DB"</td></tr>
+  </table>
+</section>
+
+<div class="part"><span class="tag">Part 2</span><h2>Short-term memory</h2></div>
+
+<!-- ============ SLIDE 8 ============ -->
+<section class="slide" id="s8">
+  <div class="slide-head"><span class="num">Slide 8</span><h3>Short-term memory</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Short-term memory (thread-scoped)</b> keeps the ongoing conversation history within a session.</li>
+      <li>In LangGraph it is managed as the agent's <b>state</b>.</li>
+      <li>State includes the conversation history, uploaded files, retrieved documents and generated artifacts.</li>
+      <li><b>Persistence:</b> state is saved to a database by a <b>checkpointer</b>, so a thread can be resumed.</li>
+      <li><b>Update cycle:</b> memory updates when the graph is invoked or a step completes.</li>
+      <li><b>Usage:</b> state is read at the start of each step for continuity.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 New words</h4>
+    <ul>
+      <li><b>Thread:</b> one conversation, identified by a <code class="i">thread_id</code>. Two users chatting = two threads, each with its own memory.</li>
+      <li><b>State:</b> everything the agent is carrying for this thread right now (messages, files, results).</li>
+      <li><b>Checkpointer:</b> saves the state after every step, like an auto-save. Come back tomorrow with the same <code class="i">thread_id</code> and the conversation continues.</li>
+    </ul>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: two threads, one checkpointer</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m08_checkpointer.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Short-term memory in LangGraph: the state is saved per thread by a checkpointer."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.checkpoint.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemorySaver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">START</span><span class="p">,</span> <span class="n">MessagesState</span><span class="p">,</span> <span class="n">StateGraph</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">chatbot</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">MessagesState</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"messages"</span><span class="p">:</span> <span class="p">[</span><span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">])]}</span>     <span class="c1"># the whole thread history goes to the model</span>
+
+
+<span class="n">builder</span> <span class="o">=</span> <span class="n">StateGraph</span><span class="p">(</span><span class="n">MessagesState</span><span class="p">)</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"chatbot"</span><span class="p">,</span> <span class="n">chatbot</span><span class="p">)</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">START</span><span class="p">,</span> <span class="s2">"chatbot"</span><span class="p">)</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">checkpointer</span><span class="o">=</span><span class="n">InMemorySaver</span><span class="p">())</span>       <span class="c1"># saves the state after every step</span>
+
+<span class="n">ravi</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"configurable"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="s2">"ravi-chat"</span><span class="p">}}</span>
+<span class="n">meera</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"configurable"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="s2">"meera-chat"</span><span class="p">}}</span>
+
+<span class="n">graph</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">"messages"</span><span class="p">:</span> <span class="p">[(</span><span class="s2">"user"</span><span class="p">,</span> <span class="s2">"Hi, I'm Ravi. My order number is 4471."</span><span class="p">)]},</span> <span class="n">ravi</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Ravi, same thread :"</span><span class="p">,</span> <span class="n">graph</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">"messages"</span><span class="p">:</span> <span class="p">[(</span><span class="s2">"user"</span><span class="p">,</span> <span class="s2">"What's my order number?"</span><span class="p">)]},</span> <span class="n">ravi</span><span class="p">)[</span><span class="s2">"messages"</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Meera, new thread :"</span><span class="p">,</span> <span class="n">graph</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">"messages"</span><span class="p">:</span> <span class="p">[(</span><span class="s2">"user"</span><span class="p">,</span> <span class="s2">"What's my order number?"</span><span class="p">)]},</span> <span class="n">meera</span><span class="p">)[</span><span class="s2">"messages"</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">saved</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">ravi</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Saved in thread 'ravi-chat': </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">saved</span><span class="p">)</span><span class="si">}</span><span class="s2"> messages"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">saved</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="si">:</span><span class="s2">&gt;5</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">text</span><span class="p">[:</span><span class="mi">70</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>Ravi, same thread : Your order number is 4471.
+Meera, new thread : I don&#x27;t have your order number yet. Could you share it, along with the name or
+email used for the order?
+
+Saved in thread &#x27;ravi-chat&#x27;: 4 messages
+  human: Hi, I&#x27;m Ravi. My order number is 4471.
+     ai: Hi Ravi! Thanks for sharing your order number, 4471. How can I help you with it today?
+  human: What&#x27;s my order number?
+     ai: Your order number is 4471.</pre></div>
+    <p>Ravi's thread remembers his order number; Meera's brand-new thread doesn't. Nobody wrote any "save" or "load" code: the checkpointer stored the state after each step and loaded it on the next call with the same <code class="i">thread_id</code>. In production, swap <code class="i">InMemorySaver</code> for a database-backed checkpointer (for example PostgreSQL) so threads survive restarts.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>WhatsApp chats: each contact has its own chat (thread). Open any chat and the old messages are still there (checkpointer). Your messages with Ravi don't appear in your chat with Meera.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9 ============ -->
+<section class="slide" id="s9">
+  <div class="slide-head"><span class="num">Slide 9</span><h3>Managing short-term memory: trimming and deleting</h3></div>
+  <div class="box said"><h4>▢ What the slide shows</h4>
+    <div class="twocol">
+      <div class="card"><h5>Trim messages</h5>Remove the first or last N messages <b>before calling the LLM</b>. The code uses <code class="i">trim_messages(state["messages"], strategy="last", token_counter=count_tokens_approximately, max_tokens=128, start_on="human", end_on=("human", "tool"))</code>.</div>
+      <div class="card"><h5>Delete messages</h5>Remove messages from LangGraph state <b>permanently</b>. The code returns <code class="i">RemoveMessage(id=m.id)</code> for the earliest two messages.</div>
+    </div>
+  </div>
+  <div class="box simple"><h4>💡 Why we need this at all</h4>
+    <p>Every message in the history is sent again on every call. A long chat means more tokens (more cost), slower replies, and eventually hitting the model's context limit. So we keep the history small.</p>
+    <p><b>Trimming</b> changes only what the model <i>sees</i> this time; the saved history stays complete. <b>Deleting</b> changes what is <i>saved</i>.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: both techniques on one conversation</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m09_trim_delete.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""The slide's two techniques on a saved conversation: trim before calling the model, delete from state."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">AIMessage</span><span class="p">,</span> <span class="n">HumanMessage</span><span class="p">,</span> <span class="n">RemoveMessage</span><span class="p">,</span> <span class="n">trim_messages</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.messages.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">count_tokens_approximately</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph.message</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_messages</span>
+
+<span class="n">conversation</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">HumanMessage</span><span class="p">(</span><span class="s2">"Hi, I'm Kabir. I need a laptop for college, budget ₹60,000."</span><span class="p">),</span>
+    <span class="n">AIMessage</span><span class="p">(</span><span class="s2">"Hi Kabir! For ₹60,000, good options are thin-and-light laptops with 16 GB RAM and an SSD."</span><span class="p">),</span>
+    <span class="n">HumanMessage</span><span class="p">(</span><span class="s2">"I also edit videos sometimes. Does that change anything?"</span><span class="p">),</span>
+    <span class="n">AIMessage</span><span class="p">(</span><span class="s2">"Yes. For video editing, prefer a dedicated GPU and at least 16 GB RAM; battery life will be lower."</span><span class="p">),</span>
+    <span class="n">HumanMessage</span><span class="p">(</span><span class="s2">"Which is more important for editing, RAM or GPU?"</span><span class="p">),</span>
+    <span class="n">AIMessage</span><span class="p">(</span><span class="s2">"For 1080p editing, 16 GB RAM matters most; the GPU speeds up exports and effects."</span><span class="p">),</span>
+    <span class="n">HumanMessage</span><span class="p">(</span><span class="s2">"Okay. So what should I buy?"</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">messages</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span><span class="si">}</span><span class="s2"> messages, ~</span><span class="si">{</span><span class="n">count_tokens_approximately</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span><span class="si">}</span><span class="s2"> tokens)"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="si">:</span><span class="s2">&gt;5</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">[:</span><span class="mi">60</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="n">show</span><span class="p">(</span><span class="s2">"FULL HISTORY"</span><span class="p">,</span> <span class="n">conversation</span><span class="p">)</span>
+
+<span class="c1"># 1. TRIM: what the model sees this turn (the saved history is NOT changed)</span>
+<span class="n">trimmed</span> <span class="o">=</span> <span class="n">trim_messages</span><span class="p">(</span>
+    <span class="n">conversation</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="o">=</span><span class="s2">"last"</span><span class="p">,</span>                          <span class="c1"># keep the newest messages</span>
+    <span class="n">token_counter</span><span class="o">=</span><span class="n">count_tokens_approximately</span><span class="p">,</span>
+    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span>
+    <span class="n">start_on</span><span class="o">=</span><span class="s2">"human"</span><span class="p">,</span>                         <span class="c1"># kept part must start with a user message</span>
+    <span class="n">end_on</span><span class="o">=</span><span class="p">(</span><span class="s2">"human"</span><span class="p">,</span> <span class="s2">"tool"</span><span class="p">),</span>                 <span class="c1"># ...and end with one (the question to answer)</span>
+<span class="p">)</span>
+<span class="n">show</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">TRIMMED for this model call"</span><span class="p">,</span> <span class="n">trimmed</span><span class="p">)</span>
+
+<span class="c1"># 2. DELETE: remove messages from the agent's state for good</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">add_messages</span><span class="p">([],</span> <span class="n">conversation</span><span class="p">)</span>        <span class="c1"># LangGraph gives every message an id</span>
+<span class="n">state</span> <span class="o">=</span> <span class="n">add_messages</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="p">[</span><span class="n">RemoveMessage</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[:</span><span class="mi">2</span><span class="p">]])</span>   <span class="c1"># remove the earliest two</span>
+<span class="n">show</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">STATE after deleting the earliest two"</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>FULL HISTORY (7 messages, ~148 tokens)
+   human: Hi, I&#x27;m Kabir. I need a laptop for college, budget ₹60,000.
+      ai: Hi Kabir! For ₹60,000, good options are thin-and-light lapto
+   human: I also edit videos sometimes. Does that change anything?
+      ai: Yes. For video editing, prefer a dedicated GPU and at least 
+   human: Which is more important for editing, RAM or GPU?
+      ai: For 1080p editing, 16 GB RAM matters most; the GPU speeds up
+   human: Okay. So what should I buy?
+
+TRIMMED for this model call (3 messages, ~53 tokens)
+   human: Which is more important for editing, RAM or GPU?
+      ai: For 1080p editing, 16 GB RAM matters most; the GPU speeds up
+   human: Okay. So what should I buy?
+
+STATE after deleting the earliest two (5 messages, ~101 tokens)
+   human: I also edit videos sometimes. Does that change anything?
+      ai: Yes. For video editing, prefer a dedicated GPU and at least 
+   human: Which is more important for editing, RAM or GPU?
+      ai: For 1080p editing, 16 GB RAM matters most; the GPU speeds up
+   human: Okay. So what should I buy?</pre></div>
+    <ul>
+      <li><code class="i">strategy="last"</code> kept the newest messages; <code class="i">start_on="human"</code> made sure the kept part begins with a user message (models expect that); <code class="i">end_on</code> made it end with the question being answered.</li>
+      <li>Notice what trimming lost: Kabir's <b>name</b> and his <b>₹60,000 budget</b>. If the model is asked "so what should I buy?", it no longer knows the budget. That's slide 11's warning.</li>
+    </ul>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Trimming is reading only the last page of your notes before an exam: the notebook is untouched. Deleting is tearing out the first two pages for good.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10 ============ -->
+<section class="slide" id="s10">
+  <div class="slide-head"><span class="num">Slide 10</span><h3>Managing short-term memory: summarizing</h3></div>
+  <div class="box said"><h4>▢ What the slide shows</h4>
+    <p>A flowchart: start conversation → save new message → increment message counter → <b>count ≥ threshold?</b> If no, continue the conversation. If yes: trigger summarization → summarize using the LLM → clear old messages → store the summary in the buffer → reset the counter → continue with the updated memory.</p>
+  </div>
+  <div class="diagram">
+    <div class="flow" style="flex-direction:column;align-items:stretch;max-width:520px;margin:0 auto">
+      <div class="b">New message saved</div>
+      <div class="a" style="text-align:center">↓</div>
+      <div class="b y">More messages than the threshold?</div>
+      <div class="twocol" style="margin-top:8px">
+        <div class="b">No → carry on</div>
+        <div class="b g">Yes → LLM writes a summary → delete old messages → keep summary + last few</div>
+      </div>
+    </div>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: the flowchart as a LangGraph agent</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m10_summarize_graph.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""The slide's flowchart in LangGraph: when the history gets long, summarise it and delete the old messages."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">RemoveMessage</span><span class="p">,</span> <span class="n">SystemMessage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.checkpoint.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemorySaver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">END</span><span class="p">,</span> <span class="n">START</span><span class="p">,</span> <span class="n">MessagesState</span><span class="p">,</span> <span class="n">StateGraph</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
+<span class="n">THRESHOLD</span> <span class="o">=</span> <span class="mi">6</span>           <span class="c1"># summarise once there are more than 6 messages</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">State</span><span class="p">(</span><span class="n">MessagesState</span><span class="p">):</span>
+    <span class="n">summary</span><span class="p">:</span> <span class="nb">str</span>        <span class="c1"># the running summary, stored next to the messages</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">chat</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">):</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">[</span><span class="n">SystemMessage</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Summary of earlier conversation: </span><span class="si">{</span><span class="n">state</span><span class="p">[</span><span class="s1">'summary'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)]</span> <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary"</span><span class="p">)</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"messages"</span><span class="p">:</span> <span class="p">[</span><span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">context</span> <span class="o">+</span> <span class="n">state</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">])]}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">should_summarize</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">"summarize"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">THRESHOLD</span> <span class="k">else</span> <span class="n">END</span>     <span class="c1"># "count &gt;= threshold?"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">State</span><span class="p">):</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Current summary: </span><span class="si">{</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'summary'</span><span class="p">,</span><span class="w"> </span><span class="s1">'none'</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+              <span class="s2">"Extend it with the new messages above. Keep names, numbers and decisions. 3 sentences max."</span><span class="p">)</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">]</span> <span class="o">+</span> <span class="p">[(</span><span class="s2">"user"</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)])</span><span class="o">.</span><span class="n">text</span>
+    <span class="n">old</span> <span class="o">=</span> <span class="p">[</span><span class="n">RemoveMessage</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">state</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">][:</span><span class="o">-</span><span class="mi">2</span><span class="p">]]</span>           <span class="c1"># "clear old messages", keep the last 2</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"summary"</span><span class="p">:</span> <span class="n">summary</span><span class="p">,</span> <span class="s2">"messages"</span><span class="p">:</span> <span class="n">old</span><span class="p">}</span>
+
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">StateGraph</span><span class="p">(</span><span class="n">State</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"chat"</span><span class="p">,</span> <span class="n">chat</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s2">"summarize"</span><span class="p">,</span> <span class="n">summarize</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">START</span><span class="p">,</span> <span class="s2">"chat"</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_conditional_edges</span><span class="p">(</span><span class="s2">"chat"</span><span class="p">,</span> <span class="n">should_summarize</span><span class="p">)</span>
+<span class="n">g</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">"summarize"</span><span class="p">,</span> <span class="n">END</span><span class="p">)</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">checkpointer</span><span class="o">=</span><span class="n">InMemorySaver</span><span class="p">())</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"configurable"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="s2">"trip"</span><span class="p">}}</span>
+<span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"Hi, I'm Neha. Planning 4 days in Kerala in December with my parents."</span><span class="p">,</span>
+            <span class="s2">"My father can't walk long distances."</span><span class="p">,</span>
+            <span class="s2">"Budget is about ₹80,000 for all three of us."</span><span class="p">,</span>
+            <span class="s2">"Should we do a houseboat in Alleppey?"</span><span class="p">,</span>
+            <span class="s2">"What did I say my budget was, and who is travelling?"</span><span class="p">]:</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">invoke</span><span class="p">({</span><span class="s2">"messages"</span><span class="p">:</span> <span class="p">[(</span><span class="s2">"user"</span><span class="p">,</span> <span class="n">msg</span><span class="p">)]},</span> <span class="n">cfg</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"You: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">Bot: </span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="s1">'messages'</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="se">\n</span><span class="s2">   [messages kept: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s1">'messages'</span><span class="p">])</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Saved summary:"</span><span class="p">,</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary"</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>You: Hi, I&#x27;m Neha. Planning 4 days in Kerala in December with my parents.
+Bot: Hi Neha! Kerala in December is lovely: cool and mostly dry. For 4 relaxed days with your parents,
+a Kochi → Munnar → Alleppey loop works well. Want a day-by-day plan?
+   [messages kept: 2]
+You: My father can&#x27;t walk long distances.
+Bot: Thanks for telling me. I&#x27;ll keep walking to a minimum: hotels with lifts, viewpoints you can drive
+up to, and boat rides instead of walking tours.
+   [messages kept: 4]
+You: Budget is about ₹80,000 for all three of us.
+Bot: That works well for 4 days: roughly ₹35,000 for hotels, ₹20,000 for a car with driver, ₹15,000 for
+a houseboat night, and the rest for food and tickets.
+   [messages kept: 6]
+You: Should we do a houseboat in Alleppey?
+Bot: Yes, one night on a houseboat is a great fit: your father can relax on board without walking, and
+boarding is usually just a few steps from the jetty. Ask for a ground-level bedroom.
+   [messages kept: 2]
+You: What did I say my budget was, and who is travelling?
+Bot: Your budget is about ₹80,000 for three people: you and your parents. And since your father can&#x27;t
+walk long distances, I&#x27;ve kept the plan light on walking.
+   [messages kept: 4]
+
+Saved summary: Neha is planning a 4-day Kerala trip in December with her parents, on a budget of about
+₹80,000 for three. Her father can&#x27;t walk long distances, so walking should be kept to a minimum. She
+is considering a one-night houseboat in Alleppey.</pre></div>
+    <p>After turn 4 there were 8 messages, more than the threshold of 6, so the agent summarised and deleted all but the last two. Yet in turn 5 it still knew the budget and who's travelling: those facts survived inside the <b>summary</b>.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Minutes of a long meeting: nobody keeps the full recording, but the minutes keep the decisions and numbers.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 11 ============ -->
+<section class="slide" id="s11">
+  <div class="slide-head"><span class="num">Slide 11</span><h3>Short-term memory: limitations and trade-offs</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>Trim too aggressively and you lose context: the model "forgets" earlier information.</li>
+      <li>Summarization can omit subtle details.</li>
+      <li>Deciding when to summarize versus prune is heuristic-based.</li>
+      <li>You must balance <b>recency</b> against <b>importance</b>.</li>
+    </ul>
+  </div>
+  <div class="widget" id="trimWidget">
+    <h5>🧪 Trim a conversation yourself</h5>
+    <p style="margin:0 0 8px">Keep only the last <b><span id="keepN">4</span></b> messages. Which important facts survive?</p>
+    <input type="range" id="keepSlider" min="1" max="9" value="4" aria-label="Messages to keep" style="width:100%">
+    <div class="res" id="trimRes"></div>
+  </div>
+  <table class="t">
+    <tr><th>Technique</th><th>Good at</th><th>Risk</th><th>Use when</th></tr>
+    <tr><td>Keep everything</td><td>Nothing is lost</td><td>Cost and context limit</td><td>Short chats</td></tr>
+    <tr><td>Trimming</td><td>Simple, free, automatic</td><td>Loses early facts (name, budget)</td><td>Only recent turns matter</td></tr>
+    <tr><td>Deleting</td><td>Precise control</td><td>You must decide what's safe to delete</td><td>Removing big tool outputs, sensitive data</td></tr>
+    <tr><td>Summarizing</td><td>Keeps the key facts</td><td>Extra LLM calls; may drop small details</td><td>Long chats where early facts matter</td></tr>
+  </table>
+  <div class="box simple"><h4>💡 A common, practical combination</h4>
+    <p>Pin the important facts (name, budget, constraints) in long-term memory or a "summary" field, summarise the middle, and keep the last few messages word-for-word. You get recency <i>and</i> importance.</p>
+  </div>
+</section>
+
+<div class="part"><span class="tag">Part 3</span><h2>Long-term memory</h2></div>
+
+<!-- ============ SLIDE 12 ============ -->
+<section class="slide" id="s12">
+  <div class="slide-head"><span class="num">Slide 12</span><h3>Long-term memory</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>Persistent memory <b>across sessions</b>.</li>
+      <li>Lets the agent "remember" users over time.</li>
+      <li>Needs a <b>backing store</b> plus a <b>retrieval strategy</b>.</li>
+      <li>Remembering birthdays, preferences, history.</li>
+      <li>Examples in AI agents: persisting user profiles, past purchases.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 Short-term vs long-term</h4>
+    <table class="t">
+      <tr><th></th><th>Short-term</th><th>Long-term</th></tr>
+      <tr><td>Lives for</td><td>One conversation (thread)</td><td>Weeks, months, forever</td></tr>
+      <tr><td>Shared between chats?</td><td>No</td><td>Yes: every new chat with this user can use it</td></tr>
+      <tr><td>LangGraph tool</td><td>Checkpointer + <code class="i">thread_id</code></td><td>Store + namespace (e.g. the user ID)</td></tr>
+      <tr><td>Example</td><td>"You just said your budget is ₹60,000"</td><td>"Happy birthday, Ananya! Still vegetarian, right?"</td></tr>
+    </table>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: a store that outlives the conversation</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m12_long_term_store.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Long-term memory in LangGraph: a Store shared by ALL threads, organised by namespace (e.g. per user)."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.store.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryStore</span>
+
+<span class="n">store</span> <span class="o">=</span> <span class="n">InMemoryStore</span><span class="p">()</span>          <span class="c1"># in production: a database-backed store such as PostgresStore</span>
+
+<span class="c1"># --- Session 1 (Monday): the agent learns things about user u_42 ---</span>
+<span class="n">ns</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"u_42"</span><span class="p">,</span> <span class="s2">"profile"</span><span class="p">)</span>         <span class="c1"># namespace = a folder per user</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"value"</span><span class="p">:</span> <span class="s2">"Ananya"</span><span class="p">})</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="s2">"birthday"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"value"</span><span class="p">:</span> <span class="s2">"14 March"</span><span class="p">})</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="s2">"diet"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"value"</span><span class="p">:</span> <span class="s2">"vegetarian, no onion or garlic"</span><span class="p">})</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s2">"u_42"</span><span class="p">,</span> <span class="s2">"orders"</span><span class="p">),</span> <span class="s2">"ORD-9001"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"item"</span><span class="p">:</span> <span class="s2">"Running shoes"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"delivered"</span><span class="p">})</span>
+
+<span class="c1"># --- Session 2 (Friday): a NEW conversation thread, same user ---</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Profile of u_42:"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="s2">"u_42"</span><span class="p">,</span> <span class="s2">"profile"</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">key</span><span class="si">:</span><span class="s2">&lt;9</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]</span><span class="si">}</span><span class="s2">   (saved </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">created_at</span><span class="si">:</span><span class="s2">%d %b %Y</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Past orders:"</span><span class="p">,</span> <span class="p">[(</span><span class="n">i</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">"item"</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="s2">"u_42"</span><span class="p">,</span> <span class="s2">"orders"</span><span class="p">))])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Another user's profile:"</span><span class="p">,</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="s2">"u_77"</span><span class="p">,</span> <span class="s2">"profile"</span><span class="p">)),</span> <span class="s2">"(nothing leaks between users)"</span><span class="p">)</span>
+
+<span class="c1"># Updating a memory overwrites it; deleting forgets it</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="s2">"diet"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"value"</span><span class="p">:</span> <span class="s2">"vegan"</span><span class="p">})</span>
+<span class="n">store</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ns</span><span class="p">,</span> <span class="s2">"birthday"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">After update + delete:"</span><span class="p">,</span> <span class="p">{</span><span class="n">i</span><span class="o">.</span><span class="n">key</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">ns</span><span class="p">)})</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Profile of u_42:
+   name      -&gt; Ananya   (saved 10 Nov 2026)
+   birthday  -&gt; 14 March   (saved 10 Nov 2026)
+   diet      -&gt; vegetarian, no onion or garlic   (saved 10 Nov 2026)
+
+Past orders: [(&#x27;ORD-9001&#x27;, &#x27;Running shoes&#x27;)]
+Another user&#x27;s profile: [] (nothing leaks between users)
+
+After update + delete: {&#x27;name&#x27;: &#x27;Ananya&#x27;, &#x27;diet&#x27;: &#x27;vegan&#x27;}</pre></div>
+    <p>A <b>namespace</b> is like a folder: <code class="i">("u_42", "profile")</code> holds only user u_42's profile, so one user's memories never leak into another's. The same store can be read from any thread, which is what makes it long-term.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Short-term memory is today's conversation at the bank counter. Long-term memory is your customer file: next month, a different clerk opens it and already knows your account type and address.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 13 ============ -->
+<section class="slide" id="s13">
+  <div class="slide-head"><span class="num">Slide 13</span><h3>Semantic memory: definition</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p><b>In cognitive science:</b> memory for general knowledge, facts and concepts, not tied to a specific event.</p>
+    <p><b>In AI agents:</b> stores domain knowledge (e.g. "Every order must have an order ID, a list of product IDs and a list of shipping IDs") and gives factual grounding for reasoning and dialogue.</p>
+    <p><b>Examples:</b> "Refund policy: 30-day window" · "Business hours: 9 AM–6 PM EST" · "Supported currencies: USD, EUR, GBP".</p>
+  </div>
+  <div class="box simple"><h4>💡 In plain words</h4>
+    <p>Semantic memory is <b>what is true</b>, whether or not you remember when you learned it. You know Delhi is India's capital, but not the day you learned it. For an agent: business rules, product facts, and also facts about a user ("Ananya is vegetarian").</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>The company handbook on a new employee's desk: rules and facts, no stories.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 14 ============ -->
+<section class="slide" id="s14">
+  <div class="slide-head"><span class="num">Slide 14</span><h3>Semantic memory: why it matters</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>It gives agents world knowledge beyond what they have experienced, enabling them to answer factual questions, stay consistent in their responses, and reason abstractly over categories.</p>
+  </div>
+  <div class="box real"><h4>🌍 Each benefit, for an online store's support agent</h4>
+    <table class="t">
+      <tr><th>Benefit</th><th>Without semantic memory</th><th>With it</th></tr>
+      <tr><td>Factual answers</td><td>Guesses "probably 7 days" for refunds</td><td>"30 days from delivery", every time</td></tr>
+      <tr><td>Consistency</td><td>Monday's answer differs from Tuesday's</td><td>Same policy for every customer</td></tr>
+      <tr><td>Reasoning over categories</td><td>Doesn't know a laptop counts as electronics</td><td>"Laptop is electronics, electronics have a 10-day return window"</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ SLIDE 15 ============ -->
+<section class="slide" id="s15">
+  <div class="slide-head"><span class="num">Slide 15</span><h3>Semantic memory: representation approaches</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Symbolic / structured:</b> knowledge graphs (RDF triples, ontologies) and key-value stores.</li>
+      <li><b>Vector-based:</b> embeddings of factual statements, supporting semantic-similarity queries.</li>
+      <li><b>Hybrid:</b> a knowledge graph for structure plus embeddings for flexible recall.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 New words</h4>
+    <ul>
+      <li><b>Triple:</b> a fact as (subject, relation, object), e.g. (Laptop, is_a, Electronics). A <b>knowledge graph</b> is many triples joined up.</li>
+      <li><b>Ontology:</b> the agreed list of types and relations (e.g. "Product", "Category", "is_a").</li>
+      <li><b>Embedding:</b> a list of numbers that captures a sentence's meaning, so "How long is shipping?" matches "Delivery takes 2–5 days" even with no shared words.</li>
+    </ul>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: one set of facts, three representations</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m15_semantic_representations.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""The same company facts stored three ways: key-value, knowledge-graph triples, and a SQL table."""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+
+<span class="c1"># 1. Key-value: fastest, exact keys only</span>
+<span class="n">kv</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"refund_window_days"</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">"business_hours"</span><span class="p">:</span> <span class="s2">"9 AM - 6 PM IST"</span><span class="p">,</span> <span class="s2">"delivery_days"</span><span class="p">:</span> <span class="s2">"2-5 business days"</span><span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"KV   refund window      -&gt;"</span><span class="p">,</span> <span class="n">kv</span><span class="p">[</span><span class="s2">"refund_window_days"</span><span class="p">],</span> <span class="s2">"days"</span><span class="p">)</span>
+
+<span class="c1"># 2. Knowledge graph: (subject, relation, object) triples, good for connected facts</span>
+<span class="n">triples</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">"Order"</span><span class="p">,</span> <span class="s2">"must_have"</span><span class="p">,</span> <span class="s2">"order_id"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Order"</span><span class="p">,</span> <span class="s2">"must_have"</span><span class="p">,</span> <span class="s2">"product_ids"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Order"</span><span class="p">,</span> <span class="s2">"must_have"</span><span class="p">,</span> <span class="s2">"shipping_ids"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"Electronics"</span><span class="p">,</span> <span class="s2">"return_window_days"</span><span class="p">,</span> <span class="s2">"10"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Clothing"</span><span class="p">,</span> <span class="s2">"return_window_days"</span><span class="p">,</span> <span class="s2">"30"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"Laptop"</span><span class="p">,</span> <span class="s2">"is_a"</span><span class="p">,</span> <span class="s2">"Electronics"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Kurta"</span><span class="p">,</span> <span class="s2">"is_a"</span><span class="p">,</span> <span class="s2">"Clothing"</span><span class="p">),</span>
+<span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ask</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span> <span class="ow">in</span> <span class="n">triples</span> <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">s</span> <span class="ow">and</span> <span class="n">b</span> <span class="o">==</span> <span class="n">r</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"KG   an Order must have -&gt;"</span><span class="p">,</span> <span class="n">ask</span><span class="p">(</span><span class="s2">"Order"</span><span class="p">,</span> <span class="s2">"must_have"</span><span class="p">))</span>
+<span class="n">category</span> <span class="o">=</span> <span class="n">ask</span><span class="p">(</span><span class="s2">"Laptop"</span><span class="p">,</span> <span class="s2">"is_a"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>                                    <span class="c1"># hop 1: Laptop -&gt; Electronics</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"KG   Laptop return window -&gt; </span><span class="si">{</span><span class="n">ask</span><span class="p">(</span><span class="n">category</span><span class="p">,</span><span class="w"> </span><span class="s1">'return_window_days'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> days (via </span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>   <span class="c1"># hop 2</span>
+
+<span class="c1"># 3. Relational table: facts in rows, queried with SQL</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">":memory:"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"CREATE TABLE policies (topic TEXT, fact TEXT)"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">"INSERT INTO policies VALUES (?, ?)"</span><span class="p">,</span> <span class="p">[(</span><span class="s2">"currency"</span><span class="p">,</span> <span class="s2">"INR"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"currency"</span><span class="p">,</span> <span class="s2">"USD"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"currency"</span><span class="p">,</span> <span class="s2">"EUR"</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="s2">"delivery"</span><span class="p">,</span> <span class="s2">"2-5 business days"</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"SQL  supported currencies -&gt;"</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT fact FROM policies WHERE topic = 'currency'"</span><span class="p">)])</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>KV   refund window      -&gt; 30 days
+KG   an Order must have -&gt; [&#x27;order_id&#x27;, &#x27;product_ids&#x27;, &#x27;shipping_ids&#x27;]
+KG   Laptop return window -&gt; 10 days (via Electronics)
+SQL  supported currencies -&gt; [&#x27;INR&#x27;, &#x27;USD&#x27;, &#x27;EUR&#x27;]</pre></div>
+    <p>The knowledge graph answered "what's a laptop's return window?" in two hops (Laptop → Electronics → 10 days), even though no single fact says it. That's "reasoning over categories". The vector approach is in slide 17's demo.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 16 ============ -->
+<section class="slide" id="s16">
+  <div class="slide-head"><span class="num">Slide 16</span><h3>Semantic memory: storage</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Relational DB (SQL):</b> facts stored in tables.</li>
+      <li><b>Document DB (MongoDB):</b> JSON documents for flexible schemas.</li>
+      <li><b>Vector DB (FAISS/Pinecone):</b> embeddings for fuzzy fact retrieval.</li>
+    </ul>
+  </div>
+  <table class="t">
+    <tr><th>Store</th><th>Best for</th><th>Example fact</th><th>How you find it</th></tr>
+    <tr><td>SQL (PostgreSQL, SQLite)</td><td>Fixed, structured facts</td><td>A row: (currency, INR)</td><td>Exact query: <code class="i">WHERE topic = 'currency'</code></td></tr>
+    <tr><td>Document DB (MongoDB)</td><td>Facts whose shape varies</td><td><code class="i">{"user": "u_42", "diet": "vegan", "allergies": ["peanut"]}</code></td><td>Filter on fields</td></tr>
+    <tr><td>Vector DB (FAISS, Pinecone, Chroma)</td><td>Fuzzy questions in plain language</td><td>"Standard delivery takes 2–5 business days."</td><td>Similarity search by meaning</td></tr>
+  </table>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>A filing cabinet with labelled folders (SQL), a box of differently shaped notes (document DB), and a librarian who understands what you <i>mean</i> (vector DB).</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 17 ============ -->
+<section class="slide" id="s17">
+  <div class="slide-head"><span class="num">Slide 17</span><h3>Semantic memory: usage</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Retrieve facts relevant to the query.</b> Q: "How long does delivery take?" Semantic memory: "2–5 business days."</li>
+      <li><b>Guide reasoning.</b> Episodic: "Last order took 7 days." Semantic: "Deliveries usually take 2–5 days."</li>
+      <li><b>Combine with episodic memory.</b> Agent: "Normally it's 2–5 days, but last time yours took longer."</li>
+    </ul>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: the slide's exact example</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m17_semantic_plus_episodic.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Semantic memory (what is generally true) + episodic memory (what happened to THIS user) in one answer."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span><span class="p">,</span> <span class="n">OpenAIEmbeddings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.store.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryStore</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
+<span class="c1"># A store that can search by MEANING: every value's "text" field is embedded</span>
+<span class="n">store</span> <span class="o">=</span> <span class="n">InMemoryStore</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">{</span><span class="s2">"embed"</span><span class="p">:</span> <span class="n">OpenAIEmbeddings</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"text-embedding-3-small"</span><span class="p">),</span> <span class="s2">"dims"</span><span class="p">:</span> <span class="mi">1536</span><span class="p">,</span> <span class="s2">"fields"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"text"</span><span class="p">]})</span>
+
+<span class="c1"># Semantic memory: company-wide facts</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"delivery"</span><span class="p">,</span> <span class="s2">"Standard delivery takes 2-5 business days."</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s2">"refunds"</span><span class="p">,</span> <span class="s2">"Refunds are allowed within 30 days of delivery."</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s2">"hours"</span><span class="p">,</span> <span class="s2">"Customer support is open 9 AM to 6 PM IST, Monday to Saturday."</span><span class="p">)]:</span>
+    <span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s2">"company"</span><span class="p">,</span> <span class="s2">"facts"</span><span class="p">),</span> <span class="n">key</span><span class="p">,</span> <span class="p">{</span><span class="s2">"text"</span><span class="p">:</span> <span class="n">text</span><span class="p">})</span>
+
+<span class="c1"># Episodic memory: this user's past experiences</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s2">"u_52"</span><span class="p">,</span> <span class="s2">"episodes"</span><span class="p">),</span> <span class="s2">"2026-10-02"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Order ORD-7712 (a mixer grinder) took 7 days to arrive; user was upset."</span><span class="p">})</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s2">"u_52"</span><span class="p">,</span> <span class="s2">"episodes"</span><span class="p">),</span> <span class="s2">"2026-10-20"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"text"</span><span class="p">:</span> <span class="s2">"User asked to change their phone number."</span><span class="p">})</span>
+
+<span class="n">question</span> <span class="o">=</span> <span class="s2">"How long does delivery take?"</span>
+<span class="n">fact</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="s2">"company"</span><span class="p">,</span> <span class="s2">"facts"</span><span class="p">),</span> <span class="n">query</span><span class="o">=</span><span class="n">question</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">episode</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">((</span><span class="s2">"u_52"</span><span class="p">,</span> <span class="s2">"episodes"</span><span class="p">),</span> <span class="n">query</span><span class="o">=</span><span class="n">question</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Semantic hit (score </span><span class="si">{</span><span class="n">fact</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">fact</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Episodic hit (score </span><span class="si">{</span><span class="n">episode</span><span class="o">.</span><span class="n">score</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">episode</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">answer</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Company fact: </span><span class="si">{</span><span class="n">fact</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">This customer's history: </span><span class="si">{</span><span class="n">episode</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                    <span class="sa">f</span><span class="s2">"Customer asks: </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="se">\n</span><span class="s2">Answer in 2 sentences, warmly."</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Agent:"</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>Semantic hit (score 0.62): Standard delivery takes 2-5 business days.
+Episodic hit (score 0.41): Order ORD-7712 (a mixer grinder) took 7 days to arrive; user was upset.
+
+Agent: Standard delivery takes 2–5 business days. I know your mixer grinder took longer than that last
+time, and I&#x27;m sorry about that; if your next order runs late, just message us and we&#x27;ll chase the courier.</pre></div>
+    <p>The store searched by <b>meaning</b>: "How long does delivery take?" found "Standard delivery takes 2–5 business days" and the user's late mixer-grinder order, without any shared keywords like "how long". The answer blends the general fact with this customer's history, exactly as on the slide.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 18 ============ -->
+<section class="slide" id="s18">
+  <div class="slide-head"><span class="num">Slide 18</span><h3>Episodic memory: definition</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>Episodic memory, in both humans and AI agents, means recalling <b>past events or actions</b>. For AI agents it is often used to help the agent remember <b>how it accomplished a task</b> before.</p>
+  </div>
+  <div class="box simple"><h4>💡 In plain words</h4>
+    <p>Episodic memory is a diary: <i>what happened, when, and how it turned out</i>. "On 3 November I tried the shipping API with order #78910 and it failed." Each entry is an <b>episode</b>.</p>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>You remember the time you took the expressway and got stuck in a 2-hour jam, so you take the old highway now. That memory of one specific trip is episodic.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 19 ============ -->
+<section class="slide" id="s19">
+  <div class="slide-head"><span class="num">Slide 19</span><h3>Episodic memory: why it matters</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>It lets agents <b>reflect on past failures</b> (avoid repeating mistakes), <b>reuse successful strategies</b> (case-based reasoning), and <b>personalise</b> responses based on history.</p>
+    <p>Key difference: <b>semantic = what is generally true</b>; <b>episodic = what happened in a specific case</b>.</p>
+  </div>
+  <div class="box real"><h4>🌍 Real world</h4>
+    <ul>
+      <li><b>Avoid failures:</b> a coding agent remembers "running the full test suite timed out last time; run only the changed module's tests".</li>
+      <li><b>Reuse what worked:</b> a support agent remembers the exact steps that fixed a similar complaint last week.</li>
+      <li><b>Personalise:</b> "Sorry your last order was late; I've added priority shipping this time."</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 "Case-based reasoning"</h4>
+    <p>Solving a new problem by finding a similar old case and adapting its solution, like a doctor thinking "this looks like the patient I saw last month".</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 20 ============ -->
+<section class="slide" id="s20">
+  <div class="slide-head"><span class="num">Slide 20</span><h3>Episodic memory: representation approaches</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <table class="t">
+      <tr><th>Approach</th><th>What it is</th><th>Good for</th></tr>
+      <tr><td><b>Logs</b></td><td>Full transcripts or step sequences, e.g. a JSON/SQL record of each step (action, result, outcome)</td><td>Replaying exactly what happened</td></tr>
+      <tr><td><b>Vector embeddings</b></td><td>Episodes as text embeddings</td><td>"Find past failed order lookups" by meaning</td></tr>
+      <tr><td><b>Key–value stores</b></td><td>Episodes indexed by user ID, timestamp or goal</td><td>Fast "all episodes for this user"</td></tr>
+      <tr><td><b>Graph structures</b></td><td>Nodes = events, edges = time or cause links</td><td>Tracing chains of events</td></tr>
+    </table>
+  </div>
+  <div class="box simple"><h4>💡 One episode, written as a log entry</h4>
+    <pre class="mini">{"episode_id": 1, "user": "u_17", "goal": "track_order", "date": "2026-11-03",
+ "steps": [{"action": "ask_order_id",          "result": "got #78910"},
+           {"action": "shipping_api(#78910)",   "result": "error: Invalid ID format"}],
+ "outcome": "failure"}</pre>
+    <p>The same episode can also be embedded ("tracking order #78910 failed: shipping API rejected the ID") for similarity search, or linked in a graph to the episode that came after it.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 21 ============ -->
+<section class="slide" id="s21">
+  <div class="slide-head"><span class="num">Slide 21</span><h3>Episodic memory: storage</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Relational DB (SQL):</b> an episodes table for metadata (id, user, goal, outcome) and a steps table for detailed actions and results.</li>
+      <li><b>Document DB (MongoDB, Firestore):</b> each episode as one JSON document, easy to retrieve with filters.</li>
+      <li><b>Vector DB (FAISS, Pinecone):</b> episode descriptions as embeddings for "similar past situations".</li>
+    </ul>
+    <p>Storing episodes in structured, retrievable formats lets agents search, compare and learn from past experience.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: the slide's two tables, filled with slides 22 and 23</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m21_episodic_store.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Episodic memory in SQL: an episodes table + a steps table, then 'learn from the past' (slides 21-24)."""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">":memory:"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">executescript</span><span class="p">(</span><span class="s2">"""</span>
+<span class="s2">CREATE TABLE episodes (episode_id INTEGER PRIMARY KEY, user_id TEXT, goal TEXT, outcome TEXT, created TEXT);</span>
+<span class="s2">CREATE TABLE steps    (episode_id INTEGER, step_no INTEGER, action TEXT, result TEXT);</span>
+<span class="s2">"""</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">log_episode</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">goal</span><span class="p">,</span> <span class="n">outcome</span><span class="p">,</span> <span class="n">created</span><span class="p">,</span> <span class="n">steps</span><span class="p">):</span>
+    <span class="n">eid</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"INSERT INTO episodes (user_id, goal, outcome, created) VALUES (?,?,?,?)"</span><span class="p">,</span>
+                     <span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">goal</span><span class="p">,</span> <span class="n">outcome</span><span class="p">,</span> <span class="n">created</span><span class="p">))</span><span class="o">.</span><span class="n">lastrowid</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">"INSERT INTO steps VALUES (?,?,?,?)"</span><span class="p">,</span> <span class="p">[(</span><span class="n">eid</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+
+
+<span class="c1"># Slide 22: the failure path        Slide 23: the success path</span>
+<span class="n">log_episode</span><span class="p">(</span><span class="s2">"u_17"</span><span class="p">,</span> <span class="s2">"track_order"</span><span class="p">,</span> <span class="s2">"failure"</span><span class="p">,</span> <span class="s2">"2026-11-03"</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">"ask_order_id"</span><span class="p">,</span> <span class="s2">"got #78910"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"shipping_api(#78910)"</span><span class="p">,</span> <span class="s2">"error: Invalid ID format"</span><span class="p">)])</span>
+<span class="n">log_episode</span><span class="p">(</span><span class="s2">"u_52"</span><span class="p">,</span> <span class="s2">"track_order"</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">,</span> <span class="s2">"2026-11-05"</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">"ask_order_id"</span><span class="p">,</span> <span class="s2">"got #78910"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"validate_id(#78910)"</span><span class="p">,</span> <span class="s2">"ok: ORD-78910"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"order_db_lookup(ORD-78910)"</span><span class="p">,</span> <span class="s2">"shipped, arriving Thursday"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"confirm_status"</span><span class="p">,</span> <span class="s2">"user satisfied"</span><span class="p">)])</span>
+
+<span class="c1"># A NEW user asks "Where is my order #55321?" -&gt; goal = track_order. Retrieve similar past episodes:</span>
+<span class="n">past</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT episode_id, outcome, created FROM episodes WHERE goal = ? ORDER BY created DESC"</span><span class="p">,</span>
+                  <span class="p">(</span><span class="s2">"track_order"</span><span class="p">,))</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">eid</span><span class="p">,</span> <span class="n">outcome</span><span class="p">,</span> <span class="n">created</span> <span class="ow">in</span> <span class="n">past</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"("</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">a</span><span class="p">,)</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT action FROM steps WHERE episode_id = ? ORDER BY step_no"</span><span class="p">,</span> <span class="p">(</span><span class="n">eid</span><span class="p">,))]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Episode </span><span class="si">{</span><span class="n">eid</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">created</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">outcome</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">:</span><span class="s2">&lt;8</span><span class="si">}</span><span class="s2"> path = </span><span class="si">{</span><span class="s1">' -&gt; '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">best</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT episode_id FROM episodes WHERE goal = ? AND outcome = 'success' ORDER BY created DESC LIMIT 1"</span><span class="p">,</span>
+                  <span class="p">(</span><span class="s2">"track_order"</span><span class="p">,))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">plan</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"("</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">a</span><span class="p">,)</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT action FROM steps WHERE episode_id = ? ORDER BY step_no"</span><span class="p">,</span> <span class="p">(</span><span class="n">best</span><span class="p">,))]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Decision: avoid shipping_api first; follow the successful path -&gt;"</span><span class="p">,</span> <span class="s2">" -&gt; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">plan</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Episode 2 (2026-11-05): SUCCESS  path = ask_order_id -&gt; validate_id -&gt; order_db_lookup -&gt; confirm_status
+Episode 1 (2026-11-03): FAILURE  path = ask_order_id -&gt; shipping_api
+
+Decision: avoid shipping_api first; follow the successful path -&gt; ask_order_id -&gt; validate_id -&gt; order_db_lookup -&gt; confirm_status</pre></div>
+    <p>Two tables, exactly as on the slide: <code class="i">episodes</code> (one row per attempt) and <code class="i">steps</code> (one row per action). A new "track my order" request looked up past episodes with the same goal and chose the path that worked.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 22 ============ -->
+<section class="slide" id="s22">
+  <div class="slide-head"><span class="num">Slide 22</span><h3>Episodic memory usage: a failure path</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>User: "Where is my order #78910?" Agent path: ask for the order ID ✅ → use <b>Tool C (shipping API)</b> ❌ → result: "Invalid ID format" → <b>failure</b>.</p>
+  </div>
+  <div class="flow">
+    <div class="b">"Where is my order #78910?"</div><div class="a">→</div>
+    <div class="b g">Ask for order ID ✅</div><div class="a">→</div>
+    <div class="b r">Shipping API ❌<small>"Invalid ID format"</small></div><div class="a">→</div>
+    <div class="b r">Failure</div>
+  </div>
+  <div class="box simple"><h4>💡 What went wrong</h4>
+    <p>The shipping API expects its own tracking number, not the store's order number, so passing "#78910" directly fails. A human support agent learns this on day one. An agent without episodic memory would make the same mistake for every customer.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 23 ============ -->
+<section class="slide" id="s23">
+  <div class="slide-head"><span class="num">Slide 23</span><h3>Episodic memory usage: a success path</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p>User: "Where is my order #78910?" Agent path: ask for the order ID ✅ → use <b>Tool A (validate ID)</b> ✅ → use <b>Tool B (order DB lookup)</b> ✅ → confirm status ✅.</p>
+  </div>
+  <div class="flow">
+    <div class="b">"Where is my order #78910?"</div><div class="a">→</div>
+    <div class="b g">Ask for order ID ✅</div><div class="a">→</div>
+    <div class="b g">Validate ID ✅</div><div class="a">→</div>
+    <div class="b g">Order DB lookup ✅</div><div class="a">→</div>
+    <div class="b g">Confirm status ✅</div>
+  </div>
+  <div class="box simple"><h4>💡 Why this path works</h4>
+    <p>Validating first turns "#78910" into the format the system uses ("ORD-78910"), and the order database (not the courier's API) is the right place to look it up. Both episodes, the failure and the success, are now in memory.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 24 ============ -->
+<section class="slide" id="s24">
+  <div class="slide-head"><span class="num">Slide 24</span><h3>Episodic memory usage: retrieval and decision</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Episodic retrieval:</b> a new query → retrieve similar past episodes.</li>
+      <li><b>Compare outcomes:</b> episode 1 → failure (Tool C path); episode 2 → success (Tool A → Tool B path).</li>
+      <li><b>Decision:</b> avoid the failed path, follow the successful one.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 How this looks in a real agent</h4>
+    <ol>
+      <li>New request arrives: "Where's my order #55321?"</li>
+      <li>Search episodic memory for similar past requests (by goal, as in slide 21's demo, or by meaning with embeddings).</li>
+      <li>Put the best examples into the prompt: <i>"Past attempt: shipping API first → failed. Past attempt: validate → DB lookup → succeeded."</i></li>
+      <li>The model follows the successful pattern. This is often called <b>few-shot learning from experience</b>.</li>
+    </ol>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy</h4>
+    <p>Before a cricket match, the captain watches clips of past games against the same team: which bowlers worked, which field placements failed. Then picks the plan that worked.</p>
+  </div>
+  <div class="box careful"><h4>⚠️ Careful</h4>
+    <p>One failure doesn't always mean a path is bad: the API might simply have been down that day. Good systems store <i>why</i> it failed, and weigh many episodes, not just the last one.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 25 ============ -->
+<section class="slide" id="s25">
+  <div class="slide-head"><span class="num">Slide 25</span><h3>Procedural memory: definition</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <p><b>In cognitive science:</b> memory for skills, procedures and how to perform actions.</p>
+    <p><b>In AI agents:</b> stores policies, workflows or action scripts, and lets the agent repeat learned skills without relearning them.</p>
+    <p><b>Analogy:</b> human: "I know how to ride a bike." Agent: "I know how to validate an order ID and fetch its status."</p>
+  </div>
+  <div class="box simple"><h4>💡 In plain words</h4>
+    <p>Procedural memory is <b>know-how</b>. For an LLM agent it usually takes one of two forms: a stored <b>workflow</b> (step 1, step 2, what to do if step 2 fails), or the agent's own <b>instructions</b> (its system prompt), improved over time from feedback.</p>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: instructions the agent improves and keeps</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m25_learned_instructions.py</span><span class="badge key">Needs OpenAI key</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Procedural memory for an LLM agent: its own instructions, improved from feedback and saved for next time."""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.store.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryStore</span>
+
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">"gpt-6-luna"</span><span class="p">,</span> <span class="n">reasoning_effort</span><span class="o">=</span><span class="s2">"none"</span><span class="p">)</span>
+<span class="n">store</span> <span class="o">=</span> <span class="n">InMemoryStore</span><span class="p">()</span>
+<span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s2">"agent"</span><span class="p">,</span> <span class="s2">"procedures"</span><span class="p">),</span> <span class="s2">"refund_reply"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"instructions"</span><span class="p">:</span> <span class="s2">"Reply to refund requests politely."</span><span class="p">})</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">reply</span><span class="p">(</span><span class="n">customer_msg</span><span class="p">):</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="s2">"agent"</span><span class="p">,</span> <span class="s2">"procedures"</span><span class="p">),</span> <span class="s2">"refund_reply"</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">"instructions"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Instructions:</span><span class="se">\n</span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">Customer: </span><span class="si">{</span><span class="n">customer_msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">Reply:"</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">learn</span><span class="p">(</span><span class="n">feedback</span><span class="p">):</span>
+    <span class="n">old</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="s2">"agent"</span><span class="p">,</span> <span class="s2">"procedures"</span><span class="p">),</span> <span class="s2">"refund_reply"</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">"instructions"</span><span class="p">]</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">invoke</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Current instructions:</span><span class="se">\n</span><span class="si">{</span><span class="n">old</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">Manager feedback: </span><span class="si">{</span><span class="n">feedback</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                     <span class="s2">"Rewrite the instructions as a short numbered procedure that includes the feedback. "</span>
+                     <span class="s2">"Return only the instructions."</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+    <span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="s2">"agent"</span><span class="p">,</span> <span class="s2">"procedures"</span><span class="p">),</span> <span class="s2">"refund_reply"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"instructions"</span><span class="p">:</span> <span class="n">new</span><span class="p">})</span>     <span class="c1"># saved: used in every future chat</span>
+    <span class="k">return</span> <span class="n">new</span>
+
+
+<span class="n">msg</span> <span class="o">=</span> <span class="s2">"My headphones stopped working after 10 days. I want a refund."</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"BEFORE:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">reply</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">NEW PROCEDURE:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">learn</span><span class="p">(</span><span class="s2">"Always ask for the order ID first, mention the 30-day refund window, "</span>
+                                  <span class="s2">"and offer a replacement before a refund."</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">AFTER:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">reply</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+</pre></div>
+    <div class="outbox example"><div class="outbar">Example output (what you would see; exact text and numbers vary)</div><pre>BEFORE:
+ I&#x27;m sorry to hear your headphones stopped working. I&#x27;d be happy to help you with a refund.
+Could you share a few more details so I can process it?
+
+NEW PROCEDURE:
+ 1. Thank the customer and apologise for the problem.
+2. Ask for the order ID before anything else.
+3. Mention that refunds are possible within 30 days of delivery.
+4. Offer a replacement first; offer a refund if the customer prefers.
+5. Keep the reply polite and short.
+
+AFTER:
+ I&#x27;m sorry your headphones stopped working after just 10 days! Could you share your order ID?
+You&#x27;re well within our 30-day refund window. I can send you a replacement pair right away, or
+process a full refund if you&#x27;d rather. Just let me know.</pre></div>
+    <p>The manager's feedback was turned into a numbered procedure and <b>saved</b>. Every future refund chat, in any thread, now follows it. That's procedural memory: the agent didn't learn a new fact, it learned a better way to act.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 26 ============ -->
+<section class="slide" id="s26">
+  <div class="slide-head"><span class="num">Slide 26</span><h3>Procedural memory: why it matters</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>Makes agents <b>consistent</b> at executing tasks.</li>
+      <li>Reduces "reinventing the wheel" each time.</li>
+      <li>Enables complex multi-step tasks and automated workflows (e.g. check order → update DB → send email).</li>
+      <li>Complements the others: <b>episodic = what happened</b>, <b>semantic = what is true</b>, <b>procedural = how to act</b>.</li>
+    </ul>
+  </div>
+  <div class="box analogy"><h4>🍛 Analogy: learning to cook dal</h4>
+    <p><b>Semantic:</b> "toor dal needs about 3 whistles in a pressure cooker." <b>Episodic:</b> "last Sunday I added salt too early and it took longer to cook." <b>Procedural:</b> the routine your hands just know: rinse, soak, cook, temper, add salt at the end.</p>
+  </div>
+  <div class="widget" id="sortWidget">
+    <h5>🧪 Which memory is it?</h5>
+    <p style="margin:0 0 8px">Pick the memory type for each sentence an agent might store.</p>
+    <div id="sortItems"></div>
+    <div class="res" id="sortRes" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 27 ============ -->
+<section class="slide" id="s27">
+  <div class="slide-head"><span class="num">Slide 27</span><h3>Procedural memory: representation approaches</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Symbolic rules / scripts:</b> IF–THEN rules or production rules.</li>
+      <li><b>Finite state machines (FSMs):</b> state transitions encode the procedural flow.</li>
+      <li><b>Neural policies:</b> reinforcement-learning agents store action policies.</li>
+      <li><b>Hybrid:</b> store procedures as symbolic plans, refined with learned policies.</li>
+    </ul>
+  </div>
+  <table class="t">
+    <tr><th>Approach</th><th>Order-tracking example</th></tr>
+    <tr><td>IF–THEN rules</td><td>IF the order ID isn't numeric THEN ask the user to re-check it. IF the DB has no result THEN try the cache.</td></tr>
+    <tr><td>Finite state machine</td><td><code class="i">ASK_ID → VALIDATE → LOOKUP → CONFIRM</code>, with <code class="i">VALIDATE --invalid--&gt; ASK_ID</code>. A LangGraph graph with conditional edges is exactly this.</td></tr>
+    <tr><td>Neural policy</td><td>A model trained by trial and error to pick the next action; its "procedure" is inside its weights, not readable as steps.</td></tr>
+    <tr><td>Hybrid</td><td>A written plan (validate → DB → fallbacks) whose fallback order is adjusted from experience: whichever source answers most often goes first.</td></tr>
+  </table>
+  <div class="box simple"><h4>💡 Which is used most with LLM agents today?</h4>
+    <p>Readable ones: written workflows, graphs (LangGraph) and instructions in prompts. They're easy to inspect, test and change, which matters when the agent touches real customers' orders.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 28 ============ -->
+<section class="slide" id="s28">
+  <div class="slide-head"><span class="num">Slide 28</span><h3>Procedural memory: storage</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li><b>Relational DB:</b> a procedures table with metadata, and a steps table with the ordered actions.</li>
+      <li><b>Document DB:</b> procedures stored as JSON workflows.</li>
+    </ul>
+  </div>
+  <div class="box simple"><h4>💡 What a stored procedure looks like</h4>
+    <pre class="mini">procedures:  goal = "track_order", version = 2
+steps (JSON): [
+  {"do": "validate_id", "on_fail": "stop: ask the user to re-check the order number"},
+  {"do": "order_db",    "fallbacks": ["cached_db", "shipping_api"]}
+]</pre>
+    <p>A <b>version</b> number matters: when the procedure improves (v1 had no fallbacks; v2 learned them), you can see what changed and roll back if needed. The next slide runs this exact procedure.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 29 ============ -->
+<section class="slide" id="s29">
+  <div class="slide-head"><span class="num">Slide 29</span><h3>Procedural memory: usage</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>Retrieve a procedure when the task goal matches.</li>
+      <li>Execute the stored sequence of steps.</li>
+      <li>Adapt if the context differs (branching, retries).</li>
+      <li>Example: episodic: "Last time, DB lookup failed." Procedural: "Try cached DB fallback → shipping API."</li>
+      <li>Enables <b>skill chaining</b>: compose procedures into larger tasks.</li>
+    </ul>
+  </div>
+  <div class="box try"><h4>⌨️ Try it in code: retrieve the procedure, run it, adapt with fallbacks</h4>
+    <div class="codebox"><div class="codebar"><span class="fname">m29_procedural.py</span><span class="badge run">Ran it ✓ real output below</span><button class="copy" type="button">Copy</button></div><pre class="hl"><span class="sd">"""Procedural memory: a stored, step-by-step procedure the agent retrieves and runs, with a fallback (slide 29)."""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+
+<span class="c1"># --- the systems the procedure uses (small in-memory examples) ---</span>
+<span class="n">ORDER_DB</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ORD-78910"</span><span class="p">:</span> <span class="s2">"shipped, arriving Thursday"</span><span class="p">}</span>            <span class="c1"># main database (new orders take time to sync)</span>
+<span class="n">ORDER_CACHE</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ORD-55321"</span><span class="p">:</span> <span class="s2">"packed, leaves warehouse today"</span><span class="p">}</span>     <span class="c1"># cached copy, updated every few minutes</span>
+<span class="n">SHIPPING_API</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ORD-60012"</span><span class="p">:</span> <span class="s2">"out for delivery"</span><span class="p">}</span>                  <span class="c1"># courier partner</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_id</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"ORD-</span><span class="si">{</span><span class="n">raw</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">'#'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">order_db</span><span class="p">(</span><span class="n">oid</span><span class="p">):</span>       <span class="k">return</span> <span class="n">ORDER_DB</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">oid</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cached_db</span><span class="p">(</span><span class="n">oid</span><span class="p">):</span>      <span class="k">return</span> <span class="n">ORDER_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">oid</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shipping_api</span><span class="p">(</span><span class="n">oid</span><span class="p">):</span>   <span class="k">return</span> <span class="n">SHIPPING_API</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">oid</span><span class="p">)</span>
+
+
+<span class="n">ACTIONS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"validate_id"</span><span class="p">:</span> <span class="n">validate_id</span><span class="p">,</span> <span class="s2">"order_db"</span><span class="p">:</span> <span class="n">order_db</span><span class="p">,</span> <span class="s2">"cached_db"</span><span class="p">:</span> <span class="n">cached_db</span><span class="p">,</span> <span class="s2">"shipping_api"</span><span class="p">:</span> <span class="n">shipping_api</span><span class="p">}</span>
+
+<span class="c1"># --- procedural memory, stored as a JSON workflow in a database ---</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">":memory:"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"CREATE TABLE procedures (goal TEXT PRIMARY KEY, version INTEGER, steps TEXT)"</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"INSERT INTO procedures VALUES (?, ?, ?)"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"track_order"</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span>
+    <span class="p">{</span><span class="s2">"do"</span><span class="p">:</span> <span class="s2">"validate_id"</span><span class="p">,</span> <span class="s2">"on_fail"</span><span class="p">:</span> <span class="s2">"stop: ask the user to re-check the order number"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"do"</span><span class="p">:</span> <span class="s2">"order_db"</span><span class="p">,</span> <span class="s2">"fallbacks"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"cached_db"</span><span class="p">,</span> <span class="s2">"shipping_api"</span><span class="p">]},</span>      <span class="c1"># learned: "if DB lookup fails, try cache, then courier"</span>
+<span class="p">])))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">run_procedure</span><span class="p">(</span><span class="n">goal</span><span class="p">,</span> <span class="n">user_input</span><span class="p">):</span>
+    <span class="n">version</span><span class="p">,</span> <span class="n">steps</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SELECT version, steps FROM procedures WHERE goal = ?"</span><span class="p">,</span> <span class="p">(</span><span class="n">goal</span><span class="p">,))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Procedure '</span><span class="si">{</span><span class="n">goal</span><span class="si">}</span><span class="s2">' v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> for input </span><span class="si">{</span><span class="n">user_input</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">user_input</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="p">[</span><span class="n">step</span><span class="p">[</span><span class="s2">"do"</span><span class="p">]]</span> <span class="o">+</span> <span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fallbacks"</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ACTIONS</span><span class="p">[</span><span class="n">action</span><span class="p">](</span><span class="n">value</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><span class="n">action</span><span class="si">:</span><span class="s2">&lt;13</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">result</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'no result'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">result</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"on_fail"</span><span class="p">,</span> <span class="s2">"stop: not found anywhere, hand over to a human agent"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Status: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"#78910"</span><span class="p">,</span> <span class="s2">"#55321"</span><span class="p">,</span> <span class="s2">"#60012"</span><span class="p">,</span> <span class="s2">"#7A91"</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"  =&gt;"</span><span class="p">,</span> <span class="n">run_procedure</span><span class="p">(</span><span class="s2">"track_order"</span><span class="p">,</span> <span class="n">order</span><span class="p">),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+    <div class="outbox"><div class="outbar">Output (real run)</div><pre>Procedure &#x27;track_order&#x27; v2 for input &#x27;#78910&#x27;
+   validate_id   -&gt; ORD-78910
+   order_db      -&gt; shipped, arriving Thursday
+  =&gt; Status: shipped, arriving Thursday 
+
+Procedure &#x27;track_order&#x27; v2 for input &#x27;#55321&#x27;
+   validate_id   -&gt; ORD-55321
+   order_db      -&gt; no result
+   cached_db     -&gt; packed, leaves warehouse today
+  =&gt; Status: packed, leaves warehouse today 
+
+Procedure &#x27;track_order&#x27; v2 for input &#x27;#60012&#x27;
+   validate_id   -&gt; ORD-60012
+   order_db      -&gt; no result
+   cached_db     -&gt; no result
+   shipping_api  -&gt; out for delivery
+  =&gt; Status: out for delivery 
+
+Procedure &#x27;track_order&#x27; v2 for input &#x27;#7A91&#x27;
+   validate_id   -&gt; no result
+  =&gt; stop: ask the user to re-check the order number </pre></div>
+    <p>Four orders, one stored procedure, four different routes: the first was found straight away, the second needed the cache, the third needed the courier, and the fourth stopped early with a helpful message. The fallback list is the slide's "Try cached DB fallback → shipping API", learned from experience (episodic) and stored as know-how (procedural).</p>
+  </div>
+  <div class="box simple"><h4>💡 Skill chaining</h4>
+    <p>"Handle a refund" can reuse <code class="i">track_order</code> as its first step, then "check refund window", then "issue refund". Small proven procedures become building blocks for bigger ones, just like the tools in the previous lecture.</p>
+  </div>
+</section>
+
+<div class="part"><span class="tag">Part 4</span><h2>Wrap-up</h2></div>
+
+<!-- ============ SLIDE 30 ============ -->
+<section class="slide" id="s30">
+  <div class="slide-head"><span class="num">Slide 30</span><h3>Summary and key takeaways</h3></div>
+  <div class="box said"><h4>▢ What the slide says</h4>
+    <ul>
+      <li>LLMs are stateless, so agents need memory for context continuity, personalization and richer dialogue.</li>
+      <li><b>Short-term memory</b> is thread-scoped: the conversation history within a session, the basis for context-aware replies.</li>
+      <li><b>Long-term memory</b> persists across sessions and lets agents remember users over time. Three types: <b>semantic</b> (general facts: what is true), <b>episodic</b> (past events and actions: what happened in a specific case), <b>procedural</b> (skills and workflows: how to act).</li>
+      <li>Memory-management techniques include <b>trimming/deleting</b> messages and <b>summarizing</b>, to handle the size and continuity of the history.</li>
+    </ul>
+  </div>
+  <table class="t">
+    <tr><th>Memory</th><th>Question it answers</th><th>LangGraph piece</th><th>Demo in this page</th></tr>
+    <tr><td>Short-term</td><td>What did we just say?</td><td>State + checkpointer (<code class="i">thread_id</code>)</td><td>Slides 8–10</td></tr>
+    <tr><td>Semantic</td><td>What is true?</td><td>Store (facts, optionally searched by meaning)</td><td>Slides 15, 17</td></tr>
+    <tr><td>Episodic</td><td>What happened last time?</td><td>Store or database of episodes</td><td>Slide 21</td></tr>
+    <tr><td>Procedural</td><td>How do I do this?</td><td>Stored workflows and instructions; the graph itself</td><td>Slides 25, 29</td></tr>
+  </table>
+  <div class="box real"><h4>🌍 In this module's code</h4>
+    <p><code class="i">short_term_memory.ipynb</code> covers buffer, trimming, deletion and summarising; <code class="i">memory_demo_1.py</code> combines semantic, episodic and procedural memory in one agent; <code class="i">memory_demo_2.py</code> adds memory that updates itself in the hot path and is saved to disk. See the code explainer.</p>
+  </div>
+</section>
+
+
+<!-- ============ GLOSSARY ============ -->
+<section class="slide" id="glossary">
+  <div class="slide-head"><span class="num">★</span><h3>Glossary</h3></div>
+  <dl class="gloss">
+    <dt>Stateless</dt><dd>Keeps nothing between calls; every request starts from zero.</dd>
+    <dt>Context window</dt><dd>The maximum amount of text a model can read in one call.</dd>
+    <dt>Short-term memory</dt><dd>The current conversation (one thread).</dd>
+    <dt>Long-term memory</dt><dd>Memory kept across conversations, e.g. per user.</dd>
+    <dt>Thread / thread_id</dt><dd>One conversation and its ID in LangGraph.</dd>
+    <dt>State</dt><dd>Everything an agent carries for a thread: messages, files, results.</dd>
+    <dt>Checkpointer</dt><dd>Auto-saves the state after each step so a thread can resume.</dd>
+    <dt>Store / namespace</dt><dd>LangGraph's long-term memory / a "folder" inside it, e.g. per user.</dd>
+    <dt>Trimming</dt><dd>Sending only part of the history to the model this time.</dd>
+    <dt>Deleting (RemoveMessage)</dt><dd>Removing messages from the saved state for good.</dd>
+    <dt>Summarizing</dt><dd>Replacing old messages with a short LLM-written summary.</dd>
+    <dt>Hot path / background</dt><dd>Updating memory during the reply / later, in a batch.</dd>
+    <dt>Semantic memory</dt><dd>Facts: what is true.</dd>
+    <dt>Episodic memory</dt><dd>Experiences: what happened in a specific case.</dd>
+    <dt>Procedural memory</dt><dd>Skills and workflows: how to act.</dd>
+    <dt>Knowledge graph / triple</dt><dd>Facts as (subject, relation, object) linked together.</dd>
+    <dt>Embedding / vector DB</dt><dd>Meaning as numbers / a database that searches by meaning.</dd>
+    <dt>Finite state machine</dt><dd>A set of states and the allowed moves between them.</dd>
+  </dl>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section class="slide" id="quiz">
+  <div class="slide-head"><span class="num">?</span><h3>Check yourself (click to reveal)</h3></div>
+  <details class="q"><summary>1. If the model is stateless, how does ChatGPT "remember" what you said earlier in the same chat?</summary><p>The app sends the earlier messages along with every new one. That re-sent history is short-term memory.</p></details>
+  <details class="q"><summary>2. What's the difference between trimming and deleting?</summary><p>Trimming changes only what the model sees in this call; the saved history is untouched. Deleting removes messages from the saved state permanently.</p></details>
+  <details class="q"><summary>3. Your agent keeps forgetting the user's budget in long chats. Trimming is on. What would you change?</summary><p>Summarize instead of (or as well as) trimming, or save the budget to long-term memory as a fact about the user, so it doesn't depend on the old message still being in the window.</p></details>
+  <details class="q"><summary>4. Classify: (a) "Delivery takes 2–5 days", (b) "Order #4471 arrived late last month", (c) "Validate the ID before calling the DB".</summary><p>(a) Semantic: a general fact. (b) Episodic: a specific past event. (c) Procedural: how to act.</p></details>
+  <details class="q"><summary>5. Hot path or background: a voice assistant where every second of delay is noticeable?</summary><p>Background. Reply first; extract and save memories afterwards, so the user never waits for memory work.</p></details>
+</section>
+
+<footer>Adding Memory to Agents, explained simply · by Shivank Agarwal</footer>
+</main>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const text = btn.closest('.codebox').querySelector('pre').innerText;
+    const done = () => { btn.textContent = 'Copied'; setTimeout(() => btn.textContent = 'Copy', 1400); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fb(text, done));
+    else fb(text, done);
+  });
+});
+function fb(text, done) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
+const bar = document.getElementById('progress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = (100 * h.scrollTop / (h.scrollHeight - h.clientHeight)) + '%'; }, {passive: true});
+const links = {}; document.querySelectorAll('nav.toc a').forEach(a => links[a.getAttribute('href').slice(1)] = a);
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && links[e.target.id]) { Object.values(links).forEach(l => l.classList.remove('active')); links[e.target.id].classList.add('active'); } }), {rootMargin: '-35% 0px -60% 0px'});
+document.querySelectorAll('section.slide').forEach(s => io.observe(s));
+
+// Slide 11: trimming simulator
+const CHAT = [
+  ["user", "Hi, I'm Kabir. Budget ₹60,000 for a college laptop.", ["his name (Kabir)", "the ₹60,000 budget"]],
+  ["ai", "Hi Kabir! Thin-and-light laptops with 16 GB RAM fit that budget.", []],
+  ["user", "I also edit videos sometimes.", ["that he edits videos"]],
+  ["ai", "Then look for a dedicated GPU.", []],
+  ["user", "I travel by train a lot, so battery matters.", ["that battery life matters"]],
+  ["ai", "Noted: aim for 8+ hours of battery.", []],
+  ["user", "Which is more important, RAM or GPU?", []],
+  ["ai", "For 1080p editing, 16 GB RAM matters most.", []],
+  ["user", "Okay, so what should I buy?", []],
+];
+const slider = document.getElementById('keepSlider'), trimRes = document.getElementById('trimRes');
+function updateTrim() {
+  const n = +slider.value; document.getElementById('keepN').textContent = n;
+  const kept = CHAT.slice(CHAT.length - n), dropped = CHAT.slice(0, CHAT.length - n);
+  const lost = dropped.flatMap(m => m[2]), have = kept.flatMap(m => m[2]);
+  let out = kept.map(m => (m[0] === 'user' ? '  user: ' : '    ai: ') + m[1]).join('\n');
+  out += '\n\n' + (lost.length ? '❌ The model no longer knows: ' + lost.join(', ') : '✅ Nothing important was lost.');
+  if (have.length) out += '\n✅ Still known: ' + have.join(', ');
+  if (kept[0][0] === 'ai') out += '\n⚠️ The kept part starts with an AI message; start_on="human" would drop it.';
+  trimRes.textContent = out;
+}
+slider.addEventListener('input', updateTrim); updateTrim();
+
+// Slide 26: which memory is it?
+const ITEMS = [
+  ["Refunds are allowed within 30 days of delivery.", "Semantic", "A general fact that's true for every customer."],
+  ["Ananya's order #4471 arrived 3 days late in October.", "Episodic", "A specific event that happened to one customer."],
+  ["To track an order: validate the ID, then check the database, then the courier.", "Procedural", "Steps for how to do a task."],
+  ["The user said 'my budget is ₹60,000' two messages ago.", "Short-term", "Part of the current conversation."],
+  ["Ananya is vegetarian.", "Semantic", "A lasting fact about the user (not tied to one event)."],
+  ["Last time, calling the shipping API first failed.", "Episodic", "What happened on a particular attempt."],
+  ["Always ask for the order ID before discussing a refund.", "Procedural", "A rule for how to act."],
+];
+const TYPES = ["Short-term", "Semantic", "Episodic", "Procedural"];
+const box = document.getElementById('sortItems'), sortRes = document.getElementById('sortRes');
+const answered = {};
+ITEMS.forEach(([text, answer, why], i) => {
+  const row = document.createElement('div');
+  row.style.cssText = 'margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff';
+  row.innerHTML = `<div style="margin-bottom:6px">“${text}”</div>`;
+  const btns = document.createElement('div'); btns.className = 'row';
+  const note = document.createElement('div'); note.style.cssText = 'font-size:14px;margin-top:6px;color:var(--muted)';
+  TYPES.forEach(t => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = t;
+    b.addEventListener('click', () => {
+      answered[i] = (t === answer);
+      note.textContent = (t === answer ? '✅ Right: ' : `❌ It's ${answer}: `) + why;
+      const right = Object.values(answered).filter(Boolean).length;
+      sortRes.textContent = `Score: ${right} / ${Object.keys(answered).length} answered (of ${ITEMS.length})`;
+    });
+    btns.appendChild(b);
+  });
+  row.appendChild(btns); row.appendChild(note); box.appendChild(row);
+});
+sortRes.textContent = `Score: 0 / 0 answered (of ${ITEMS.length})`;
+</script>
+</body>
+</html>

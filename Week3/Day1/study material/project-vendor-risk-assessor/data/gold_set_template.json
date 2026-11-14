@@ -1,0 +1,42 @@
+{
+  "_about": "TEMPLATE for your own gold set of REAL vendors. Copy to data/gold_set_real.json and fill it by hand: open each vendor's trust centre, privacy policy, sub-processor list and pricing page yourself, and record the URL and the date you checked. Do not let the agent fill this file — then you would be grading the agent with its own answers. Aim for 10 vendors x 8 fields. Pick a mix: 3 that should clearly pass, 3 that should clearly fail at least one blocker, 4 that are messy (claims without evidence, regions 'coming soon', training opt-outs).",
+  "as_of": "YYYY-MM-DD",
+  "how_to_fill": {
+    "security_certifications": "List each certification as {name, status, date, valid_until, issuer}. name must be one of: 'SOC 2 Type II', 'SOC 2 Type I', 'SOC 2' (type not stated), 'ISO 27001'. status: certified | in_progress | planned. Record evidence_level: documented (report, certificate, or trust-centre entry that links to it) or claimed (marketing text only).",
+    "data_regions": "{available: [...], planned: [...]} using country or region names as the vendor writes them. 'India' must appear in available for DP-3.1 to pass.",
+    "trains_on_customer_data": "no | no_on_paid_plans | opt_out_available | yes",
+    "subprocessors": "List of {name, purpose, category, country}. category: hosting | model_provider | email | analytics | support | other. null if the vendor publishes no list.",
+    "data_retention": "{default_days, deletion_on_request_days} as integers; null when the vendor does not say.",
+    "sso_saml": "all_plans | paid_plans | enterprise_only | none",
+    "security_incidents": "List of {date, summary, severity (major|minor), postmortem_published, postmortem_url} for the last 24 months; [] if none found; null if you could not establish it.",
+    "dpa_available": "yes | on_request | no"
+  },
+  "cases": [
+    {
+      "id": "real-vendor-01",
+      "question": "Can <team> use <Tool> for <use case>?",
+      "vendor": "<Vendor name exactly as on its website>",
+      "official_domain": "<vendor.com>",
+      "tier": "T3",
+      "users": 0,
+      "user_groups": ["public", "employees", "security"],
+      "checked_on": "YYYY-MM-DD",
+      "expected_facts": {
+        "security_certifications": {"has": [], "evidence_level": "documented|claimed", "best_source": "<url>"},
+        "data_regions": {"available": [], "india_available": false},
+        "trains_on_customer_data": "",
+        "subprocessors": {"count": 0, "has_model_provider": false},
+        "data_retention": {"default_days": null, "deletion_on_request_days": null},
+        "sso_saml": "",
+        "security_incidents": {"major_count": 0, "all_major_have_postmortem": true},
+        "dpa_available": ""
+      },
+      "expected_verdicts": {
+        "SEC-4.2": "", "DP-3.1": "", "AI-2.1": "", "AI-3.4": "", "DP-5.4": "", "SEC-7.1": "", "SEC-9.3": "", "DP-2.2": "", "PROC-1.1": ""
+      },
+      "expected_overall": "",
+      "sources": [{"field": "", "url": "", "checked_on": "YYYY-MM-DD"}],
+      "notes": "What makes this vendor tricky?"
+    }
+  ]
+}

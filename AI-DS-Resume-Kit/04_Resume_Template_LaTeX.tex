@@ -1,0 +1,189 @@
+% =====================================================================
+% AI & Data Science Resume Template -- shared by Shivank Agrawal
+% How to use: overleaf.com -> New Project -> Upload Project -> this file
+% -> Recompile -> Download PDF.
+% Everything below is SAMPLE content. Replace all of it with your own.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[letterpaper, left=0.5in, right=0.5in, top=0.5in, bottom=0.5in]{geometry}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fontawesome5}
+
+% Define colors
+\definecolor{titlecolor}{RGB}{0,0,0}
+\definecolor{sectioncolor}{RGB}{30,64,175}
+
+% Configure hyperlinks
+\hypersetup{
+    colorlinks=true,
+    urlcolor=blue,
+    linkcolor=blue,
+}
+
+% Section formatting
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{sectioncolor}}
+  {}
+  {0em}
+  {}
+  [\vspace{0.2em}\hrule\vspace{0.5em}]
+
+% Subsection formatting
+\titleformat{\subsection}[runin]
+  {\normalfont\large\bfseries}
+  {}
+  {0em}
+  {}
+
+% Remove paragraph indentation
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% Customize lists
+\setlist[itemize]{leftmargin=1.5em, itemsep=0.1em, parsep=0pt, topsep=0.1em}
+
+\begin{document}
+
+% Header
+\begin{center}
+\huge\textbf{Your Name}\\
+\Large Target Role (e.g. AI Engineer)\\
+\vspace{0.2em}
+\normalsize
+\faIcon{envelope} \href{mailto:your.email@example.com}{your.email@example.com} 
+\hspace{0.5em} \faIcon{phone} +91 XXXXX XXXXX 
+\hspace{0.5em} \faIcon{map-marker-alt} City, Country 
+\hspace{0.5em} \faIcon{linkedin} \href{https://linkedin.com}{LinkedIn} 
+\hspace{0.5em} \faIcon{github} \href{https://github.com}{Github}
+\end{center}
+
+\section{PROFESSIONAL SUMMARY}
+Senior AI Engineer with 3+ years of expertise in developing production-grade LLM solutions and Computer Vision applications. Demonstrated success in architecting multilingual RAG systems that accelerated RFP response times by 23x and creating medical imaging solutions with 96+ accuracy. Proficient in end-to-end ML lifecycle management leveraging LangChain, HuggingFace, and Oracle Cloud Infrastructure. Published researcher in Q1/Q2 journals with specialized knowledge in Retrieval-Augmented Generation, vector embeddings, and enterprise-scale AI deployment strategies.
+
+\section{PROFESSIONAL EXPERIENCE}
+
+\textbf{Senior AI Engineer, Oracle} \hfill 09/2024 – Present\\
+\textit{Cairo, Egypt}
+\begin{itemize}
+\item Architected a multilingual Retrieval-Augmented Generation (RAG) system for Canon Medical supporting English, Dutch, German, and Japanese, reducing RFP response time from 24 hours to under 1 hour (23x improvement)
+\item Orchestrated integration of Reciprocal Rank Fusion (RRF) with LLaMA 3.3 70B on Oracle Cloud Infrastructure (OCI) GenAI, automating deployment via Docker and GitHub Actions
+\item Pioneered an AI meeting assistant for Saudi clients that transcribes and summarizes meetings exceeding 1 hour, boosting documentation efficiency by 80\%
+\item Formulated a bilingual SQL agent that transforms natural language into SQL queries and generates visual insights based on query results reducing report generation 5x times
+\item Constructed an LLM-based RFP scoring tool utilizing LLaMA 3.1 8B to evaluate proposals against standardized benchmarks
+\item Spearheaded a GenAI-powered CV evaluation platform with Qwen 2.5 32B to analyze 450+ resumes against job descriptions
+\item Engineered a real estate chatbot using LLaMA 3.1 with function calling capabilities and regression analysis achieving R² = 0.95, with confidence interval calculations
+\end{itemize}
+
+\textbf{Computer Vision Research Engineer, Atomica AI} \hfill 08/2023 – 07/2024\\
+\textit{Cairo, Egypt}
+\begin{itemize}
+\item Elevated pipeline accuracy by 5\% through implementation of EfficientSAM and other state-of-the-art deep learning models
+\item Streamlined pipeline efficiency by 8\% by refining computer vision models for segmentation, pose estimation, and object detection tasks
+\item Revamped 5 project codebases from standard PyTorch to PyTorch Lightning, shrinking codebase size by 54\% while enhancing maintainability
+\end{itemize}
+
+\textbf{Remote Computer Vision Engineer, U the Mind Company} \hfill 06/2023 – 06/2024\\
+\textit{Remote (US-based)}
+\begin{itemize}
+\item Conceptualized an analytical system for Parkinson's Disease tremor assessment using Mediapipe and OpenCV, achieving 92\% accuracy compared to clinical standards
+\item Launched the solution using Flask API, establishing a valuable remote diagnostic tool accessible by more than 100 medical analysts
+\item Fashioned a web-based dashboard for visualizing patient video analysis and tremor signal measurements, enhancing report review 85\%
+\end{itemize}
+
+\textbf{Machine Learning Engineer, SaffroSystems} \hfill 08/2021 – 08/2023\\
+\textit{Remote (US-based)}
+\begin{itemize}
+\item Devised an agricultural deep learning system achieving 99\% accuracy in classifying counterfeit saffron using transfer learning techniques
+\item Championed the project's online deployment with a custom website tailored to model specifications and end-user requirements
+\item Co-authored a research paper published in a Q2-ranked journal (Impact Factor 5.6), documenting innovative methods and findings
+\end{itemize}
+
+\section{EDUCATION}
+
+\textbf{Bachelor of Science, Computer Science with Minor in Mathematics} \hfill 2017 – 2021\\
+\textit{Minya University, Egypt}
+\begin{itemize}
+\item Coursework: Machine Learning, Artificial Intelligence, Data Structures \& Algorithms, Computer Vision
+\item Graduated with Honors (Top 5\% of class)
+\end{itemize}
+
+\section{PUBLICATIONS}
+
+\textbf{Temporal dynamics of user activities: deep learning strategies and mathematical modeling for long-term and short-term profiling} \hfill 06/2024\\
+\textit{Q1-ranked Journal (Impact Factor 3.8)}
+\begin{itemize}
+\item Established a text classification system using DistilBERT, LSTM, and GRU models, achieving 88\% accuracy in categorizing tweets
+\item Among the top five most-cited papers in the journal globally
+\end{itemize}
+
+\textbf{Digging for Gold: Evaluating the Authenticity of Saffron} \hfill 08/2023\\
+\textit{Q2-ranked Journal (Impact Factor 5.6)}
+\begin{itemize}
+\item Developed a novel method for verifying saffron authenticity using a MobileNet architecture, achieving 99\% accuracy
+\item Created significant contribution to agricultural quality control methodologies
+\end{itemize}
+
+\section{PROJECTS}
+
+\textbf{NBME - Clinical Patient Notes Analyzer}
+\begin{itemize}
+\item Crafted an NLP solution using LangChain and fine-tuned LLMs (LLaMA 3, Mixtral-8x7B) for medical documentation analysis
+\item Attained 98\%+ accuracy in identifying clinical findings while decreasing document review time by 75\%
+\end{itemize}
+
+\textbf{Hand Tremor Analyzer for Parkinson's Assessment}
+\begin{itemize}
+\item Programmed a tremor analysis platform using Mediapipe and FFT algorithms, reaching 92\% accuracy against clinical standards
+\item Distributed system via Flask API to 100+ medical professionals for remote Parkinson's assessment
+\end{itemize}
+
+\textbf{3D Nerve Tracking for Dental Procedures}
+\begin{itemize}
+\item Executed 3D U-Net architecture for mandibular nerve tracking in dental CT scans, securing 96\% Dice coefficient
+\item Accelerated inference to 30-seconds, shortening procedure duration by 15\% while improving patient safety
+\end{itemize}
+
+\textbf{Egyptian Currency Detector for Visually Impaired}
+\begin{itemize}
+\item Assembled YOLOv5-based recognition system with 99\% accuracy across all Egyptian currency denominations
+\item Produced mobile application for visually impaired users, processing transactions in under 2 seconds
+\end{itemize}
+\hfill\hfill \\
+\hfill\hfill \\
+\textbf{Real-time Face Mask Detection System}
+\begin{itemize}
+\item Structured mask compliance monitoring system with CNN and OpenCV, delivering 95\% accuracy in challenging environments
+\item Tailored for edge deployment at 30+ FPS on standard surveillance hardware
+\end{itemize}
+
+\textbf{I-Eye Saffron Authentication Platform}
+\begin{itemize}
+\item Supervised design of counterfeit detection system using MobileNetV2, capturing 99\% accuracy in detecting fake saffron
+\item Minimized authentication time from days to seconds while scaling to analyze thousands of samples daily
+\end{itemize}
+
+\section{TECHNICAL SKILLS}
+
+\begin{itemize}
+\item \textbf{Programming Languages:} Python, SQL, Object-Oriented Programming
+\item \textbf{AI Frameworks:} TensorFlow, PyTorch, PyTorch Lightning, Timm, Scikit-Learn, Numpy, Pandas, HuggingFace Transformers
+\item \textbf{Computer Vision:} OpenCV, Mediapipe, EfficientSAM, YOLOv10/v11, U-Net, Instance Segmentation
+\item \textbf{Generative AI:} RAG, LangChain, LangGraph, Ollama, LLaMA 3, Mixtral, Qwen, Claude, GPT-4
+\item \textbf{MLOps \& Deployment:} Docker, Kubernetes, AWS, OCI, GitHub Actions, CI/CD, Flask, FastAPI
+\item \textbf{Vector Databases:} FAISS, Pinecone, Chroma, Qdrant
+\item \textbf{Model Optimization:} ONNX Runtime, Quantization, Pruning, Knowledge Distillation, TensorRT
+\item \textbf{Prompt Engineering:} Chain-of-Thought, Few-shot Learning, Function Calling, ReAct
+\end{itemize}
+
+\section{LANGUAGES}
+
+\begin{itemize}
+\item \textbf{English:} Fluent
+\item \textbf{Arabic:} Native
+\end{itemize}
+
+\end{document}

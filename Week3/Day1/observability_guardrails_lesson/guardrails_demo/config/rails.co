@@ -1,0 +1,39 @@
+# ------------------------------------------------------------------
+# DIALOG RAILS (Colang)  -  by Shivank Agarwal
+# A "user ..." block lists example sentences. NeMo compares each new message
+# with these examples (using embeddings), so similar wording also matches.
+# A "flow" says: when the user does X, the bot does Y.
+# ------------------------------------------------------------------
+
+# ---------- Greeting ----------
+define user express greeting
+  "hello"
+  "hi there"
+  "good morning"
+  "hey, how are you?"
+
+define bot express greeting
+  "Hello! I'm your learning assistant. How can I help you today?"
+
+define flow greeting
+  user express greeting
+  bot express greeting
+
+# ---------- Personal information (PII) ----------
+define user share personal information
+  "my email is test@example.com"
+  "my phone number is 555-123-4567"
+  "my phone number is 98765 43210"
+  "my address is 12 MG Road, Bangalore"
+  "my card number is 4111 1111 1111 1111"
+
+define bot warn about personal information
+  "Please don't share personal details like emails, phone numbers or ID numbers here. I don't need them to help you, and keeping them private protects you."
+
+define flow personal information
+  user share personal information
+  bot warn about personal information
+
+# ---------- What the user sees when the input or output check blocks a message ----------
+define bot refuse to respond
+  "Sorry, I can't help with that. I can't change my rules, share my instructions, or give harmful information."

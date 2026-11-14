@@ -1,0 +1,368 @@
+[
+ {
+  "id": "short_1",
+  "turns": [
+   {
+    "role": "user",
+    "content": "what's a heap"
+   },
+   {
+    "role": "assistant",
+    "content": "A heap is a complete binary tree stored in a list. In a min-heap the smallest item is at index 0."
+   },
+   {
+    "role": "user",
+    "content": "honestly I think I'll just drop the course"
+   }
+  ]
+ },
+ {
+  "id": "long_1",
+  "turns": [
+   {
+    "role": "user",
+    "content": "what's a heap"
+   },
+   {
+    "role": "assistant",
+    "content": "A heap is a complete binary tree stored in a list. In a min-heap the smallest item is at index 0."
+   },
+   {
+    "role": "user",
+    "content": "and heappush?"
+   },
+   {
+    "role": "assistant",
+    "content": "It adds the item at the end and sifts it up: O(log n)."
+   },
+   {
+    "role": "user",
+    "content": "heappop?"
+   },
+   {
+    "role": "assistant",
+    "content": "It removes the root, moves the last item to the top and sifts it down: O(log n)."
+   },
+   {
+    "role": "user",
+    "content": "why log n"
+   },
+   {
+    "role": "assistant",
+    "content": "Because the tree's height is about log2(n), and an item moves at most one level per swap."
+   },
+   {
+    "role": "user",
+    "content": "ok what is heapify"
+   },
+   {
+    "role": "assistant",
+    "content": "It turns a whole list into a heap in O(n) by sifting down from the last parent."
+   },
+   {
+    "role": "user",
+    "content": "why not n log n"
+   },
+   {
+    "role": "assistant",
+    "content": "Most nodes are near the bottom and only move a little, so the total is about 2n swaps."
+   },
+   {
+    "role": "user",
+    "content": "can heap do max"
+   },
+   {
+    "role": "assistant",
+    "content": "Python's heapq is a min-heap. Push -x to simulate a max-heap."
+   },
+   {
+    "role": "user",
+    "content": "top k largest?"
+   },
+   {
+    "role": "assistant",
+    "content": "Keep a min-heap of size k; pop whenever it grows past k. That's O(n log k)."
+   },
+   {
+    "role": "user",
+    "content": "is heap sorted"
+   },
+   {
+    "role": "assistant",
+    "content": "No. Only the parent-child order holds; the list as a whole isn't sorted."
+   },
+   {
+    "role": "user",
+    "content": "heap[1] is second smallest?"
+   },
+   {
+    "role": "assistant",
+    "content": "Not always. The second smallest is one of the root's children: heap[1] or heap[2]."
+   },
+   {
+    "role": "user",
+    "content": "ok tried the quiz question again"
+   },
+   {
+    "role": "assistant",
+    "content": "Nice! Share your approach and I'll give you a hint on the next step."
+   },
+   {
+    "role": "user",
+    "content": "got it wrong again"
+   },
+   {
+    "role": "assistant",
+    "content": "That's okay, heaps take practice. Which part felt confusing: sifting up or sifting down?"
+   },
+   {
+    "role": "user",
+    "content": "honestly I think I'll just drop the course"
+   }
+  ]
+ },
+ {
+  "id": "short_2",
+  "turns": [
+   {
+    "role": "user",
+    "content": "what's a heap"
+   },
+   {
+    "role": "assistant",
+    "content": "A heap is a complete binary tree stored in a list. In a min-heap the smallest item is at index 0."
+   },
+   {
+    "role": "user",
+    "content": "i'm so stressed, i can't do this anymore, nothing goes in my head"
+   }
+  ]
+ },
+ {
+  "id": "long_2",
+  "turns": [
+   {
+    "role": "user",
+    "content": "what's a heap"
+   },
+   {
+    "role": "assistant",
+    "content": "A heap is a complete binary tree stored in a list. In a min-heap the smallest item is at index 0."
+   },
+   {
+    "role": "user",
+    "content": "and heappush?"
+   },
+   {
+    "role": "assistant",
+    "content": "It adds the item at the end and sifts it up: O(log n)."
+   },
+   {
+    "role": "user",
+    "content": "heappop?"
+   },
+   {
+    "role": "assistant",
+    "content": "It removes the root, moves the last item to the top and sifts it down: O(log n)."
+   },
+   {
+    "role": "user",
+    "content": "why log n"
+   },
+   {
+    "role": "assistant",
+    "content": "Because the tree's height is about log2(n), and an item moves at most one level per swap."
+   },
+   {
+    "role": "user",
+    "content": "ok what is heapify"
+   },
+   {
+    "role": "assistant",
+    "content": "It turns a whole list into a heap in O(n) by sifting down from the last parent."
+   },
+   {
+    "role": "user",
+    "content": "why not n log n"
+   },
+   {
+    "role": "assistant",
+    "content": "Most nodes are near the bottom and only move a little, so the total is about 2n swaps."
+   },
+   {
+    "role": "user",
+    "content": "can heap do max"
+   },
+   {
+    "role": "assistant",
+    "content": "Python's heapq is a min-heap. Push -x to simulate a max-heap."
+   },
+   {
+    "role": "user",
+    "content": "top k largest?"
+   },
+   {
+    "role": "assistant",
+    "content": "Keep a min-heap of size k; pop whenever it grows past k. That's O(n log k)."
+   },
+   {
+    "role": "user",
+    "content": "is heap sorted"
+   },
+   {
+    "role": "assistant",
+    "content": "No. Only the parent-child order holds; the list as a whole isn't sorted."
+   },
+   {
+    "role": "user",
+    "content": "heap[1] is second smallest?"
+   },
+   {
+    "role": "assistant",
+    "content": "Not always. The second smallest is one of the root's children: heap[1] or heap[2]."
+   },
+   {
+    "role": "user",
+    "content": "ok tried the quiz question again"
+   },
+   {
+    "role": "assistant",
+    "content": "Nice! Share your approach and I'll give you a hint on the next step."
+   },
+   {
+    "role": "user",
+    "content": "got it wrong again"
+   },
+   {
+    "role": "assistant",
+    "content": "That's okay, heaps take practice. Which part felt confusing: sifting up or sifting down?"
+   },
+   {
+    "role": "user",
+    "content": "i'm so stressed, i can't do this anymore, nothing goes in my head"
+   }
+  ]
+ },
+ {
+  "id": "short_3",
+  "turns": [
+   {
+    "role": "user",
+    "content": "what's a heap"
+   },
+   {
+    "role": "assistant",
+    "content": "A heap is a complete binary tree stored in a list. In a min-heap the smallest item is at index 0."
+   },
+   {
+    "role": "user",
+    "content": "maybe coding is not for me. i'll quit after this week"
+   }
+  ]
+ },
+ {
+  "id": "long_3",
+  "turns": [
+   {
+    "role": "user",
+    "content": "what's a heap"
+   },
+   {
+    "role": "assistant",
+    "content": "A heap is a complete binary tree stored in a list. In a min-heap the smallest item is at index 0."
+   },
+   {
+    "role": "user",
+    "content": "and heappush?"
+   },
+   {
+    "role": "assistant",
+    "content": "It adds the item at the end and sifts it up: O(log n)."
+   },
+   {
+    "role": "user",
+    "content": "heappop?"
+   },
+   {
+    "role": "assistant",
+    "content": "It removes the root, moves the last item to the top and sifts it down: O(log n)."
+   },
+   {
+    "role": "user",
+    "content": "why log n"
+   },
+   {
+    "role": "assistant",
+    "content": "Because the tree's height is about log2(n), and an item moves at most one level per swap."
+   },
+   {
+    "role": "user",
+    "content": "ok what is heapify"
+   },
+   {
+    "role": "assistant",
+    "content": "It turns a whole list into a heap in O(n) by sifting down from the last parent."
+   },
+   {
+    "role": "user",
+    "content": "why not n log n"
+   },
+   {
+    "role": "assistant",
+    "content": "Most nodes are near the bottom and only move a little, so the total is about 2n swaps."
+   },
+   {
+    "role": "user",
+    "content": "can heap do max"
+   },
+   {
+    "role": "assistant",
+    "content": "Python's heapq is a min-heap. Push -x to simulate a max-heap."
+   },
+   {
+    "role": "user",
+    "content": "top k largest?"
+   },
+   {
+    "role": "assistant",
+    "content": "Keep a min-heap of size k; pop whenever it grows past k. That's O(n log k)."
+   },
+   {
+    "role": "user",
+    "content": "is heap sorted"
+   },
+   {
+    "role": "assistant",
+    "content": "No. Only the parent-child order holds; the list as a whole isn't sorted."
+   },
+   {
+    "role": "user",
+    "content": "heap[1] is second smallest?"
+   },
+   {
+    "role": "assistant",
+    "content": "Not always. The second smallest is one of the root's children: heap[1] or heap[2]."
+   },
+   {
+    "role": "user",
+    "content": "ok tried the quiz question again"
+   },
+   {
+    "role": "assistant",
+    "content": "Nice! Share your approach and I'll give you a hint on the next step."
+   },
+   {
+    "role": "user",
+    "content": "got it wrong again"
+   },
+   {
+    "role": "assistant",
+    "content": "That's okay, heaps take practice. Which part felt confusing: sifting up or sifting down?"
+   },
+   {
+    "role": "user",
+    "content": "maybe coding is not for me. i'll quit after this week"
+   }
+  ]
+ }
+]

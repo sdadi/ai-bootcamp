@@ -1,0 +1,75 @@
+{
+  "_about": "Metadata for every document in data/raw. 'access' lists which user groups may see the document. 'trust' marks content written by outsiders. All content is fictional (Nimbu Mart is a made-up company for this course by Shivank Agrawal).",
+  "refund_policy_2025.md": {
+    "title": "Returns and Refund Policy (2025)",
+    "department": "support", "doc_type": "policy", "access": ["public"],
+    "version": "2025", "effective_date": "2025-04-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "refund_policy_2024.md": {
+    "title": "Returns Policy (2024)",
+    "department": "support", "doc_type": "policy", "access": ["public"],
+    "version": "2024", "effective_date": "2024-01-01", "status": "archived", "trust": "trusted", "language": "en",
+    "superseded_by": "refund_policy_2025.md"
+  },
+  "delivery_and_shipping.md": {
+    "title": "Delivery and Shipping",
+    "department": "support", "doc_type": "policy", "access": ["public"],
+    "version": "2025", "effective_date": "2025-01-15", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "nimbu_plus_membership.html": {
+    "title": "Nimbu Plus Membership",
+    "department": "marketing", "doc_type": "web_page", "access": ["public"],
+    "version": "2026", "effective_date": "2026-01-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "error_codes_runbook.md": {
+    "title": "Checkout Error Codes Runbook",
+    "department": "engineering", "doc_type": "runbook", "access": ["employees"],
+    "version": "4", "effective_date": "2026-02-10", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "product_catalog.csv": {
+    "title": "Product Catalog",
+    "department": "catalog", "doc_type": "table", "access": ["public"],
+    "version": "2026-10", "effective_date": "2026-10-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "hr_leave_policy.md": {
+    "title": "Employee Leave Policy",
+    "department": "hr", "doc_type": "policy", "access": ["employees"],
+    "version": "2026", "effective_date": "2026-01-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "salary_bands_confidential.md": {
+    "title": "Salary Bands FY2026 (Confidential)",
+    "department": "hr", "doc_type": "policy", "access": ["hr"],
+    "version": "FY2026", "effective_date": "2026-04-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "support_tickets_sample.txt": {
+    "title": "Sample Support Tickets",
+    "department": "support", "doc_type": "tickets", "access": ["employees"],
+    "version": "1", "effective_date": "2026-09-01", "status": "active", "trust": "trusted", "language": "en",
+    "contains_pii": true
+  },
+  "community_tips_untrusted.md": {
+    "title": "Community Shopping Tips",
+    "department": "community", "doc_type": "user_generated", "access": ["public"],
+    "version": "1", "effective_date": "2026-08-01", "status": "active", "trust": "untrusted", "language": "en"
+  },
+  "faq_hindi.md": {
+    "title": "FAQ (Hindi)",
+    "department": "support", "doc_type": "faq", "access": ["public"],
+    "version": "2025", "effective_date": "2025-06-01", "status": "active", "trust": "trusted", "language": "hi"
+  },
+  "travel_reimbursement_policy.pdf": {
+    "title": "Travel and Expense Reimbursement Policy (FIN-007)",
+    "department": "finance", "doc_type": "policy", "access": ["employees"],
+    "version": "3", "effective_date": "2025-07-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "warranty_terms_scanned.pdf": {
+    "title": "Nimbu Care Warranty Terms (scanned)",
+    "department": "support", "doc_type": "policy", "access": ["public"],
+    "version": "2025", "effective_date": "2025-01-01", "status": "active", "trust": "trusted", "language": "en"
+  },
+  "vendor_onboarding_mixed.pdf": {
+    "title": "Vendor Onboarding Guide",
+    "department": "procurement", "doc_type": "guide", "access": ["employees"],
+    "version": "2", "effective_date": "2026-03-01", "status": "active", "trust": "trusted", "language": "en"
+  }
+}

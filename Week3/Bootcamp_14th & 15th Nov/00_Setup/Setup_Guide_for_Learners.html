@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Shivank Agarwal">
+<title>Setup Guide — Shivank Agarwal</title>
+<style>
+:root{--ink:#1d2433;--muted:#5b6475;--line:#e3e7ee;--bg:#fbfaf7;--card:#ffffff;--accent:#0f6e66;--accent-soft:#e6f3f1;
+--todo:#b45309;--todo-soft:#fff4e5;--blue:#1d4ed8;--blue-soft:#eaf1ff;--red:#b42318;--red-soft:#fdecea;--green:#15803d;--green-soft:#eaf7ee}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:940px;margin:0 auto;padding:0 22px 60px}
+header.top{background:linear-gradient(135deg,#0f3d3a,#0f6e66);color:#fff;padding:38px 0 30px;margin-bottom:28px}
+header.top .wrap{padding-bottom:0}
+.kicker{text-transform:uppercase;letter-spacing:.12em;font-size:12.5px;font-weight:700;opacity:.85}
+header.top h1{font-size:34px;line-height:1.2;margin:8px 0 10px;font-weight:800}
+header.top p.sub{margin:0;font-size:18px;opacity:.92;max-width:760px}
+.byline{margin-top:16px;font-size:14px;opacity:.9}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 12px;font-size:13.5px}
+h2{font-size:26px;margin:44px 0 12px;padding-top:6px;border-top:2px solid var(--line)}
+h3{font-size:20.5px;margin:30px 0 8px}
+h4{font-size:17px;margin:20px 0 6px}
+p{margin:10px 0}
+a{color:var(--accent)}
+code{font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;font-size:.88em;background:#eef1f5;padding:1px 5px;border-radius:4px}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 20px;margin:18px 0}
+.toc ol{margin:6px 0;padding-left:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:18px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.exercise{border-left:6px solid var(--accent)}
+.exercise > h3:first-child{margin-top:4px}
+.file{display:inline-block;font-family:Menlo,Consolas,monospace;font-size:14px;background:var(--accent-soft);color:var(--accent);padding:2px 9px;border-radius:6px}
+.todo{border:1px solid #f3d9b5;background:var(--todo-soft);border-radius:12px;padding:12px 16px;margin:12px 0}
+.todo .num{display:inline-block;background:var(--todo);color:#fff;font-weight:700;font-size:13px;border-radius:999px;padding:1px 10px;margin-right:8px}
+.todo .title{font-weight:650}
+details{margin:8px 0 2px}
+summary{cursor:pointer;color:var(--todo);font-weight:600;font-size:15px}
+details ul{margin:6px 0 4px}
+.callout{border-radius:12px;padding:12px 16px;margin:16px 0;border:1px solid}
+.callout.tip{background:var(--green-soft);border-color:#bfe3c9}
+.callout.note{background:var(--blue-soft);border-color:#c9d8fb}
+.callout.warn{background:var(--todo-soft);border-color:#f3d9b5}
+.callout.stop{background:var(--red-soft);border-color:#f5c2bc}
+.callout b.lbl{display:block;margin-bottom:2px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:15.5px;background:#fff}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f3f5f8}
+.code{border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow:hidden;background:#fff}
+.code .label{font-size:12.5px;color:var(--muted);background:#f6f7f9;border-bottom:1px solid var(--line);padding:4px 12px;font-family:Menlo,Consolas,monospace}
+.code pre{margin:0;padding:12px 14px;overflow-x:auto;font-size:14px;line-height:1.5}
+.out{background:#0f172a;color:#d6e2f0;border-radius:10px;margin:12px 0;overflow:hidden}
+.out .label{font-size:12.5px;color:#93a4bd;background:#18233a;padding:4px 12px;font-family:Menlo,Consolas,monospace}
+.out pre{margin:0;padding:12px 14px;overflow-x:auto;font:13.5px/1.5 Menlo,Consolas,monospace;white-space:pre-wrap}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:16px 0}
+.flow .box{flex:1 1 140px;background:#fff;border:1.5px solid var(--accent);border-radius:12px;padding:10px 12px;text-align:center;font-size:15px}
+.flow .box b{display:block;color:var(--accent)}
+.flow .arrow{align-self:center;font-size:24px;color:var(--muted)}
+.qa{border-bottom:1px dashed var(--line);padding:8px 0}
+.qa .q{font-weight:650}
+.done{background:var(--green-soft);border:1px solid #bfe3c9;border-radius:10px;padding:10px 14px;margin:12px 0}
+.done b{color:var(--green)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr} header.top h1{font-size:27px}}
+footer{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+.pill{display:inline-block;font-size:12.5px;font-weight:700;border-radius:999px;padding:1px 9px;margin-left:6px;vertical-align:middle}
+.pill.core{background:var(--accent-soft);color:var(--accent)}
+.pill.opt{background:#f1f2f6;color:var(--muted)}
+@media print{header.top{background:#0f6e66 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact} details{display:block} details>*{display:block}}
+
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.code pre .hll { background-color: #ffffcc }
+.code pre { background: #f0f0f0; }
+.code pre .c { color: #60A0B0; font-style: italic } /* Comment */
+.code pre .err { border: 1px solid #F00 } /* Error */
+.code pre .k { color: #007020; font-weight: bold } /* Keyword */
+.code pre .o { color: #666 } /* Operator */
+.code pre .ch { color: #60A0B0; font-style: italic } /* Comment.Hashbang */
+.code pre .cm { color: #60A0B0; font-style: italic } /* Comment.Multiline */
+.code pre .cp { color: #007020 } /* Comment.Preproc */
+.code pre .cpf { color: #60A0B0; font-style: italic } /* Comment.PreprocFile */
+.code pre .c1 { color: #60A0B0; font-style: italic } /* Comment.Single */
+.code pre .cs { color: #60A0B0; background-color: #FFF0F0 } /* Comment.Special */
+.code pre .gd { color: #A00000 } /* Generic.Deleted */
+.code pre .ge { font-style: italic } /* Generic.Emph */
+.code pre .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.code pre .gr { color: #F00 } /* Generic.Error */
+.code pre .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.code pre .gi { color: #00A000 } /* Generic.Inserted */
+.code pre .go { color: #888 } /* Generic.Output */
+.code pre .gp { color: #C65D09; font-weight: bold } /* Generic.Prompt */
+.code pre .gs { font-weight: bold } /* Generic.Strong */
+.code pre .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.code pre .gt { color: #04D } /* Generic.Traceback */
+.code pre .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.code pre .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.code pre .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.code pre .kp { color: #007020 } /* Keyword.Pseudo */
+.code pre .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.code pre .kt { color: #902000 } /* Keyword.Type */
+.code pre .m { color: #40A070 } /* Literal.Number */
+.code pre .s { color: #4070A0 } /* Literal.String */
+.code pre .na { color: #4070A0 } /* Name.Attribute */
+.code pre .nb { color: #007020 } /* Name.Builtin */
+.code pre .nc { color: #0E84B5; font-weight: bold } /* Name.Class */
+.code pre .no { color: #60ADD5 } /* Name.Constant */
+.code pre .nd { color: #555; font-weight: bold } /* Name.Decorator */
+.code pre .ni { color: #D55537; font-weight: bold } /* Name.Entity */
+.code pre .ne { color: #007020 } /* Name.Exception */
+.code pre .nf { color: #06287E } /* Name.Function */
+.code pre .nl { color: #002070; font-weight: bold } /* Name.Label */
+.code pre .nn { color: #0E84B5; font-weight: bold } /* Name.Namespace */
+.code pre .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.code pre .nv { color: #BB60D5 } /* Name.Variable */
+.code pre .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.code pre .w { color: #BBB } /* Text.Whitespace */
+.code pre .mb { color: #40A070 } /* Literal.Number.Bin */
+.code pre .mf { color: #40A070 } /* Literal.Number.Float */
+.code pre .mh { color: #40A070 } /* Literal.Number.Hex */
+.code pre .mi { color: #40A070 } /* Literal.Number.Integer */
+.code pre .mo { color: #40A070 } /* Literal.Number.Oct */
+.code pre .sa { color: #4070A0 } /* Literal.String.Affix */
+.code pre .sb { color: #4070A0 } /* Literal.String.Backtick */
+.code pre .sc { color: #4070A0 } /* Literal.String.Char */
+.code pre .dl { color: #4070A0 } /* Literal.String.Delimiter */
+.code pre .sd { color: #4070A0; font-style: italic } /* Literal.String.Doc */
+.code pre .s2 { color: #4070A0 } /* Literal.String.Double */
+.code pre .se { color: #4070A0; font-weight: bold } /* Literal.String.Escape */
+.code pre .sh { color: #4070A0 } /* Literal.String.Heredoc */
+.code pre .si { color: #70A0D0; font-style: italic } /* Literal.String.Interpol */
+.code pre .sx { color: #C65D09 } /* Literal.String.Other */
+.code pre .sr { color: #235388 } /* Literal.String.Regex */
+.code pre .s1 { color: #4070A0 } /* Literal.String.Single */
+.code pre .ss { color: #517918 } /* Literal.String.Symbol */
+.code pre .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.code pre .fm { color: #06287E } /* Name.Function.Magic */
+.code pre .vc { color: #BB60D5 } /* Name.Variable.Class */
+.code pre .vg { color: #BB60D5 } /* Name.Variable.Global */
+.code pre .vi { color: #BB60D5 } /* Name.Variable.Instance */
+.code pre .vm { color: #BB60D5 } /* Name.Variable.Magic */
+.code pre .il { color: #40A070 } /* Literal.Number.Integer.Long */</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<div class="kicker">Before the session · Give to learners</div>
+<h1>Setup Guide</h1>
+<p class="sub">Get your laptop ready for the hands-on session: Python, libraries, API key, and a one-click check.</p>
+<div class="badges"><span class="badge">For learners</span><span class="badge">20–30 minutes</span><span class="badge">Do this before class</span></div>
+<div class="byline">Created by <b>Shivank Agarwal</b></div>
+</div></header>
+<main class="wrap">
+
+<div class="card"><p>Do this <b>before the session</b> (about 20–30 minutes, mostly waiting for downloads). At the end, one script tells you
+whether everything works. If it says <b>All good</b>, you are ready.</p></div>
+
+<h2>1. Install Python</h2>
+<p>You need <b>Python 3.11, 3.12 or 3.13</b>. Check what you have:</p>
+<div class="code"><div class="label">Terminal</div><pre>python<span class="w"> </span>--version<span class="w">      </span><span class="c1"># on Mac/Linux you may need: python3 --version</span>
+</pre></div>
+<p>If it is missing or older, install it from <a href="https://www.python.org/downloads/">python.org/downloads</a>.
+On Windows, tick <b>"Add Python to PATH"</b> during install.</p>
+
+<h2>2. Open a terminal in the main folder</h2>
+<p>Unzip the folder you received. The <b>main folder</b> is the one that contains <code>00_Setup</code> and the <code>Module_...</code> folders. Open a terminal there
+(VS Code: <i>File &rarr; Open Folder</i>, then <i>Terminal &rarr; New Terminal</i>).</p>
+
+<h2>3. Create a virtual environment and install the libraries</h2>
+<p>A virtual environment is a private box of libraries for this course, so it does not disturb other Python projects.</p>
+<div class="grid2">
+<div><div class="code"><div class="label">Windows</div><pre>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+.venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>00_Setup/requirements.txt
+</pre></div></div>
+<div><div class="code"><div class="label">Mac / Linux</div><pre>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>00_Setup/requirements.txt
+</pre></div></div></div>
+<p>You will see <code>(.venv)</code> at the start of the terminal line when it is active. The install takes 5–15 minutes (it downloads PyTorch for the local models).</p>
+<div class="callout note"><b class="lbl">Every time you open a new terminal</b><p>Activate the environment again (the second line above) before running any file.</p></div>
+
+<h2>4. Add your OpenAI API key</h2>
+<ol>
+<li>Create a key at <a href="https://platform.openai.com/api-keys">platform.openai.com/api-keys</a> (your account needs a small amount of credit; the whole course costs a few rupees).</li>
+<li>Make a copy of the template, named <code>.env</code>, in the main folder:</li></ol>
+<div class="grid2">
+<div><div class="code"><div class="label">Windows</div><pre>copy<span class="w"> </span>00_Setup<span class="se">\e</span>nv_template.txt<span class="w"> </span>.env
+</pre></div></div>
+<div><div class="code"><div class="label">Mac / Linux</div><pre>cp<span class="w"> </span>00_Setup/env_template.txt<span class="w"> </span>.env
+</pre></div></div></div>
+<ol start="3"><li>Open <code>.env</code> in VS Code or Notepad and replace <code>sk-paste-your-key-here</code> with your key. Save.</li></ol>
+<div class="callout stop"><b class="lbl">Keep your key secret</b><p>Never paste your key into code, screenshots, WhatsApp or GitHub. The <code>.env</code> file keeps it out of your code.</p></div>
+
+<h2>5. Run the setup check</h2>
+<div class="code"><div class="label">Terminal (main folder, environment active)</div><pre>python<span class="w"> </span>00_Setup/check_setup.py
+</pre></div>
+<div class="out"><div class="label">What success looks like</div><pre>Python 3.12.4
+
+1) Libraries
+  [OK]   openai
+  [OK]   langchain_core
+  ...
+2) Free local models (the first time this takes a few minutes)
+  [OK]   all-MiniLM-L6-v2 (sentence embeddings)
+  [OK]   ms-marco-MiniLM-L6-v2 (reranker)
+  [OK]   glove-wiki-gigaword-50 (word vectors)
+
+3) OpenAI API key
+  [OK]   chat model gpt-6-luna replied: 'OK'
+  [OK]   embedding model text-embedding-3-small returned 1536 numbers
+
+All good. You are ready for the session!</pre></div>
+
+<h2>6. How to run the exercise files</h2>
+<table><tr><th>File type</th><th>How to run</th></tr>
+<tr><td><code>.ipynb</code> (notebook)</td><td>In VS Code: open the file, click <b>Select Kernel</b> (top right) and pick <code>.venv</code>, then run the cells one by one (Shift+Enter).<br>Or in the terminal: <code>jupyter notebook</code> and open the file in the browser.</td></tr>
+<tr><td><code>.py</code> (script)</td><td>Go into its folder and run it, for example:<br><code>cd Module_3_Tool_Calling_Basics/1_GIVE_FIRST_Starter_Code</code><br><code>python 1_tool_calling_from_scratch.py</code></td></tr>
+<tr><td><code>.py</code> with a web page (Gradio)</td><td>Run it the same way, then open <code>http://127.0.0.1:7860</code> in your browser. Press <b>Ctrl+C</b> in the terminal to stop it before starting the next app.</td></tr></table>
+
+<h2>Problems?</h2>
+<table><tr><th>You see</th><th>Fix</th></tr>
+<tr><td><code>'python' is not recognized</code></td><td>Reinstall Python with "Add Python to PATH" ticked, or use <code>py</code> instead of <code>python</code> on Windows.</td></tr>
+<tr><td><code>... cannot be loaded because running scripts is disabled</code> (Windows PowerShell)</td><td>Run <code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code> once, then activate again. Or use the Command Prompt instead of PowerShell.</td></tr>
+<tr><td><code>ModuleNotFoundError</code> in a notebook, but check_setup passes</td><td>The notebook is using a different Python. Select the <code>.venv</code> kernel.</td></tr>
+<tr><td><code>OPENAI_API_KEY not found</code></td><td>The file must be named exactly <code>.env</code> (not <code>.env.txt</code>) and sit in the main folder.</td></tr>
+<tr><td><code>401 Incorrect API key</code> / <code>insufficient_quota</code></td><td>Check the key, or add credit to your OpenAI account.</td></tr>
+<tr><td>Model downloads fail on office or college Wi-Fi</td><td>Some networks block model downloads. Try a mobile hotspot once; after that the models are saved on your laptop.</td></tr></table>
+
+<footer>Created by Shivank Agarwal. </footer>
+</main>
+</body>
+</html>
